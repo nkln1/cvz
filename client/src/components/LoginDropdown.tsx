@@ -1,8 +1,16 @@
 import { useState, useRef, useEffect } from "react";
+import AuthDialog from "./auth/AuthDialog";
+import { Button } from "./ui/button";
+import { ChevronDown } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import { signOut } from "@/lib/auth";
+import { useToast } from "@/hooks/use-toast";
 
 export default function LoginDropdown() {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const { user } = useAuth();
+  const { toast } = useToast();
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -18,63 +26,73 @@ export default function LoginDropdown() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  return (
-    <div className="relative" ref={dropdownRef}>
-      <button
-        type="button"
-        aria-label="Conectează-te"
-        className="flex items-center p-0 space-x-1 text-gray-600 hover:text-blue-600 focus:outline-none focus:ring-0 transition-colors"
-        onClick={() => setIsOpen(!isOpen)}
-      >
-        <img
-          src="https://i.ibb.co/NnnNWbN/Signlogin.png"
-          alt="Login Icon"
-          className="h-8 w-8"
-        />
-        <svg
-          viewBox="0 0 24 24"
-          xmlns="http://www.w3.org/2000/svg"
-          className={`h-6 w-6 transition-transform ${isOpen ? "rotate-180" : ""}`}
-          role="img"
-          aria-hidden="true"
-          fill="currentColor"
-        >
-          <path
-            fillRule="evenodd"
-            d="M8.29289 6.70711c-.39052-.39053-.39052-1.02369 0-1.41422.39053-.39052 1.02369-.39052 1.41422 0l5.99999 6.00001c.3905.3905.3905 1.0237 0 1.4142l-5.99999 6c-.39053.3905-1.02369.3905-1.41422 0-.39052-.3905-.39052-1.0237 0-1.4142L13.5858 12 8.29289 6.70711Z"
-            clipRule="evenodd"
-            transform="rotate(90 12 12)"
-          />
-        </svg>
-      </button>
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      toast({
+        title: "Success",
+        description: "Te-ai deconectat cu succes!",
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "A apărut o eroare la deconectare.",
+      });
+    }
+  };
 
-      {isOpen && (
-        <div className="absolute right-0 mt-2 w-64 bg-white rounded-md shadow-lg p-4 z-50">
-          <h3 className="text-lg font-semibold mb-2">Intră în cont</h3>
-          <form className="space-y-3">
-            <input
-              type="email"
-              placeholder="Email"
-              className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
-            />
-            <input
-              type="password"
-              placeholder="Parolă"
-              className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
-            />
+  if (user) {
+    return (
+      <div className="relative" ref={dropdownRef}>
+        <Button
+          variant="ghost"
+          className="flex items-center gap-2"
+          onClick={() => setIsOpen(!isOpen)}
+        >
+          <img
+            src={user.photoURL || "https://i.ibb.co/NnnNWbN/Signlogin.png"}
+            alt={user.displayName || "User"}
+            className="h-8 w-8 rounded-full"
+          />
+          <ChevronDown
+            className={`h-4 w-4 transition-transform ${
+              isOpen ? "rotate-180" : ""
+            }`}
+          />
+        </Button>
+        {isOpen && (
+          <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
+            <div className="px-4 py-2 text-sm text-gray-700 border-b border-gray-100">
+              {user.displayName || user.email}
+            </div>
             <button
-              type="submit"
-              className="inline-flex items-center justify-center px-8 py-3 border border-transparent text-lg font-medium rounded-full text-white bg-[#00aff5] hover:bg-blue-700 shadow-lg transition-transform transform hover:scale-105 w-full"
+              onClick={handleSignOut}
+              className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
             >
-              Conectează-te
+              Deconectare
             </button>
-          </form>
-          <hr className="my-3" />
-          <button className="inline-flex items-center justify-center px-8 py-3 border border-transparent text-lg font-medium rounded-full text-white bg-[#005f99] hover:bg-[#006fb3] shadow-lg transition-transform transform hover:scale-105 w-full">
-            Crează cont
-          </button>
-        </div>
-      )}
-    </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <AuthDialog
+      trigger={
+        <Button
+          variant="ghost"
+          className="flex items-center gap-2 text-gray-600 hover:text-[#00aff5]"
+        >
+          <img
+            src="https://i.ibb.co/NnnNWbN/Signlogin.png"
+            alt="Login Icon"
+            className="h-8 w-8"
+          />
+          <ChevronDown className="h-4 w-4" />
+        </Button>
+      }
+    />
   );
 }
