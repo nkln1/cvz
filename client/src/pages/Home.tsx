@@ -6,6 +6,7 @@ import AppPreview from "@/components/AppPreview";
 import Footer from "@/components/Footer";
 import Navigation from "@/components/Navigation";
 import { useEffect } from "react";
+import { ParallaxWrapper } from "@/components/ui/parallax-wrapper";
 
 export default function Home() {
   useEffect(() => {
@@ -15,11 +16,21 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Navigation />
-      <Hero />
-      <HowItWorks />
-      <Benefits />
-      <AppPreview />
-      <FAQ />
+      <ParallaxWrapper offset={0}>
+        <Hero />
+      </ParallaxWrapper>
+      <ParallaxWrapper offset={30}>
+        <HowItWorks />
+      </ParallaxWrapper>
+      <ParallaxWrapper offset={40}>
+        <Benefits />
+      </ParallaxWrapper>
+      <ParallaxWrapper offset={50}>
+        <AppPreview />
+      </ParallaxWrapper>
+      <ParallaxWrapper offset={30}>
+        <FAQ />
+      </ParallaxWrapper>
       <Footer />
     </div>
   );
