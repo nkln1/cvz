@@ -12,7 +12,9 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Mail, Phone, Send } from "lucide-react";
+import { Mail, Phone } from "lucide-react";
+import Navigation from "@/components/Navigation";
+import Footer from "@/components/Footer";
 
 const formSchema = z.object({
   name: z.string().min(2, {
@@ -47,6 +49,7 @@ export default function Contact() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <Navigation />
       <div className="max-w-7xl mx-auto py-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-2xl mx-auto">
           <h1 className="text-4xl font-extrabold text-gray-900 text-center mb-8">
@@ -119,7 +122,7 @@ export default function Contact() {
                   type="submit"
                   className="w-full bg-[#00aff5] hover:bg-[#0099d6] transition-colors duration-200"
                 >
-                  <Send className="mr-2 h-4 w-4" />
+                  <Mail className="mr-2 h-4 w-4" />
                   Trimite Mesajul
                 </Button>
               </form>
@@ -138,6 +141,7 @@ export default function Contact() {
           </div>
         </div>
       </div>
+      <Footer />
     </div>
   );
 }
