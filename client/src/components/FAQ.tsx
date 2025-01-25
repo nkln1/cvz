@@ -4,12 +4,12 @@ const faqs = [
   {
     question: "Cum îmi creez un cont în aplicație?",
     answer:
-      "Pentru a-ți crea un cont, mergi în bara de navigare și apasă pe butonul „Conectează-te" sau „Login". Completează formularul cu adresa de email și parola, iar contul se va crea instant. Poți, de asemenea, să folosești un cont de Google sau Facebook pentru a te autentifica mai rapid.",
+      'Pentru a-ți crea un cont, mergi în bara de navigare și apasă pe butonul "Conectează-te" sau "Login". Completează formularul cu adresa de email și parola, iar contul se va crea instant. Poți, de asemenea, să folosești un cont de Google sau Facebook pentru a te autentifica mai rapid.',
   },
   {
     question: "Cum trimit o cerere către service-urile auto?",
     answer:
-      "După ce te-ai logat, mergi la secțiunea „Trimite cerere" (sau „Solicită ofertă"). Acolo vei completa detaliile mașinii tale (model, an, kilometraj) și vei descrie serviciul necesar (reparație, revizie, ITP, etc.). Aplicația va distribui automat cererea ta către service-urile din zona selectată de tine.",
+      'După ce te-ai logat, mergi la secțiunea "Trimite cerere" (sau "Solicită ofertă"). Acolo vei completa detaliile mașinii tale (model, an, kilometraj) și vei descrie serviciul necesar (reparație, revizie, ITP, etc.). Aplicația va distribui automat cererea ta către service-urile din zona selectată de tine.',
   },
   {
     question: "Cum primesc cotații de la service-uri?",
