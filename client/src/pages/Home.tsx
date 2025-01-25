@@ -5,6 +5,7 @@ import FAQ from "@/components/FAQ";
 import AppPreview from "@/components/AppPreview";
 import Footer from "@/components/Footer";
 import Navigation from "@/components/Navigation";
+import TestimonialCarousel from "@/components/TestimonialCarousel";
 import { useEffect } from "react";
 import { ParallaxWrapper } from "@/components/ui/parallax-wrapper";
 
@@ -24,6 +25,9 @@ export default function Home() {
       </ParallaxWrapper>
       <ParallaxWrapper offset={40}>
         <Benefits />
+      </ParallaxWrapper>
+      <ParallaxWrapper offset={50}>
+        <TestimonialCarousel />
       </ParallaxWrapper>
       <ParallaxWrapper offset={50}>
         <AppPreview />
