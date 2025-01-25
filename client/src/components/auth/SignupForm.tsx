@@ -14,14 +14,24 @@ import {
 import { Input } from "@/components/ui/input";
 import { signInWithGoogle } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
-import { Mail, Lock, User } from "lucide-react";
+import { Mail, Lock, User, MapPin, Phone, Building } from "lucide-react";
+import RoleSelection from "./RoleSelection";
+import { doc, setDoc } from "firebase/firestore";
+import { db, auth } from "@/lib/firebase";
+import { createUserWithEmailAndPassword } from "firebase/auth";
 
-const formSchema = z.object({
+const clientSchema = z.object({
   name: z.string().min(2, {
     message: "Numele trebuie să conțină cel puțin 2 caractere.",
   }),
   email: z.string().email({
     message: "Te rugăm să introduci o adresă de email validă.",
+  }),
+  phone: z.string().min(10, {
+    message: "Te rugăm să introduci un număr de telefon valid.",
+  }),
+  location: z.string().min(2, {
+    message: "Te rugăm să introduci localitatea.",
   }),
   password: z.string().min(6, {
     message: "Parola trebuie să conțină cel puțin 6 caractere.",
@@ -32,34 +42,92 @@ const formSchema = z.object({
   path: ["confirmPassword"],
 });
 
+const serviceSchema = z.object({
+  companyName: z.string().min(2, {
+    message: "Numele companiei trebuie să conțină cel puțin 2 caractere.",
+  }),
+  representativeName: z.string().min(2, {
+    message: "Numele reprezentantului trebuie să conțină cel puțin 2 caractere.",
+  }),
+  email: z.string().email({
+    message: "Te rugăm să introduci o adresă de email validă.",
+  }),
+  phone: z.string().min(10, {
+    message: "Te rugăm să introduci un număr de telefon valid.",
+  }),
+  address: z.string().min(5, {
+    message: "Te rugăm să introduci adresa completă.",
+  }),
+  location: z.string().min(2, {
+    message: "Te rugăm să introduci localitatea.",
+  }),
+  password: z.string().min(6, {
+    message: "Parola trebuie să conțină cel puțin 6 caractere.",
+  }),
+  confirmPassword: z.string(),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Parolele nu coincid",
+  path: ["confirmPassword"],
+});
+
+type UserRole = "client" | "service" | null;
+
 export default function SignupForm() {
   const [isLoading, setIsLoading] = useState(false);
+  const [role, setRole] = useState<UserRole>(null);
   const { toast } = useToast();
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const clientForm = useForm<z.infer<typeof clientSchema>>({
+    resolver: zodResolver(clientSchema),
     defaultValues: {
       name: "",
       email: "",
+      phone: "",
+      location: "",
       password: "",
       confirmPassword: "",
     },
   });
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
+  const serviceForm = useForm<z.infer<typeof serviceSchema>>({
+    resolver: zodResolver(serviceSchema),
+    defaultValues: {
+      companyName: "",
+      representativeName: "",
+      email: "",
+      phone: "",
+      address: "",
+      location: "",
+      password: "",
+      confirmPassword: "",
+    },
+  });
+
+  async function onSubmit(values: z.infer<typeof clientSchema> | z.infer<typeof serviceSchema>) {
     setIsLoading(true);
     try {
-      // TODO: Implement email/password registration
-      console.log(values);
+      const { email, password, ...userData } = values;
+      // Create auth user
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      // Store additional user data
+      await setDoc(doc(db, role === "client" ? "clients" : "services", user.uid), {
+        ...userData,
+        email,
+        createdAt: new Date().toISOString(),
+      });
+
       toast({
         title: "Success",
         description: "Cont creat cu succes!",
       });
     } catch (error) {
+      console.error("Error during registration:", error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "A apărut o eroare. Te rugăm să încerci din nou.",
+        description: "A apărut o eroare la crearea contului. Te rugăm să încerci din nou.",
       });
     } finally {
       setIsLoading(false);
@@ -82,40 +150,87 @@ export default function SignupForm() {
     }
   };
 
+  if (!role) {
+    return <RoleSelection onSelect={setRole} />;
+  }
+
+  const currentForm = role === "client" ? clientForm : serviceForm;
+  const currentSchema = role === "client" ? clientSchema : serviceSchema;
+
   return (
     <div className="w-full max-w-md space-y-6 p-6 bg-white rounded-lg shadow-lg">
       <div className="space-y-2 text-center">
-        <h2 className="text-2xl font-bold">Creează cont</h2>
+        <h2 className="text-2xl font-bold">
+          {role === "client" ? "Înregistrare Client" : "Înregistrare Service Auto"}
+        </h2>
         <p className="text-sm text-gray-500">
-          Înregistrează-te pentru a accesa toate funcționalitățile
+          Completează datele pentru a crea un cont nou
         </p>
       </div>
 
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <Form {...currentForm}>
+        <form onSubmit={currentForm.handleSubmit(onSubmit)} className="space-y-4">
+          {role === "client" ? (
+            // Client Form Fields
+            <>
+              <FormField
+                control={currentForm.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nume și Prenume</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                        <Input {...field} placeholder="Ion Popescu" className="pl-10" />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </>
+          ) : (
+            // Service Form Fields
+            <>
+              <FormField
+                control={currentForm.control}
+                name="companyName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Numele Service-ului</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <Building className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                        <Input {...field} placeholder="Auto Service SRL" className="pl-10" />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={currentForm.control}
+                name="representativeName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nume Reprezentant</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                        <Input {...field} placeholder="Ion Popescu" className="pl-10" />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </>
+          )}
+
+          {/* Common Fields */}
           <FormField
-            control={form.control}
-            name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Nume și Prenume</FormLabel>
-                <FormControl>
-                  <div className="relative">
-                    <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input
-                      {...field}
-                      placeholder="Andrei Cătălin"
-                      className="pl-10"
-                      disabled={isLoading}
-                    />
-                  </div>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
+            control={currentForm.control}
             name="email"
             render={({ field }) => (
               <FormItem>
@@ -123,21 +238,69 @@ export default function SignupForm() {
                 <FormControl>
                   <div className="relative">
                     <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input
-                      {...field}
-                      type="email"
-                      placeholder="nume@example.com"
-                      className="pl-10"
-                      disabled={isLoading}
-                    />
+                    <Input {...field} type="email" placeholder="email@example.com" className="pl-10" />
                   </div>
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
+
           <FormField
-            control={form.control}
+            control={currentForm.control}
+            name="phone"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Telefon</FormLabel>
+                <FormControl>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                    <Input {...field} placeholder="0712 345 678" className="pl-10" />
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {role === "service" && (
+            <FormField
+              control={currentForm.control}
+              name="address"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Adresă</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <MapPin className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Input {...field} placeholder="Strada, Număr" className="pl-10" />
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+
+          <FormField
+            control={currentForm.control}
+            name="location"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Localitate</FormLabel>
+                <FormControl>
+                  <div className="relative">
+                    <MapPin className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                    <Input {...field} placeholder="București" className="pl-10" />
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={currentForm.control}
             name="password"
             render={({ field }) => (
               <FormItem>
@@ -145,21 +308,16 @@ export default function SignupForm() {
                 <FormControl>
                   <div className="relative">
                     <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input
-                      {...field}
-                      type="password"
-                      placeholder="••••••••"
-                      className="pl-10"
-                      disabled={isLoading}
-                    />
+                    <Input {...field} type="password" placeholder="••••••••" className="pl-10" />
                   </div>
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
+
           <FormField
-            control={form.control}
+            control={currentForm.control}
             name="confirmPassword"
             render={({ field }) => (
               <FormItem>
@@ -167,19 +325,14 @@ export default function SignupForm() {
                 <FormControl>
                   <div className="relative">
                     <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input
-                      {...field}
-                      type="password"
-                      placeholder="••••••••"
-                      className="pl-10"
-                      disabled={isLoading}
-                    />
+                    <Input {...field} type="password" placeholder="••••••••" className="pl-10" />
                   </div>
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
+
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading ? "Se încarcă..." : "Creează cont"}
           </Button>
@@ -208,6 +361,16 @@ export default function SignupForm() {
           className="mr-2 h-4 w-4"
         />
         Înregistrare cu Google
+      </Button>
+
+      <Button
+        type="button"
+        variant="link"
+        className="w-full"
+        onClick={() => setRole(null)}
+        disabled={isLoading}
+      >
+        Schimbă tipul de cont
       </Button>
     </div>
   );
