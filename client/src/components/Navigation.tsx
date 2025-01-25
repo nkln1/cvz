@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import LoginDropdown from "./LoginDropdown";
 import { Button } from "./ui/button";
-import { PhoneCall } from "lucide-react";
+import { Mail } from "lucide-react";
 
 export default function Navigation() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -45,12 +45,12 @@ export default function Navigation() {
           </div>
           <div className="flex items-center space-x-4">
             <Button
-              variant="default"
+              variant="ghost"
               size="sm"
               onClick={handleContactClick}
-              className="flex items-center gap-2 bg-blue-600 text-white hover:bg-blue-700 hover:scale-105 transition-all duration-200"
+              className="flex items-center gap-2 text-gray-600 hover:text-[#00aff5] hover:bg-transparent hover:scale-105 transition-all duration-200"
             >
-              <PhoneCall className="h-4 w-4" />
+              <Mail className="h-4 w-4" />
               Contact Us
             </Button>
             <LoginDropdown />
