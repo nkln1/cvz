@@ -6,7 +6,10 @@ export default function LoginDropdown() {
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false);
       }
     };
@@ -24,7 +27,7 @@ export default function LoginDropdown() {
         onClick={() => setIsOpen(!isOpen)}
       >
         <img
-          src="https://i.ibb.co/f9fPn5G/Sign.png"
+          src="https://i.ibb.co/NnnNWbN/Signlogin.png"
           alt="Login Icon"
           className="h-8 w-8"
         />
