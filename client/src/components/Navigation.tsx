@@ -51,7 +51,7 @@ export default function Navigation() {
               className="flex items-center gap-2 text-gray-600 hover:text-[#00aff5] hover:bg-transparent hover:scale-105 transition-all duration-200"
             >
               <Mail className="h-4 w-4" />
-              Contact Us
+              Contactează-ne
             </Button>
             <LoginDropdown />
           </div>

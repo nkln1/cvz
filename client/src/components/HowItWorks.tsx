@@ -31,7 +31,7 @@ export default function HowItWorks() {
           <h2 className="text-4xl font-extrabold text-gray-900 sm:text-5xl">
             Cum funcționează:
           </h2>
-          <p className="mt-4 text-lg text-gray-600">
+          <p className="mt-4 text-lg text-gray-600 font-sans">
             Urmează acești pași simpli pentru a găsi cele mai bune oferte.
           </p>
         </div>
@@ -48,7 +48,7 @@ export default function HowItWorks() {
                 <h3 className="mt-6 text-xl font-semibold text-gray-900">
                   {step.title}
                 </h3>
-                <p className="mt-4 text-base text-gray-600">{step.desc}</p>
+                <p className="mt-4 text-base text-gray-600 font-sans">{step.desc}</p>
               </div>
             ))}
           </div>

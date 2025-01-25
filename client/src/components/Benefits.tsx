@@ -30,7 +30,7 @@ export default function Benefits() {
         <h2 className="text-4xl font-extrabold text-center text-white sm:text-5xl">
           De ce să alegi CARVIZIO
         </h2>
-        <p className="mt-4 text-lg text-center text-blue-100">
+        <p className="mt-4 text-lg text-center text-blue-100 font-sans">
           Simplificăm procesul de întreținere auto pentru tine.
         </p>
         <div className="mt-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -45,7 +45,7 @@ export default function Benefits() {
               <h3 className="mt-6 text-xl font-semibold text-gray-900">
                 {benefit.title}
               </h3>
-              <p className="mt-4 text-base text-gray-600">{benefit.desc}</p>
+              <p className="mt-4 text-base text-gray-600 font-sans">{benefit.desc}</p>
             </div>
           ))}
         </div>
