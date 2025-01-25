@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
+import { useLocation } from "wouter";
 import LoginDropdown from "./LoginDropdown";
 import { Button } from "./ui/button";
 import { Mail } from "lucide-react";
 
 export default function Navigation() {
   const [isScrolled, setIsScrolled] = useState(false);
+  const [, setLocation] = useLocation();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -16,8 +18,7 @@ export default function Navigation() {
   }, []);
 
   const handleContactClick = () => {
-    // We'll implement the contact modal functionality later
-    console.log("Contact button clicked");
+    setLocation("/contact");
   };
 
   return (
