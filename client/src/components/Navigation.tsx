@@ -15,8 +15,10 @@ export default function Navigation() {
 
   return (
     <nav
-      className={`sticky top-0 z-50 bg-white shadow-md transition-all duration-300 ${
-        isScrolled ? "navbar-transparent" : ""
+      className={`sticky top-0 z-50 transition-all duration-300 ${
+        isScrolled
+          ? "bg-white/75 backdrop-blur-md shadow-md"
+          : "bg-white shadow-md"
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
