@@ -50,18 +50,22 @@ export default function Contact() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Navigation />
-      <div className="max-w-7xl mx-auto py-16 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto py-8 sm:py-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-2xl mx-auto">
-          <h1 className="text-4xl font-extrabold text-gray-900 text-center mb-8">
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 text-center mb-4 sm:mb-8">
             Contactează-ne
           </h1>
-          <p className="text-lg text-gray-600 text-center mb-12 font-sans">
-            Ai întrebări sau sugestii? Scrie-ne un mesaj și îți vom răspunde cât mai curând posibil.
+          <p className="text-base sm:text-lg text-gray-600 text-center mb-8 sm:mb-12 font-sans">
+            Ai întrebări sau sugestii? Scrie-ne un mesaj și îți vom răspunde cât
+            mai curând posibil.
           </p>
 
-          <div className="bg-white shadow-xl rounded-lg p-8">
+          <div className="bg-white shadow-xl rounded-lg p-4 sm:p-8">
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-4 sm:space-y-6"
+              >
                 <FormField
                   control={form.control}
                   name="name"
@@ -69,7 +73,7 @@ export default function Contact() {
                     <FormItem>
                       <FormLabel>Nume și Prenume</FormLabel>
                       <FormControl>
-                        <Input placeholder="John Doe" {...field} />
+                        <Input placeholder="Andrei Cătălin" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -82,7 +86,11 @@ export default function Contact() {
                     <FormItem>
                       <FormLabel>Email</FormLabel>
                       <FormControl>
-                        <Input type="email" placeholder="john@example.com" {...field} />
+                        <Input
+                          type="email"
+                          placeholder="catalin@example.com"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -108,9 +116,9 @@ export default function Contact() {
                     <FormItem>
                       <FormLabel>Mesaj</FormLabel>
                       <FormControl>
-                        <Textarea 
+                        <Textarea
                           placeholder="Scrie mesajul tău aici..."
-                          className="min-h-[150px]"
+                          className="min-h-[120px] sm:min-h-[150px]"
                           {...field}
                         />
                       </FormControl>
@@ -118,7 +126,7 @@ export default function Contact() {
                     </FormItem>
                   )}
                 />
-                <Button 
+                <Button
                   type="submit"
                   className="w-full bg-[#00aff5] hover:bg-[#0099d6] transition-colors duration-200"
                 >
@@ -129,12 +137,12 @@ export default function Contact() {
             </Form>
           </div>
 
-          <div className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2">
-            <div className="flex items-center space-x-4 text-gray-600">
+          <div className="mt-8 sm:mt-12 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+            <div className="flex items-center justify-center sm:justify-start space-x-4 text-gray-600 p-4 bg-white rounded-lg shadow-md">
               <Mail className="h-6 w-6 text-[#00aff5]" />
               <span className="font-sans">contact@carvizio.com</span>
             </div>
-            <div className="flex items-center space-x-4 text-gray-600">
+            <div className="flex items-center justify-center sm:justify-start space-x-4 text-gray-600 p-4 bg-white rounded-lg shadow-md">
               <Phone className="h-6 w-6 text-[#00aff5]" />
               <span className="font-sans">0712 345 678</span>
             </div>
