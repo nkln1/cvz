@@ -18,10 +18,12 @@ export default function Navigation() {
   }, []);
 
   const handleContactClick = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
     setLocation("/contact");
   };
 
   const handleLogoClick = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
     setLocation("/");
   };
 

@@ -5,10 +5,12 @@ export default function Footer() {
   const [, setLocation] = useLocation();
 
   const handleContactClick = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
     setLocation("/contact");
   };
 
   const handleLogoClick = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
     setLocation("/");
   };
 
