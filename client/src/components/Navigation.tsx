@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import LoginDropdown from "./LoginDropdown";
+import { Button } from "./ui/button";
+import { PhoneCall } from "lucide-react";
 
 export default function Navigation() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -12,6 +14,11 @@ export default function Navigation() {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  const handleContactClick = () => {
+    // We'll implement the contact modal functionality later
+    console.log("Contact button clicked");
+  };
 
   return (
     <nav
@@ -36,7 +43,18 @@ export default function Navigation() {
               CARVIZIO
             </span>
           </div>
-          <LoginDropdown />
+          <div className="flex items-center space-x-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleContactClick}
+              className="flex items-center gap-2 hover:bg-primary hover:text-primary-foreground transition-colors"
+            >
+              <PhoneCall className="h-4 w-4" />
+              Contact Us
+            </Button>
+            <LoginDropdown />
+          </div>
         </div>
       </div>
     </nav>
