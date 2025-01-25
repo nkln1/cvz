@@ -45,10 +45,10 @@ export default function Navigation() {
           </div>
           <div className="flex items-center space-x-4">
             <Button
-              variant="outline"
+              variant="default"
               size="sm"
               onClick={handleContactClick}
-              className="flex items-center gap-2 hover:bg-primary hover:text-primary-foreground transition-colors"
+              className="flex items-center gap-2 bg-blue-600 text-white hover:bg-blue-700 hover:scale-105 transition-all duration-200"
             >
               <PhoneCall className="h-4 w-4" />
               Contact Us
