@@ -1,36 +1,42 @@
 import { Button } from "@/components/ui/button";
-import { UserCog, Building2 } from "lucide-react";
+import { UserCog, Building2, ArrowLeft } from "lucide-react";
 
 interface RoleSelectionProps {
   onSelect: (role: "client" | "service") => void;
+  onBack?: () => void;
 }
 
-export default function RoleSelection({ onSelect }: RoleSelectionProps) {
+export default function RoleSelection({ onSelect, onBack }: RoleSelectionProps) {
   return (
     <div className="space-y-6">
-      <h3 className="text-lg font-semibold text-center">Alege tipul de cont</h3>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      {onBack && (
+        <Button
+          variant="ghost"
+          className="absolute left-4 top-4 p-0 text-[#00aff5]"
+          onClick={onBack}
+        >
+          <ArrowLeft className="h-4 w-4" />
+        </Button>
+      )}
+      <h3 className="text-lg font-semibold text-center text-[#00aff5]">
+        Alege tipul de cont
+      </h3>
+      <div className="grid grid-cols-2 gap-4">
         <Button
           variant="outline"
-          className="p-6 h-auto flex flex-col items-center space-y-2 hover:border-[#00aff5] hover:text-[#00aff5] transition-all"
+          className="p-6 h-auto flex flex-col items-center hover:border-[#00aff5] hover:text-[#00aff5] transition-all"
           onClick={() => onSelect("client")}
         >
           <UserCog className="h-8 w-8" />
           <span className="text-sm font-medium">Client</span>
-          <span className="text-xs text-muted-foreground text-center">
-            Caută și programează servicii auto
-          </span>
         </Button>
         <Button
           variant="outline"
-          className="p-6 h-auto flex flex-col items-center space-y-2 hover:border-[#00aff5] hover:text-[#00aff5] transition-all"
+          className="p-6 h-auto flex flex-col items-center hover:border-[#00aff5] hover:text-[#00aff5] transition-all"
           onClick={() => onSelect("service")}
         >
           <Building2 className="h-8 w-8" />
           <span className="text-sm font-medium">Service Auto</span>
-          <span className="text-xs text-muted-foreground text-center">
-            Oferă servicii și primește programări
-          </span>
         </Button>
       </div>
     </div>

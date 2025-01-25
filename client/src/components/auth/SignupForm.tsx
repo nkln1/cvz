@@ -14,7 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { signInWithGoogle } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
-import { Mail, Lock, User, MapPin, Phone, Building } from "lucide-react";
+import { Mail, Lock, User, MapPin, Phone, Building, ArrowLeft } from "lucide-react";
 import RoleSelection from "./RoleSelection";
 import { doc, setDoc } from "firebase/firestore";
 import { db, auth } from "@/lib/firebase";
@@ -107,11 +107,8 @@ export default function SignupForm() {
     setIsLoading(true);
     try {
       const { email, password, ...userData } = values;
-      // Create auth user
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
-
-      // Store additional user data
       await setDoc(doc(db, role === "client" ? "clients" : "services", user.uid), {
         ...userData,
         email,
@@ -155,30 +152,33 @@ export default function SignupForm() {
   }
 
   const currentForm = role === "client" ? clientForm : serviceForm;
-  const currentSchema = role === "client" ? clientSchema : serviceSchema;
 
   return (
-    <div className="w-full max-w-md space-y-6 p-6 bg-white rounded-lg shadow-lg">
+    <div className="w-full max-w-4xl space-y-6 p-6 bg-white rounded-lg shadow-lg relative max-h-[80vh] overflow-y-auto">
+      <Button
+        variant="ghost"
+        className="absolute left-4 top-4 p-0 text-[#00aff5]"
+        onClick={() => setRole(null)}
+      >
+        <ArrowLeft className="h-4 w-4" />
+      </Button>
+
       <div className="space-y-2 text-center">
-        <h2 className="text-2xl font-bold">
+        <h2 className="text-2xl font-bold text-[#00aff5]">
           {role === "client" ? "Înregistrare Client" : "Înregistrare Service Auto"}
         </h2>
-        <p className="text-sm text-gray-500">
-          Completează datele pentru a crea un cont nou
-        </p>
       </div>
 
       <Form {...currentForm}>
         <form onSubmit={currentForm.handleSubmit(onSubmit)} className="space-y-4">
-          {role === "client" ? (
-            // Client Form Fields
-            <>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {role === "client" ? (
               <FormField
                 control={currentForm.control}
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Nume și Prenume</FormLabel>
+                    <FormLabel className="text-[#00aff5]">Nume și Prenume</FormLabel>
                     <FormControl>
                       <div className="relative">
                         <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
@@ -189,189 +189,174 @@ export default function SignupForm() {
                   </FormItem>
                 )}
               />
-            </>
-          ) : (
-            // Service Form Fields
-            <>
-              <FormField
-                control={currentForm.control}
-                name="companyName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Numele Service-ului</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <Building className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                        <Input {...field} placeholder="Auto Service SRL" className="pl-10" />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={currentForm.control}
-                name="representativeName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nume Reprezentant</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                        <Input {...field} placeholder="Ion Popescu" className="pl-10" />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </>
-          )}
-
-          {/* Common Fields */}
-          <FormField
-            control={currentForm.control}
-            name="email"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Email</FormLabel>
-                <FormControl>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input {...field} type="email" placeholder="email@example.com" className="pl-10" />
-                  </div>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
+            ) : (
+              <>
+                <FormField
+                  control={currentForm.control}
+                  name="companyName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-[#00aff5]">Numele Service-ului</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Building className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                          <Input {...field} placeholder="Auto Service SRL" className="pl-10" />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={currentForm.control}
+                  name="representativeName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-[#00aff5]">Nume Reprezentant</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                          <Input {...field} placeholder="Ion Popescu" className="pl-10" />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </>
             )}
-          />
 
-          <FormField
-            control={currentForm.control}
-            name="phone"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Telefon</FormLabel>
-                <FormControl>
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input {...field} placeholder="0712 345 678" className="pl-10" />
-                  </div>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          {role === "service" && (
             <FormField
               control={currentForm.control}
-              name="address"
+              name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Adresă</FormLabel>
+                  <FormLabel className="text-[#00aff5]">Email</FormLabel>
                   <FormControl>
                     <div className="relative">
-                      <MapPin className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                      <Input {...field} placeholder="Strada, Număr" className="pl-10" />
+                      <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Input {...field} type="email" placeholder="email@example.com" className="pl-10" />
                     </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-          )}
-
-          <FormField
-            control={currentForm.control}
-            name="location"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Localitate</FormLabel>
-                <FormControl>
-                  <div className="relative">
-                    <MapPin className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input {...field} placeholder="București" className="pl-10" />
-                  </div>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
+            <FormField
+              control={currentForm.control}
+              name="phone"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-[#00aff5]">Telefon</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Input {...field} placeholder="0712 345 678" className="pl-10" />
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            {role === "service" && (
+              <FormField
+                control={currentForm.control}
+                name="address"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-[#00aff5]">Adresă</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <MapPin className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                        <Input {...field} placeholder="Strada, Număr" className="pl-10" />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             )}
-          />
+            <FormField
+              control={currentForm.control}
+              name="location"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-[#00aff5]">Localitate</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <MapPin className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Input {...field} placeholder="București" className="pl-10" />
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={currentForm.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-[#00aff5]">Parolă</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Input {...field} type="password" placeholder="••••••••" className="pl-10" />
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={currentForm.control}
+              name="confirmPassword"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-[#00aff5]">Confirmă Parola</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Input {...field} type="password" placeholder="••••••••" className="pl-10" />
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
 
-          <FormField
-            control={currentForm.control}
-            name="password"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Parolă</FormLabel>
-                <FormControl>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input {...field} type="password" placeholder="••••••••" className="pl-10" />
-                  </div>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <div className="flex flex-col items-center space-y-4 pt-4">
+            <Button type="submit" className="w-full max-w-md bg-[#00aff5] hover:bg-[#0099d6]" disabled={isLoading}>
+              {isLoading ? "Se încarcă..." : "Creează cont"}
+            </Button>
 
-          <FormField
-            control={currentForm.control}
-            name="confirmPassword"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Confirmă Parola</FormLabel>
-                <FormControl>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input {...field} type="password" placeholder="••••••••" className="pl-10" />
-                  </div>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+            <div className="relative w-full max-w-md">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-200" />
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="bg-white px-2 text-gray-500">Sau continuă cu</span>
+              </div>
+            </div>
 
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? "Se încarcă..." : "Creează cont"}
-          </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full max-w-md"
+              onClick={handleGoogleSignIn}
+              disabled={isLoading}
+            >
+              <img
+                src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+                alt="Google"
+                className="mr-2 h-4 w-4"
+              />
+              Înregistrare cu Google
+            </Button>
+          </div>
         </form>
       </Form>
-
-      <div className="relative">
-        <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-gray-200" />
-        </div>
-        <div className="relative flex justify-center text-sm">
-          <span className="bg-white px-2 text-gray-500">Sau continuă cu</span>
-        </div>
-      </div>
-
-      <Button
-        type="button"
-        variant="outline"
-        className="w-full"
-        onClick={handleGoogleSignIn}
-        disabled={isLoading}
-      >
-        <img
-          src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
-          alt="Google"
-          className="mr-2 h-4 w-4"
-        />
-        Înregistrare cu Google
-      </Button>
-
-      <Button
-        type="button"
-        variant="link"
-        className="w-full"
-        onClick={() => setRole(null)}
-        disabled={isLoading}
-      >
-        Schimbă tipul de cont
-      </Button>
     </div>
   );
 }
