@@ -146,6 +146,7 @@ export default function LoginForm() {
     }
 
     try {
+      console.log("Initiating Google sign in...");
       const result = await signInWithGoogle();
       console.log("Google sign in successful:", result);
 
@@ -159,10 +160,15 @@ export default function LoginForm() {
     } catch (error: any) {
       console.error("Google Sign In Error:", error);
 
+      let errorMessage = "A apărut o eroare la conectarea prin Google.";
+      if (error.message === 'Popup was blocked by the browser. Please allow popups and try again.') {
+        errorMessage = "Te rugăm să permiți popup-urile pentru a continua cu autentificarea Google.";
+      }
+
       toast({
         variant: "destructive",
         title: "Eroare",
-        description: "A apărut o eroare la conectarea prin Google.",
+        description: errorMessage,
       });
     }
   };

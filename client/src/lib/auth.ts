@@ -7,16 +7,24 @@ import {
 } from "firebase/auth";
 import { auth } from "./firebase";
 
-// Create Google Auth Provider
+// Create Google Auth Provider with custom parameters
 const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({
+  prompt: 'select_account'
+});
 
 // Sign in with Google
 export const signInWithGoogle = async () => {
   try {
+    console.log("Attempting Google sign in...");
     const result = await signInWithPopup(auth, googleProvider);
+    console.log("Google sign in successful:", result.user);
     return result.user;
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error signing in with Google:", error);
+    if (error.code === 'auth/popup-blocked') {
+      throw new Error('Popup was blocked by the browser. Please allow popups and try again.');
+    }
     throw error;
   }
 };
