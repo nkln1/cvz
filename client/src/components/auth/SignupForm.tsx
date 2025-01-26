@@ -22,9 +22,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Mail, Lock, User, MapPin, Phone, Building, ArrowLeft } from "lucide-react";
 import RoleSelection from "./RoleSelection";
-import { doc, setDoc } from "firebase/firestore";
-import { db, auth } from "@/lib/firebase";
-import { createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
+import { useAuth } from "@/hooks/use-auth";
 import { romanianCounties, getCitiesForCounty } from "@/lib/romaniaData";
 
 const clientSchema = z.object({
@@ -90,6 +88,7 @@ export default function SignupForm() {
   const [role, setRole] = useState<UserRole>(null);
   const [selectedCounty, setSelectedCounty] = useState<string>("");
   const { toast } = useToast();
+  const { register } = useAuth();
 
   const clientForm = useForm<z.infer<typeof clientSchema>>({
     resolver: zodResolver(clientSchema),
@@ -122,98 +121,23 @@ export default function SignupForm() {
   async function onSubmit(values: z.infer<typeof clientSchema> | z.infer<typeof serviceSchema>) {
     setIsLoading(true);
     try {
-      const { email, password, ...userData } = values;
+      const { confirmPassword, ...userData } = values;
 
-      // Create auth user
-      let userCredential;
-      try {
-        console.log("Creating user with Firebase Auth...");
-        userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        console.log("Auth user created successfully:", userCredential.user.uid);
+      await register({
+        ...userData,
+        role: role as "client" | "service"
+      });
 
-        // Send email verification
-        await sendEmailVerification(userCredential.user);
-        console.log("Verification email sent successfully");
-
-      } catch (error: any) {
-        console.error("Firebase Auth Error:", error);
-        let errorMessage = "A apărut o eroare la crearea contului.";
-
-        switch (error.code) {
-          case 'auth/email-already-in-use':
-            errorMessage = "Această adresă de email este deja folosită.";
-            break;
-          case 'auth/invalid-email':
-            errorMessage = "Adresa de email nu este validă.";
-            break;
-          case 'auth/operation-not-allowed':
-            errorMessage = "Înregistrarea cu email și parolă nu este activată.";
-            break;
-          case 'auth/weak-password':
-            errorMessage = "Parola trebuie să aibă cel puțin 6 caractere.";
-            break;
-        }
-
-        toast({
-          variant: "destructive",
-          title: "Eroare",
-          description: errorMessage,
-        });
-        return;
-      }
-
-      // Store additional user data in Firestore
-      const collectionPath = role === "client" ? "clients" : "services";
-      console.log(`Saving user data to ${collectionPath} collection...`);
-
-      try {
-        const userDocRef = doc(db, collectionPath, userCredential.user.uid);
-
-        // Prepare user data
-        const userDataToSave = {
-          ...userData,
-          email,
-          emailVerified: false,
-          createdAt: new Date().toISOString(),
-          role: role,
-          uid: userCredential.user.uid
-        };
-
-        // Set the document with merge option to ensure it works with existing documents
-        await setDoc(userDocRef, userDataToSave, { merge: true });
-        console.log("User data saved successfully to Firestore");
-
-        toast({
-          title: "Success",
-          description: "Cont creat cu succes! Te rugăm să verifici email-ul pentru a confirma adresa.",
-        });
-      } catch (error: any) {
-        console.error("Firestore Error:", {
-          code: error.code,
-          message: error.message,
-          details: error
-        });
-
-        // Clean up auth user if Firestore save fails
-        try {
-          await userCredential.user.delete();
-          console.log("Auth user cleaned up after Firestore error");
-        } catch (deleteError) {
-          console.error("Error cleaning up auth user:", deleteError);
-        }
-
-        toast({
-          variant: "destructive",
-          title: "Eroare",
-          description: "A apărut o eroare la salvarea datelor. Te rugăm să încerci din nou.",
-        });
-      }
+      toast({
+        title: "Success",
+        description: "Cont creat cu succes! Te rugăm să verifici email-ul pentru a confirma adresa.",
+      });
     } catch (error: any) {
-      console.error("Registration Process Error:", error);
+      console.error("Registration error:", error);
       toast({
         variant: "destructive",
         title: "Eroare",
-        description: "A apărut o eroare neașteptată. Te rugăm să încerci din nou.",
+        description: error.message || "A apărut o eroare la crearea contului.",
       });
     } finally {
       setIsLoading(false);
@@ -349,7 +273,7 @@ export default function SignupForm() {
                 )}
               />
             )}
-            {/* County Dropdown */}
+
             <FormField
               control={currentForm.control}
               name="county"
@@ -361,7 +285,6 @@ export default function SignupForm() {
                     onValueChange={(value) => {
                       field.onChange(value);
                       setSelectedCounty(value);
-                      // Reset city when county changes
                       currentForm.setValue("city", "");
                     }}
                   >
@@ -383,7 +306,6 @@ export default function SignupForm() {
               )}
             />
 
-            {/* City Dropdown */}
             <FormField
               control={currentForm.control}
               name="city"
@@ -413,7 +335,6 @@ export default function SignupForm() {
                 </FormItem>
               )}
             />
-
 
             <FormField
               control={currentForm.control}
