@@ -136,16 +136,25 @@ export default function SignupForm() {
           title: "Eroare",
           description: errorMessage,
         });
-        return;
+        throw error; // Rethrow to prevent continuing with Firestore
       }
 
       // Store additional user data in Firestore
+      const collectionPath = role === "client" ? "clients" : "services";
+      console.log("Attempting to save to Firestore:", {
+        collection: collectionPath,
+        userId: userCredential.user.uid,
+        data: { ...userData, email, role }
+      });
+
       try {
-        await setDoc(doc(db, role === "client" ? "clients" : "services", userCredential.user.uid), {
+        const userDocRef = doc(db, collectionPath, userCredential.user.uid);
+        await setDoc(userDocRef, {
           ...userData,
           email,
           createdAt: new Date().toISOString(),
           role: role,
+          uid: userCredential.user.uid // Add UID for reference
         });
 
         toast({
@@ -153,7 +162,13 @@ export default function SignupForm() {
           description: "Cont creat cu succes!",
         });
       } catch (error: any) {
-        console.error("Firestore Error:", error);
+        console.error("Firestore Error Details:", {
+          error,
+          errorCode: error.code,
+          errorMessage: error.message,
+          errorName: error.name
+        });
+
         // If Firestore fails, delete the auth user to maintain consistency
         await userCredential.user.delete();
 
@@ -162,14 +177,17 @@ export default function SignupForm() {
           title: "Eroare",
           description: "A apărut o eroare la salvarea datelor. Te rugăm să încerci din nou.",
         });
+        throw error; // Rethrow to be caught by outer catch
       }
     } catch (error: any) {
-      console.error("Unexpected Error:", error);
-      toast({
-        variant: "destructive",
-        title: "Eroare",
-        description: "A apărut o eroare neașteptată. Te rugăm să încerci din nou.",
-      });
+      console.error("Registration Process Error:", error);
+      if (!toast.isActive) {
+        toast({
+          variant: "destructive",
+          title: "Eroare",
+          description: "A apărut o eroare neașteptată. Te rugăm să încerci din nou.",
+        });
+      }
     } finally {
       setIsLoading(false);
     }
