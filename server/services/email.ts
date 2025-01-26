@@ -43,8 +43,13 @@ export async function sendVerificationEmail(email: string, token: string) {
     await transporter.verify();
     console.log("SMTP connection verified successfully");
 
-    // Construct the verification URL using the Replit domain
-    const verificationUrl = `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co/verify-email?token=${token}`;
+    // Use the actual domain for the verification URL
+    const domain = process.env.REPL_ID 
+      ? `${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co`
+      : process.env.APP_URL || 'localhost:5000';
+
+    const verificationUrl = `https://${domain}/verify-email?token=${token}`;
+    console.log("Generated verification URL:", verificationUrl);
 
     console.log("Sending verification email to:", email);
     const mailOptions = {
