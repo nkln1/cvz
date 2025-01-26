@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
+import { useLocation } from "wouter";
 import {
   Form,
   FormControl,
@@ -33,6 +34,7 @@ export default function LoginForm() {
   const [isSendingReset, setIsSendingReset] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
+  const [, setLocation] = useLocation();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -45,6 +47,7 @@ export default function LoginForm() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     if (user) {
       console.log("User already logged in:", user);
+      setLocation("/dashboard");
       return;
     }
 
@@ -62,6 +65,9 @@ export default function LoginForm() {
         title: "Success",
         description: "Te-ai conectat cu succes!",
       });
+
+      // Redirect to dashboard after successful login
+      setLocation("/dashboard");
     } catch (error: any) {
       console.error("Login Error:", error);
       let errorMessage = "A apărut o eroare la conectare.";
@@ -135,6 +141,7 @@ export default function LoginForm() {
   const handleGoogleSignIn = async () => {
     if (user) {
       console.log("User already logged in:", user);
+      setLocation("/dashboard");
       return;
     }
 
@@ -146,6 +153,9 @@ export default function LoginForm() {
         title: "Success",
         description: "Te-ai conectat cu succes prin Google!",
       });
+
+      // Redirect to dashboard after successful Google login
+      setLocation("/dashboard");
     } catch (error: any) {
       console.error("Google Sign In Error:", error);
 

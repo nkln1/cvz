@@ -5,7 +5,6 @@ import {
   MailOpen,
   FileText,
   MessageSquare,
-  Settings,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,6 +16,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import MainLayout from "@/components/layout/MainLayout";
 
 // Mock data
 const mockRequests = [
@@ -167,41 +167,43 @@ export default function ClientDashboard() {
   };
 
   return (
-    <div className="container mx-auto p-4 space-y-4">
-      {/* Navigation */}
-      <nav className="flex gap-2 border-b pb-4">
-        <Button
-          variant={activeTab === "requests" ? "default" : "ghost"}
-          onClick={() => setActiveTab("requests")}
-        >
-          <FileText className="w-4 h-4 mr-2" />
-          Cererile Mele
-        </Button>
-        <Button
-          variant={activeTab === "offers" ? "default" : "ghost"}
-          onClick={() => setActiveTab("offers")}
-        >
-          <MailOpen className="w-4 h-4 mr-2" />
-          Oferte Primite
-        </Button>
-        <Button
-          variant={activeTab === "messages" ? "default" : "ghost"}
-          onClick={() => setActiveTab("messages")}
-        >
-          <MessageSquare className="w-4 h-4 mr-2" />
-          Mesaje
-        </Button>
-        <Button
-          variant={activeTab === "profile" ? "default" : "ghost"}
-          onClick={() => setActiveTab("profile")}
-        >
-          <User className="w-4 h-4 mr-2" />
-          Cont
-        </Button>
-      </nav>
+    <MainLayout>
+      <div className="container mx-auto p-4 space-y-4">
+        {/* Navigation */}
+        <nav className="flex gap-2 border-b pb-4">
+          <Button
+            variant={activeTab === "requests" ? "default" : "ghost"}
+            onClick={() => setActiveTab("requests")}
+          >
+            <FileText className="w-4 h-4 mr-2" />
+            Cererile Mele
+          </Button>
+          <Button
+            variant={activeTab === "offers" ? "default" : "ghost"}
+            onClick={() => setActiveTab("offers")}
+          >
+            <MailOpen className="w-4 h-4 mr-2" />
+            Oferte Primite
+          </Button>
+          <Button
+            variant={activeTab === "messages" ? "default" : "ghost"}
+            onClick={() => setActiveTab("messages")}
+          >
+            <MessageSquare className="w-4 h-4 mr-2" />
+            Mesaje
+          </Button>
+          <Button
+            variant={activeTab === "profile" ? "default" : "ghost"}
+            onClick={() => setActiveTab("profile")}
+          >
+            <User className="w-4 h-4 mr-2" />
+            Cont
+          </Button>
+        </nav>
 
-      {/* Main Content */}
-      {renderContent()}
-    </div>
+        {/* Main Content */}
+        {renderContent()}
+      </div>
+    </MainLayout>
   );
 }
