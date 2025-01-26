@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useLocation, useLocation as useWouterLocation } from "wouter";
+import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,6 @@ export default function VerifyEmail() {
   const [isVerifying, setIsVerifying] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [, setLocation] = useLocation();
-  const [, params] = useWouterLocation("/verify-email");
   const token = new URLSearchParams(window.location.search).get("token");
 
   useEffect(() => {
@@ -26,10 +25,17 @@ export default function VerifyEmail() {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({ token }),
+          credentials: 'include'
         });
 
+        const data = await response.json();
+
         if (!response.ok) {
-          throw new Error(await response.text());
+          throw new Error(data.message || "Eroare la verificarea emailului");
+        }
+
+        if (!data.success) {
+          throw new Error(data.message || "Verificarea a eșuat");
         }
 
         setIsVerifying(false);
@@ -72,7 +78,7 @@ export default function VerifyEmail() {
               </div>
             </div>
           )}
-          
+
           <Button
             onClick={handleReturn}
             className="w-full bg-[#00aff5] hover:bg-[#0099d6]"

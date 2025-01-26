@@ -183,12 +183,21 @@ export function setupAuth(app: Express) {
     res.header('Access-Control-Allow-Origin', 'https://www.carvizio.ro');
     res.header('Access-Control-Allow-Methods', 'POST');
     res.header('Access-Control-Allow-Headers', 'Content-Type');
+    res.header('Access-Control-Allow-Credentials', 'true');
+
+    // Handle preflight request
+    if (req.method === 'OPTIONS') {
+      return res.sendStatus(200);
+    }
 
     try {
       const { token } = req.body;
 
       if (!token) {
-        return res.status(400).json({ message: "Token lipsește" });
+        return res.status(400).json({ 
+          success: false,
+          message: "Token lipsește" 
+        });
       }
 
       console.log("Verifying token:", token);
@@ -203,11 +212,17 @@ export function setupAuth(app: Express) {
       console.log("Found verification token:", verificationToken);
 
       if (!verificationToken) {
-        return res.status(400).json({ message: "Token invalid" });
+        return res.status(400).json({ 
+          success: false,
+          message: "Token invalid" 
+        });
       }
 
       if (new Date() > verificationToken.expiresAt) {
-        return res.status(400).json({ message: "Token expirat" });
+        return res.status(400).json({ 
+          success: false,
+          message: "Token expirat" 
+        });
       }
 
       // Update user's email verification status
