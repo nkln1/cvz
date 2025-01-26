@@ -28,8 +28,11 @@ async function handleAuthRequest(
   });
 
   if (!response.ok) {
-    const text = await response.text();
-    throw new Error(text);
+    // Handle specific error cases
+    if (response.status === 401 || response.status === 400) {
+      throw new Error("Email sau parolă incorecte");
+    }
+    throw new Error("A apărut o eroare. Vă rugăm încercați din nou.");
   }
 
   return response.json();
@@ -45,12 +48,12 @@ export function useAuth() {
         const response = await fetch("/api/user", {
           credentials: "include",
         });
-        
+
         if (!response.ok) {
           if (response.status === 401) {
             return null;
           }
-          throw new Error(await response.text());
+          throw new Error("Eroare la verificarea autentificării");
         }
 
         return response.json();
@@ -74,8 +77,8 @@ export function useAuth() {
     onError: (error: Error) => {
       toast({
         variant: "destructive",
-        title: "Error",
-        description: error.message || "A apărut o eroare la conectare.",
+        title: "Eroare de autentificare",
+        description: error.message,
       });
     },
   });
@@ -103,7 +106,7 @@ export function useAuth() {
     onError: (error: Error) => {
       toast({
         variant: "destructive",
-        title: "Error",
+        title: "Eroare la înregistrare",
         description: error.message || "A apărut o eroare la crearea contului.",
       });
     },
@@ -121,7 +124,7 @@ export function useAuth() {
     onError: (error: Error) => {
       toast({
         variant: "destructive",
-        title: "Error",
+        title: "Eroare",
         description: error.message || "A apărut o eroare la deconectare.",
       });
     },
@@ -138,7 +141,7 @@ export function useAuth() {
     onError: (error: Error) => {
       toast({
         variant: "destructive",
-        title: "Error",
+        title: "Eroare",
         description: error.message || "Nu s-a putut trimite emailul de verificare.",
       });
     },
