@@ -15,6 +15,9 @@ import { Input } from "@/components/ui/input";
 import { signInWithGoogle } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
 import { Mail, Lock } from "lucide-react";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "@/lib/firebase";
+import { useAuth } from "@/context/AuthContext";
 
 const formSchema = z.object({
   email: z.string().email({
@@ -28,6 +31,7 @@ const formSchema = z.object({
 export default function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -38,19 +42,48 @@ export default function LoginForm() {
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
+    if (user) {
+      console.log("User already logged in:", user);
+      return;
+    }
+
     setIsLoading(true);
     try {
-      // TODO: Implement email/password sign in
-      console.log(values);
+      console.log("Attempting to sign in with email/password...");
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        values.email,
+        values.password
+      );
+      console.log("Sign in successful:", userCredential.user.uid);
+
       toast({
         title: "Success",
         description: "Te-ai conectat cu succes!",
       });
-    } catch (error) {
+    } catch (error: any) {
+      console.error("Login Error:", error);
+      let errorMessage = "A apărut o eroare la conectare.";
+
+      switch (error.code) {
+        case 'auth/invalid-email':
+          errorMessage = "Adresa de email nu este validă.";
+          break;
+        case 'auth/user-disabled':
+          errorMessage = "Acest cont a fost dezactivat.";
+          break;
+        case 'auth/user-not-found':
+          errorMessage = "Nu există niciun cont cu această adresă de email.";
+          break;
+        case 'auth/wrong-password':
+          errorMessage = "Parolă incorectă.";
+          break;
+      }
+
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "A apărut o eroare. Te rugăm să încerci din nou.",
+        title: "Eroare",
+        description: errorMessage,
       });
     } finally {
       setIsLoading(false);
@@ -58,16 +91,25 @@ export default function LoginForm() {
   }
 
   const handleGoogleSignIn = async () => {
+    if (user) {
+      console.log("User already logged in:", user);
+      return;
+    }
+
     try {
-      await signInWithGoogle();
+      const result = await signInWithGoogle();
+      console.log("Google sign in successful:", result);
+
       toast({
         title: "Success",
         description: "Te-ai conectat cu succes prin Google!",
       });
-    } catch (error) {
+    } catch (error: any) {
+      console.error("Google Sign In Error:", error);
+
       toast({
         variant: "destructive",
-        title: "Error",
+        title: "Eroare",
         description: "A apărut o eroare la conectarea prin Google.",
       });
     }
