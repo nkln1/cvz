@@ -8,6 +8,7 @@ import {
   Pencil,
   Phone,
   MapPin,
+  AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -32,8 +33,11 @@ import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { romanianCounties, getCitiesForCounty } from "@/lib/romaniaData";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { auth } from "@/lib/firebase";
+import { sendEmailVerification } from "firebase/auth";
 
-// Mock data for requests and offers remain unchanged...
+// Mock data for requests and offers
 const mockRequests = [
   {
     id: "REQ-001",
@@ -86,6 +90,7 @@ export default function ClientDashboard() {
   const [isEditing, setIsEditing] = useState(false);
   const [editedProfile, setEditedProfile] = useState<UserProfile>({});
   const [selectedCounty, setSelectedCounty] = useState<string>("");
+  const [isResendingVerification, setIsResendingVerification] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -157,6 +162,28 @@ export default function ClientDashboard() {
         county: value,
         city: "", // Reset city when county changes
       }));
+    }
+  };
+
+  const handleResendVerification = async () => {
+    if (!auth.currentUser) return;
+
+    setIsResendingVerification(true);
+    try {
+      await sendEmailVerification(auth.currentUser);
+      toast({
+        title: "Email trimis",
+        description: "Un nou email de verificare a fost trimis. Te rugăm să îți verifici căsuța de email.",
+      });
+    } catch (error) {
+      console.error("Error sending verification email:", error);
+      toast({
+        variant: "destructive",
+        title: "Eroare",
+        description: "Nu s-a putut trimite emailul de verificare. Te rugăm să încerci din nou mai târziu.",
+      });
+    } finally {
+      setIsResendingVerification(false);
     }
   };
 
@@ -303,8 +330,8 @@ export default function ClientDashboard() {
 
           {isEditing && (
             <div className="flex justify-end gap-2 mt-6">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={() => {
                   setIsEditing(false);
                   setEditedProfile(userProfile);
@@ -313,10 +340,7 @@ export default function ClientDashboard() {
               >
                 Anulează
               </Button>
-              <Button 
-                onClick={handleSave}
-                className="bg-[#00aff5] hover:bg-[#0099d6]"
-              >
+              <Button onClick={handleSave} className="bg-[#00aff5] hover:bg-[#0099d6]">
                 Salvează
               </Button>
             </div>
@@ -351,11 +375,13 @@ export default function ClientDashboard() {
                 <TableCell>{request.date}</TableCell>
                 <TableCell>{request.service}</TableCell>
                 <TableCell>
-                  <span className={`px-2 py-1 rounded-full text-sm ${
-                    request.status === "În așteptare" 
-                      ? "bg-yellow-100 text-yellow-800"
-                      : "bg-green-100 text-green-800"
-                  }`}>
+                  <span
+                    className={`px-2 py-1 rounded-full text-sm ${
+                      request.status === "În așteptare"
+                        ? "bg-yellow-100 text-yellow-800"
+                        : "bg-green-100 text-green-800"
+                    }`}
+                  >
                     {request.status}
                   </span>
                 </TableCell>
@@ -432,10 +458,33 @@ export default function ClientDashboard() {
     }
   };
 
+  if (!user?.emailVerified) {
+    return (
+      <MainLayout>
+        <div className="container mx-auto p-6">
+          <Alert variant="destructive" className="mb-6">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Email neverificat</AlertTitle>
+            <AlertDescription>
+              Te rugăm să îți confirmi adresa de email pentru a avea acces la toate funcționalitățile.
+              Verifică-ți căsuța de email pentru linkul de confirmare.
+            </AlertDescription>
+          </Alert>
+          <Button
+            onClick={handleResendVerification}
+            disabled={isResendingVerification}
+            className="w-full max-w-md mx-auto block"
+          >
+            {isResendingVerification ? "Se trimite..." : "Retrimite email de verificare"}
+          </Button>
+        </div>
+      </MainLayout>
+    );
+  }
+
   return (
     <MainLayout>
       <div className="container mx-auto p-6 space-y-6">
-        {/* Navigation */}
         <nav className="flex gap-2 border-b pb-4">
           <Button
             variant={activeTab === "requests" ? "default" : "ghost"}
@@ -487,7 +536,6 @@ export default function ClientDashboard() {
           </Button>
         </nav>
 
-        {/* Main Content */}
         {renderContent()}
       </div>
     </MainLayout>
