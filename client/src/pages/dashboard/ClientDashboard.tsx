@@ -1,13 +1,17 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import {
   User,
   MailOpen,
   FileText,
   MessageSquare,
+  Pencil,
+  Phone,
+  MapPin,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -17,8 +21,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import MainLayout from "@/components/layout/MainLayout";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { useToast } from "@/hooks/use-toast";
 
-// Mock data
+// Mock data for requests and offers remain unchanged...
 const mockRequests = [
   {
     id: "REQ-001",
@@ -55,9 +62,211 @@ const mockOffers = [
 
 type TabType = "requests" | "offers" | "messages" | "profile";
 
+interface UserProfile {
+  name?: string;
+  email?: string;
+  phone?: string;
+  county?: string;
+  city?: string;
+}
+
 export default function ClientDashboard() {
   const [activeTab, setActiveTab] = useState<TabType>("requests");
   const { user } = useAuth();
+  const { toast } = useToast();
+  const [userProfile, setUserProfile] = useState<UserProfile>({});
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedProfile, setEditedProfile] = useState<UserProfile>({});
+
+  useEffect(() => {
+    if (user) {
+      fetchUserProfile();
+    }
+  }, [user]);
+
+  const fetchUserProfile = async () => {
+    if (!user?.uid) return;
+
+    try {
+      const userDoc = await getDoc(doc(db, "clients", user.uid));
+      if (userDoc.exists()) {
+        const userData = userDoc.data() as UserProfile;
+        setUserProfile(userData);
+        setEditedProfile(userData);
+      }
+    } catch (error) {
+      console.error("Error fetching user profile:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Nu s-au putut încărca datele profilului.",
+      });
+    }
+  };
+
+  const handleEditClick = () => {
+    setIsEditing(true);
+  };
+
+  const handleSave = async () => {
+    if (!user?.uid) return;
+
+    try {
+      await updateDoc(doc(db, "clients", user.uid), editedProfile);
+      setUserProfile(editedProfile);
+      setIsEditing(false);
+      toast({
+        title: "Succes",
+        description: "Profilul a fost actualizat cu succes!",
+      });
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Nu s-a putut actualiza profilul.",
+      });
+    }
+  };
+
+  const handleInputChange = (field: keyof UserProfile, value: string) => {
+    setEditedProfile((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const renderProfile = () => (
+    <Card>
+      <CardHeader>
+        <CardTitle>Profilul Meu</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-500">Nume</label>
+              <div className="flex items-center gap-2">
+                {isEditing ? (
+                  <Input
+                    value={editedProfile.name || ""}
+                    onChange={(e) => handleInputChange("name", e.target.value)}
+                    placeholder="Nume complet"
+                  />
+                ) : (
+                  <p className="text-gray-900">{userProfile.name || "Nespecificat"}</p>
+                )}
+                {!isEditing && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleEditClick}
+                    className="h-8 w-8"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-500">Email</label>
+              <p className="text-gray-900">{userProfile.email}</p>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-500">Telefon</label>
+              <div className="flex items-center gap-2">
+                {isEditing ? (
+                  <Input
+                    value={editedProfile.phone || ""}
+                    onChange={(e) => handleInputChange("phone", e.target.value)}
+                    placeholder="Număr de telefon"
+                  />
+                ) : (
+                  <p className="text-gray-900">{userProfile.phone || "Nespecificat"}</p>
+                )}
+                {!isEditing && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleEditClick}
+                    className="h-8 w-8"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-500">Județ</label>
+              <div className="flex items-center gap-2">
+                {isEditing ? (
+                  <Input
+                    value={editedProfile.county || ""}
+                    onChange={(e) => handleInputChange("county", e.target.value)}
+                    placeholder="Județ"
+                  />
+                ) : (
+                  <p className="text-gray-900">{userProfile.county || "Nespecificat"}</p>
+                )}
+                {!isEditing && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleEditClick}
+                    className="h-8 w-8"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-500">Localitate</label>
+              <div className="flex items-center gap-2">
+                {isEditing ? (
+                  <Input
+                    value={editedProfile.city || ""}
+                    onChange={(e) => handleInputChange("city", e.target.value)}
+                    placeholder="Localitate"
+                  />
+                ) : (
+                  <p className="text-gray-900">{userProfile.city || "Nespecificat"}</p>
+                )}
+                {!isEditing && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleEditClick}
+                    className="h-8 w-8"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {isEditing && (
+            <div className="flex justify-end gap-2 mt-4">
+              <Button variant="outline" onClick={() => {
+                setIsEditing(false);
+                setEditedProfile(userProfile);
+              }}>
+                Anulează
+              </Button>
+              <Button onClick={handleSave}>
+                Salvează
+              </Button>
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
 
   const renderContent = () => {
     switch (activeTab) {
@@ -125,29 +334,7 @@ export default function ClientDashboard() {
         );
 
       case "profile":
-        return (
-          <Card>
-            <CardHeader>
-              <CardTitle>Profilul Meu</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">
-                    Email
-                  </label>
-                  <p>{user?.email}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">
-                    Nume
-                  </label>
-                  <p>{user?.displayName || "Nespecificat"}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        );
+        return renderProfile();
 
       case "messages":
         return (
