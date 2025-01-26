@@ -179,8 +179,19 @@ export function setupAuth(app: Express) {
   });
 
   app.post("/api/verify-email", async (req, res) => {
+    // Enable CORS for the verification endpoint
+    res.header('Access-Control-Allow-Origin', 'https://www.carvizio.ro');
+    res.header('Access-Control-Allow-Methods', 'POST');
+    res.header('Access-Control-Allow-Headers', 'Content-Type');
+
     try {
       const { token } = req.body;
+
+      if (!token) {
+        return res.status(400).json({ message: "Token lipsește" });
+      }
+
+      console.log("Verifying token:", token);
 
       // Find and validate token
       const [verificationToken] = await db
@@ -189,12 +200,14 @@ export function setupAuth(app: Express) {
         .where(eq(verificationTokens.token, token))
         .limit(1);
 
+      console.log("Found verification token:", verificationToken);
+
       if (!verificationToken) {
-        return res.status(400).send("Invalid verification token");
+        return res.status(400).json({ message: "Token invalid" });
       }
 
       if (new Date() > verificationToken.expiresAt) {
-        return res.status(400).send("Verification token expired");
+        return res.status(400).json({ message: "Token expirat" });
       }
 
       // Update user's email verification status
@@ -208,10 +221,16 @@ export function setupAuth(app: Express) {
         .delete(verificationTokens)
         .where(eq(verificationTokens.id, verificationToken.id));
 
-      res.json({ message: "Email verified successfully" });
+      res.json({ 
+        success: true,
+        message: "Email verificat cu succes" 
+      });
     } catch (error) {
-      console.error("Email verification error:", error);
-      res.status(500).send("Email verification failed");
+      console.error("Error verifying email:", error);
+      res.status(500).json({ 
+        success: false,
+        message: "Eroare la verificarea emailului" 
+      });
     }
   });
 

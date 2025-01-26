@@ -43,12 +43,8 @@ export async function sendVerificationEmail(email: string, token: string) {
     await transporter.verify();
     console.log("SMTP connection verified successfully");
 
-    // Use the actual domain for the verification URL
-    const domain = process.env.REPL_ID 
-      ? `${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co`
-      : process.env.APP_URL || 'localhost:5000';
-
-    const verificationUrl = `https://${domain}/verify-email?token=${token}`;
+    // Use the production domain for verification URL
+    const verificationUrl = `https://www.carvizio.ro/verify-email?token=${token}`;
     console.log("Generated verification URL:", verificationUrl);
 
     console.log("Sending verification email to:", email);
