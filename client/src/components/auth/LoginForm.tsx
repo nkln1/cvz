@@ -13,7 +13,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { signInWithGoogle } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
 import { Mail, Lock } from "lucide-react";
 import { signInWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
@@ -138,41 +137,6 @@ export default function LoginForm() {
     }
   };
 
-  const handleGoogleSignIn = async () => {
-    if (user) {
-      console.log("User already logged in:", user);
-      setLocation("/dashboard");
-      return;
-    }
-
-    try {
-      console.log("Initiating Google sign in...");
-      const result = await signInWithGoogle();
-      console.log("Google sign in successful:", result);
-
-      toast({
-        title: "Success",
-        description: "Te-ai conectat cu succes prin Google!",
-      });
-
-      // Redirect to dashboard after successful Google login
-      setLocation("/dashboard");
-    } catch (error: any) {
-      console.error("Google Sign In Error:", error);
-
-      let errorMessage = "A apărut o eroare la conectarea prin Google.";
-      if (error.message === 'Popup was blocked by the browser. Please allow popups and try again.') {
-        errorMessage = "Te rugăm să permiți popup-urile pentru a continua cu autentificarea Google.";
-      }
-
-      toast({
-        variant: "destructive",
-        title: "Eroare",
-        description: errorMessage,
-      });
-    }
-  };
-
   return (
     <div className="w-full max-w-md space-y-6 p-6 bg-white rounded-lg shadow-lg">
       <div className="space-y-2 text-center">
@@ -242,30 +206,6 @@ export default function LoginForm() {
           {isSendingReset ? "Se trimite..." : "Mi-am uitat parola"}
         </Button>
       </div>
-
-      <div className="relative">
-        <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-gray-200" />
-        </div>
-        <div className="relative flex justify-center text-sm">
-          <span className="bg-white px-2 text-gray-500">Sau continuă cu</span>
-        </div>
-      </div>
-
-      <Button
-        type="button"
-        variant="outline"
-        className="w-full"
-        onClick={handleGoogleSignIn}
-        disabled={isLoading}
-      >
-        <img
-          src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
-          alt="Google"
-          className="mr-2 h-4 w-4"
-        />
-        Conectare cu Google
-      </Button>
     </div>
   );
 }
