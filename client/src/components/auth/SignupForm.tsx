@@ -111,7 +111,9 @@ export default function SignupForm() {
       // Create auth user
       let userCredential;
       try {
+        console.log("Attempting to create user with Firebase Auth");
         userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        console.log("User created successfully:", userCredential.user.uid);
       } catch (error: any) {
         console.error("Firebase Auth Error:", error);
         let errorMessage = "A apărut o eroare la crearea contului.";
@@ -136,26 +138,31 @@ export default function SignupForm() {
           title: "Eroare",
           description: errorMessage,
         });
-        throw error; // Rethrow to prevent continuing with Firestore
+        throw error;
       }
 
       // Store additional user data in Firestore
       const collectionPath = role === "client" ? "clients" : "services";
-      console.log("Attempting to save to Firestore:", {
+      const userDocRef = doc(db, collectionPath, userCredential.user.uid);
+
+      console.log("Attempting to save user data to Firestore:", {
         collection: collectionPath,
         userId: userCredential.user.uid,
         data: { ...userData, email, role }
       });
 
       try {
-        const userDocRef = doc(db, collectionPath, userCredential.user.uid);
-        await setDoc(userDocRef, {
+        // Simplified data object
+        const userDataToSave = {
           ...userData,
           email,
           createdAt: new Date().toISOString(),
           role: role,
-          uid: userCredential.user.uid // Add UID for reference
-        });
+          uid: userCredential.user.uid
+        };
+
+        await setDoc(userDocRef, userDataToSave);
+        console.log("User data saved successfully to Firestore");
 
         toast({
           title: "Success",
@@ -164,23 +171,29 @@ export default function SignupForm() {
       } catch (error: any) {
         console.error("Firestore Error Details:", {
           error,
-          errorCode: error.code,
-          errorMessage: error.message,
-          errorName: error.name
+          code: error.code,
+          message: error.message,
+          name: error.name
         });
 
-        // If Firestore fails, delete the auth user to maintain consistency
-        await userCredential.user.delete();
+        // Clean up: delete the auth user if Firestore save fails
+        try {
+          await userCredential.user.delete();
+          console.log("Cleaned up auth user after Firestore error");
+        } catch (deleteError) {
+          console.error("Error cleaning up auth user:", deleteError);
+        }
 
         toast({
           variant: "destructive",
           title: "Eroare",
           description: "A apărut o eroare la salvarea datelor. Te rugăm să încerci din nou.",
         });
-        throw error; // Rethrow to be caught by outer catch
+        throw error;
       }
     } catch (error: any) {
       console.error("Registration Process Error:", error);
+      // Only show toast if no other toast is active
       if (!toast.isActive) {
         toast({
           variant: "destructive",
