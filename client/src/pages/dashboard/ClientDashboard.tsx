@@ -20,10 +20,18 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import MainLayout from "@/components/layout/MainLayout";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
+import { romanianCounties, getCitiesForCounty } from "@/lib/romaniaData";
 
 // Mock data for requests and offers remain unchanged...
 const mockRequests = [
@@ -77,12 +85,19 @@ export default function ClientDashboard() {
   const [userProfile, setUserProfile] = useState<UserProfile>({});
   const [isEditing, setIsEditing] = useState(false);
   const [editedProfile, setEditedProfile] = useState<UserProfile>({});
+  const [selectedCounty, setSelectedCounty] = useState<string>("");
 
   useEffect(() => {
     if (user) {
       fetchUserProfile();
     }
   }, [user]);
+
+  useEffect(() => {
+    if (userProfile.county) {
+      setSelectedCounty(userProfile.county);
+    }
+  }, [userProfile.county]);
 
   const fetchUserProfile = async () => {
     if (!user?.uid) return;
@@ -134,6 +149,15 @@ export default function ClientDashboard() {
       ...prev,
       [field]: value,
     }));
+
+    if (field === "county") {
+      setSelectedCounty(value);
+      setEditedProfile((prev) => ({
+        ...prev,
+        county: value,
+        city: "", // Reset city when county changes
+      }));
+    }
   };
 
   const renderProfile = () => (
@@ -203,11 +227,21 @@ export default function ClientDashboard() {
               <label className="text-sm font-medium text-gray-500">Județ</label>
               <div className="flex items-center gap-2">
                 {isEditing ? (
-                  <Input
+                  <Select
                     value={editedProfile.county || ""}
-                    onChange={(e) => handleInputChange("county", e.target.value)}
-                    placeholder="Județ"
-                  />
+                    onValueChange={(value) => handleInputChange("county", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selectează județul" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {romanianCounties.map((county) => (
+                        <SelectItem key={county} value={county}>
+                          {county}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 ) : (
                   <p className="text-gray-900">{userProfile.county || "Nespecificat"}</p>
                 )}
@@ -228,11 +262,23 @@ export default function ClientDashboard() {
               <label className="text-sm font-medium text-gray-500">Localitate</label>
               <div className="flex items-center gap-2">
                 {isEditing ? (
-                  <Input
+                  <Select
                     value={editedProfile.city || ""}
-                    onChange={(e) => handleInputChange("city", e.target.value)}
-                    placeholder="Localitate"
-                  />
+                    onValueChange={(value) => handleInputChange("city", value)}
+                    disabled={!selectedCounty}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selectează localitatea" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {selectedCounty &&
+                        getCitiesForCounty(selectedCounty).map((city) => (
+                          <SelectItem key={city} value={city}>
+                            {city}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
                 ) : (
                   <p className="text-gray-900">{userProfile.city || "Nespecificat"}</p>
                 )}
