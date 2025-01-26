@@ -15,7 +15,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Mail, Lock } from "lucide-react";
-import { signInWithEmailAndPassword, sendEmailVerification, sendPasswordResetEmail } from "firebase/auth";
+import { signInWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useAuth } from "@/context/AuthContext";
 
@@ -58,22 +58,6 @@ export default function LoginForm() {
         values.email,
         values.password
       );
-
-      // Check if email is verified
-      if (!userCredential.user.emailVerified) {
-        // Send a new verification email
-        await sendEmailVerification(userCredential.user);
-
-        toast({
-          variant: "destructive",
-          title: "Email neverificat",
-          description: "Te rugăm să îți verifici email-ul pentru a confirma adresa. Am trimis un nou email de verificare.",
-        });
-
-        // Sign out the user until they verify their email
-        await auth.signOut();
-        return;
-      }
 
       console.log("Sign in successful:", userCredential.user.uid);
 
