@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { signInWithGoogle } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
 import { Mail, Lock } from "lucide-react";
-import { signInWithEmailAndPassword } from "firebase/auth";
+import { signInWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useAuth } from "@/context/AuthContext";
 
@@ -30,6 +30,7 @@ const formSchema = z.object({
 
 export default function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
+  const [isSendingReset, setIsSendingReset] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -89,6 +90,47 @@ export default function LoginForm() {
       setIsLoading(false);
     }
   }
+
+  const handlePasswordReset = async () => {
+    const email = form.getValues("email");
+    if (!email) {
+      toast({
+        variant: "destructive",
+        title: "Eroare",
+        description: "Te rugăm să introduci adresa de email pentru resetarea parolei.",
+      });
+      return;
+    }
+
+    setIsSendingReset(true);
+    try {
+      await sendPasswordResetEmail(auth, email);
+      toast({
+        title: "Email trimis",
+        description: "Verifică-ți email-ul pentru instrucțiuni de resetare a parolei.",
+      });
+    } catch (error: any) {
+      console.error("Password Reset Error:", error);
+      let errorMessage = "A apărut o eroare la trimiterea email-ului de resetare.";
+
+      switch (error.code) {
+        case 'auth/invalid-email':
+          errorMessage = "Adresa de email nu este validă.";
+          break;
+        case 'auth/user-not-found':
+          errorMessage = "Nu există niciun cont cu această adresă de email.";
+          break;
+      }
+
+      toast({
+        variant: "destructive",
+        title: "Eroare",
+        description: errorMessage,
+      });
+    } finally {
+      setIsSendingReset(false);
+    }
+  };
 
   const handleGoogleSignIn = async () => {
     if (user) {
@@ -172,6 +214,18 @@ export default function LoginForm() {
           </Button>
         </form>
       </Form>
+
+      <div className="flex justify-center">
+        <Button
+          type="button"
+          variant="link"
+          className="text-sm text-[#00aff5] hover:text-[#0099d6]"
+          onClick={handlePasswordReset}
+          disabled={isSendingReset}
+        >
+          {isSendingReset ? "Se trimite..." : "Mi-am uitat parola"}
+        </Button>
+      </div>
 
       <div className="relative">
         <div className="absolute inset-0 flex items-center">
