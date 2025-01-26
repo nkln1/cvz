@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from "@/hooks/use-toast";
 
 interface User {
@@ -13,11 +13,16 @@ interface AuthResponse {
   message: string;
 }
 
+interface AuthError {
+  error: true;
+  message: string;
+}
+
 async function handleAuthRequest(
   url: string,
   method: string,
   body?: Record<string, any>
-): Promise<AuthResponse> {
+): Promise<AuthResponse | AuthError> {
   const response = await fetch(url, {
     method,
     headers: {
@@ -30,9 +35,9 @@ async function handleAuthRequest(
   if (!response.ok) {
     // Handle specific error cases
     if (response.status === 401 || response.status === 400) {
-      throw new Error("Email sau parolă incorecte");
+      return { error: true, message: "Email sau parolă incorecte" };
     }
-    throw new Error("A apărut o eroare. Vă rugăm încercați din nou.");
+    return { error: true, message: "A apărut o eroare. Vă rugăm încercați din nou." };
   }
 
   return response.json();
@@ -53,7 +58,7 @@ export function useAuth() {
           if (response.status === 401) {
             return null;
           }
-          throw new Error("Eroare la verificarea autentificării");
+          return null;
         }
 
         return response.json();
@@ -65,8 +70,13 @@ export function useAuth() {
   });
 
   const login = useMutation({
-    mutationFn: (credentials: { email: string; password: string }) =>
-      handleAuthRequest("/api/login", "POST", credentials),
+    mutationFn: async (credentials: { email: string; password: string }) => {
+      const result = await handleAuthRequest("/api/login", "POST", credentials);
+      if ('error' in result) {
+        throw new Error(result.message);
+      }
+      return result;
+    },
     onSuccess: (data) => {
       queryClient.setQueryData(["user"], data.user);
       toast({
@@ -84,7 +94,7 @@ export function useAuth() {
   });
 
   const register = useMutation({
-    mutationFn: (userData: {
+    mutationFn: async (userData: {
       email: string;
       password: string;
       role: "client" | "service";
@@ -95,7 +105,13 @@ export function useAuth() {
       address?: string;
       county?: string;
       city?: string;
-    }) => handleAuthRequest("/api/register", "POST", userData),
+    }) => {
+      const result = await handleAuthRequest("/api/register", "POST", userData);
+      if ('error' in result) {
+        throw new Error(result.message);
+      }
+      return result;
+    },
     onSuccess: (data) => {
       queryClient.setQueryData(["user"], data.user);
       toast({
@@ -113,7 +129,13 @@ export function useAuth() {
   });
 
   const logout = useMutation({
-    mutationFn: () => handleAuthRequest("/api/logout", "POST"),
+    mutationFn: async () => {
+      const result = await handleAuthRequest("/api/logout", "POST");
+      if ('error' in result) {
+        throw new Error(result.message);
+      }
+      return result;
+    },
     onSuccess: () => {
       queryClient.setQueryData(["user"], null);
       toast({
@@ -131,7 +153,13 @@ export function useAuth() {
   });
 
   const resendVerification = useMutation({
-    mutationFn: () => handleAuthRequest("/api/resend-verification", "POST"),
+    mutationFn: async () => {
+      const result = await handleAuthRequest("/api/resend-verification", "POST");
+      if ('error' in result) {
+        throw new Error(result.message);
+      }
+      return result;
+    },
     onSuccess: () => {
       toast({
         title: "Email trimis",
