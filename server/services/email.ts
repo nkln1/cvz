@@ -43,12 +43,8 @@ export async function sendVerificationEmail(email: string, token: string) {
     await transporter.verify();
     console.log("SMTP connection verified successfully");
 
-    // Base URL based on environment
-    const baseUrl = process.env.NODE_ENV === 'production' 
-      ? 'https://www.carvizio.ro'
-      : 'http://localhost:5000';
-
-    const verificationUrl = `${baseUrl}/verify-email?token=${token}`;
+    // Always use the production URL for verification links
+    const verificationUrl = `https://carvizio.ro/verify-email?token=${token}`;
     console.log("Generated verification URL:", verificationUrl);
 
     console.log("Sending verification email to:", email);
