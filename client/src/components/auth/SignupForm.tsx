@@ -19,7 +19,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { signInWithGoogle } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
 import { Mail, Lock, User, MapPin, Phone, Building, ArrowLeft } from "lucide-react";
 import RoleSelection from "./RoleSelection";
@@ -214,22 +213,6 @@ export default function SignupForm() {
       setIsLoading(false);
     }
   }
-
-  const handleGoogleSignIn = async () => {
-    try {
-      await signInWithGoogle();
-      toast({
-        title: "Success",
-        description: "Te-ai înregistrat cu succes prin Google!",
-      });
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "A apărut o eroare la înregistrarea prin Google.",
-      });
-    }
-  };
 
   if (!role) {
     return <RoleSelection onSelect={setRole} />;
@@ -463,30 +446,6 @@ export default function SignupForm() {
           <div className="flex flex-col items-center space-y-4 pt-4">
             <Button type="submit" className="w-full max-w-md bg-[#00aff5] hover:bg-[#0099d6]" disabled={isLoading}>
               {isLoading ? "Se încarcă..." : "Creează cont"}
-            </Button>
-
-            <div className="relative w-full max-w-md">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-200" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="bg-white px-2 text-gray-500">Sau continuă cu</span>
-              </div>
-            </div>
-
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full max-w-md"
-              onClick={handleGoogleSignIn}
-              disabled={isLoading}
-            >
-              <img
-                src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
-                alt="Google"
-                className="mr-2 h-4 w-4"
-              />
-              Înregistrare cu Google
             </Button>
           </div>
         </form>
