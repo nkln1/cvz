@@ -90,3 +90,45 @@ export async function sendVerificationEmail(email: string, token: string) {
     throw new Error("Failed to send verification email");
   }
 }
+
+export async function sendContactEmail(data: {
+  name: string;
+  email: string;
+  phone: string;
+  message: string;
+}) {
+  try {
+    const transporter = await getTransporter();
+    await transporter.verify();
+
+    const mailOptions = {
+      from: `"CARVIZIO Contact Form" <${process.env.SMTP_USER || 'noreply@carvizio.com'}>`,
+      to: 'contact@carvizio.ro',
+      subject: `Mesaj nou de la ${data.name}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #00aff5;">Mesaj nou de pe formularul de contact</h2>
+          <div style="background-color: #f5f5f5; padding: 20px; border-radius: 5px;">
+            <p><strong>Nume:</strong> ${data.name}</p>
+            <p><strong>Email:</strong> ${data.email}</p>
+            <p><strong>Telefon:</strong> ${data.phone}</p>
+            <p><strong>Mesaj:</strong></p>
+            <p style="white-space: pre-wrap;">${data.message}</p>
+          </div>
+        </div>
+      `,
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+    console.log("Contact email sent successfully:", info.messageId);
+
+    if (process.env.NODE_ENV !== 'production') {
+      console.log("Preview URL: %s", nodemailer.getTestMessageUrl(info));
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error sending contact email:", error);
+    throw new Error("Failed to send contact email");
+  }
+}

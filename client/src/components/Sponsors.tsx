@@ -34,33 +34,31 @@ export default function Sponsors() {
   ];
 
   return (
-    <section className="py-20 bg-white">
+    <section className="py-20 bg-gradient-to-b from-blue-50 via-white to-blue-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h2 className="text-4xl font-extrabold text-center text-gray-900 sm:text-5xl mb-4">
+        <h2 className="text-4xl font-extrabold text-center text-[#00aff5] sm:text-5xl mb-6">
           Sponsorii Noștri
         </h2>
         <p className="text-lg text-center text-gray-600 mb-12">
           Partenerii care ne susțin în misiunea noastră
         </p>
-        
+
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
           {mockSponsors.map((sponsor) => (
             <button
               key={sponsor.id}
               onClick={() => setShowDialog(true)}
-              className="group relative bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+              className="group relative bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-transform transform hover:scale-105"
             >
-              <div className="aspect-w-16 aspect-h-9">
-                <img
-                  src={sponsor.image}
-                  alt={sponsor.alt}
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-300 flex items-center justify-center">
-                  <span className="text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-lg font-medium">
-                    Rezervă acest spațiu
-                  </span>
-                </div>
+              <img
+                src={sponsor.image}
+                alt={sponsor.alt}
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
+                <span className="text-white font-semibold text-lg">
+                  Rezervă acest spațiu
+                </span>
               </div>
             </button>
           ))}
@@ -69,25 +67,31 @@ export default function Sponsors() {
         <Dialog open={showDialog} onOpenChange={setShowDialog}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>Devino Sponsor CARVIZIO</DialogTitle>
+              <DialogTitle className="text-[#00aff5]">
+                Devino Sponsor CARVIZIO
+              </DialogTitle>
               <DialogDescription className="pt-4 space-y-4 text-base">
                 <p>
-                  Afacerea ta poate apărea aici! Prin intermediul platformei noastre, 
-                  poți ajunge la mii de potențiali clienți interesați de servicii auto.
+                  Alătură-te celor mai importanți parteneri și afișează-ți
+                  brandul în fața unei audiențe relevante. Aceasta este o
+                  oportunitate unică de a îți crește vizibilitatea și de a avea
+                  un impact real într-o industrie competitivă.
                 </p>
-                <p>
-                  Beneficii:
-                </p>
+                <p className="font-semibold text-[#00aff5]">Beneficii:</p>
                 <ul className="list-disc pl-5 space-y-2">
-                  <li>Vizibilitate crescută în industria auto</li>
-                  <li>Acces la o audiență targetată</li>
-                  <li>Creșterea credibilității brandului</li>
+                  <li>Promovare strategică în cadrul platformei noastre</li>
+                  <li>Acces direct la o comunitate pasionată de auto</li>
+                  <li>Un spațiu exclusiv pentru afacerea ta</li>
                   <li>Parteneriat cu o platformă în continuă creștere</li>
+                  <li>
+                    Susținere continuă pentru a maximiza impactul reclamei tale
+                  </li>
                 </ul>
                 <p className="font-semibold pt-2">
-                  Contactează-ne pentru a discuta despre oportunitățile de sponsorizare:
+                  Nu rata șansa de a face parte dintr-o comunitate care
+                  inovează!
                 </p>
-                <p className="text-[#00aff5]">
+                <p className="text-[#00aff5] font-medium underline">
                   contact@carvizio.com
                 </p>
               </DialogDescription>
