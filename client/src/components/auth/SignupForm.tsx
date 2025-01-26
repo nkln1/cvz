@@ -111,9 +111,9 @@ export default function SignupForm() {
       // Create auth user
       let userCredential;
       try {
-        console.log("Attempting to create user with Firebase Auth");
+        console.log("Creating user with Firebase Auth...");
         userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        console.log("User created successfully:", userCredential.user.uid);
+        console.log("Auth user created successfully:", userCredential.user.uid);
       } catch (error: any) {
         console.error("Firebase Auth Error:", error);
         let errorMessage = "A apărut o eroare la crearea contului.";
@@ -138,21 +138,20 @@ export default function SignupForm() {
           title: "Eroare",
           description: errorMessage,
         });
-        throw error;
+        return;
       }
 
       // Store additional user data in Firestore
       const collectionPath = role === "client" ? "clients" : "services";
       const userDocRef = doc(db, collectionPath, userCredential.user.uid);
 
-      console.log("Attempting to save user data to Firestore:", {
-        collection: collectionPath,
-        userId: userCredential.user.uid,
-        data: { ...userData, email, role }
-      });
-
       try {
-        // Simplified data object
+        console.log("Attempting to save user data to Firestore:", {
+          path: `${collectionPath}/${userCredential.user.uid}`,
+          data: { ...userData, email, role }
+        });
+
+        // Create a simplified data object
         const userDataToSave = {
           ...userData,
           email,
@@ -161,15 +160,34 @@ export default function SignupForm() {
           uid: userCredential.user.uid
         };
 
-        await setDoc(userDocRef, userDataToSave);
-        console.log("User data saved successfully to Firestore");
+        // Try to save to Firestore with retries
+        let retryCount = 0;
+        const maxRetries = 3;
 
-        toast({
-          title: "Success",
-          description: "Cont creat cu succes!",
-        });
+        while (retryCount < maxRetries) {
+          try {
+            await setDoc(userDocRef, userDataToSave);
+            console.log("User data saved successfully to Firestore");
+
+            toast({
+              title: "Success",
+              description: "Cont creat cu succes!",
+            });
+            return; // Exit function on success
+          } catch (error: any) {
+            console.error(`Firestore save attempt ${retryCount + 1} failed:`, error);
+            retryCount++;
+
+            if (retryCount === maxRetries) {
+              throw error; // Throw on final retry
+            }
+
+            // Wait before retrying (exponential backoff)
+            await new Promise(resolve => setTimeout(resolve, Math.pow(2, retryCount) * 1000));
+          }
+        }
       } catch (error: any) {
-        console.error("Firestore Error Details:", {
+        console.error("Final Firestore Error:", {
           error,
           code: error.code,
           message: error.message,
@@ -189,18 +207,14 @@ export default function SignupForm() {
           title: "Eroare",
           description: "A apărut o eroare la salvarea datelor. Te rugăm să încerci din nou.",
         });
-        throw error;
       }
     } catch (error: any) {
       console.error("Registration Process Error:", error);
-      // Only show toast if no other toast is active
-      if (!toast.isActive) {
-        toast({
-          variant: "destructive",
-          title: "Eroare",
-          description: "A apărut o eroare neașteptată. Te rugăm să încerci din nou.",
-        });
-      }
+      toast({
+        variant: "destructive",
+        title: "Eroare",
+        description: "A apărut o eroare neașteptată. Te rugăm să încerci din nou.",
+      });
     } finally {
       setIsLoading(false);
     }
