@@ -8,6 +8,7 @@ import { randomUUID } from "crypto";
 import { users, verificationTokens, type User as SelectUser } from "@db/schema";
 import { db } from "@db";
 import { eq } from "drizzle-orm";
+import { sendVerificationEmail } from "./services/email";
 
 declare global {
   namespace Express {
@@ -86,7 +87,6 @@ export function setupAuth(app: Express) {
     }
   });
 
-  // Register endpoint
   app.post("/api/register", async (req, res) => {
     try {
       const { email, password, role } = req.body;
@@ -124,12 +124,22 @@ export function setupAuth(app: Express) {
         expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
       });
 
-      // TODO: Send verification email
-      // For now, we'll just return the token in the response
-      // In production, this should send an actual email
+      // Send verification email
+      try {
+        await sendVerificationEmail(email, token);
+      } catch (emailError) {
+        console.error("Failed to send verification email:", emailError);
+        // Don't fail registration if email fails, but log it
+      }
+
       res.json({
         message: "Registration successful",
-        verificationToken: token,
+        user: {
+          id: user.id,
+          email: user.email,
+          role: user.role,
+          emailVerified: user.emailVerified
+        },
       });
     } catch (error) {
       console.error("Registration error:", error);
@@ -137,46 +147,6 @@ export function setupAuth(app: Express) {
     }
   });
 
-  // Login endpoint
-  app.post("/api/login", (req, res, next) => {
-    passport.authenticate("local", (err: any, user: Express.User | false, info: IVerifyOptions) => {
-      if (err) {
-        return next(err);
-      }
-
-      if (!user) {
-        return res.status(401).send(info.message || "Authentication failed");
-      }
-
-      req.logIn(user, (err) => {
-        if (err) {
-          return next(err);
-        }
-
-        return res.json({
-          message: "Login successful",
-          user: {
-            id: user.id,
-            email: user.email,
-            role: user.role,
-            emailVerified: user.emailVerified,
-          },
-        });
-      });
-    })(req, res, next);
-  });
-
-  // Logout endpoint
-  app.post("/api/logout", (req, res) => {
-    req.logout((err) => {
-      if (err) {
-        return res.status(500).send("Logout failed");
-      }
-      res.json({ message: "Logged out successfully" });
-    });
-  });
-
-  // Resend verification email endpoint
   app.post("/api/resend-verification", async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).send("Not authenticated");
@@ -196,12 +166,11 @@ export function setupAuth(app: Express) {
         expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
       });
 
-      // TODO: Send verification email
-      // For now, we'll just return the token in the response
-      // In production, this should send an actual email
+      // Send verification email
+      await sendVerificationEmail(req.user.email, token);
+
       res.json({
         message: "Verification email sent",
-        verificationToken: token,
       });
     } catch (error) {
       console.error("Error resending verification:", error);
@@ -209,7 +178,6 @@ export function setupAuth(app: Express) {
     }
   });
 
-  // Email verification endpoint
   app.post("/api/verify-email", async (req, res) => {
     try {
       const { token } = req.body;
@@ -247,7 +215,6 @@ export function setupAuth(app: Express) {
     }
   });
 
-  // Get current user endpoint
   app.get("/api/user", (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).send("Not authenticated");
