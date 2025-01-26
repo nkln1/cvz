@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/hooks/use-auth";
 import {
   User,
   MailOpen,
@@ -35,7 +35,7 @@ import { useToast } from "@/hooks/use-toast";
 import { romanianCounties, getCitiesForCounty } from "@/lib/romaniaData";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { auth } from "@/lib/firebase";
-import { sendEmailVerification } from "firebase/auth";
+
 
 // Mock data for requests and offers
 const mockRequests = [
@@ -84,7 +84,7 @@ interface UserProfile {
 
 export default function ClientDashboard() {
   const [activeTab, setActiveTab] = useState<TabType>("requests");
-  const { user } = useAuth();
+  const { user, resendVerification } = useAuth();
   const { toast } = useToast();
   const [userProfile, setUserProfile] = useState<UserProfile>({});
   const [isEditing, setIsEditing] = useState(false);
@@ -166,11 +166,11 @@ export default function ClientDashboard() {
   };
 
   const handleResendVerification = async () => {
-    if (!auth.currentUser) return;
+    if (!user) return;
 
     setIsResendingVerification(true);
     try {
-      await sendEmailVerification(auth.currentUser);
+      await resendVerification();
       toast({
         title: "Email trimis",
         description: "Un nou email de verificare a fost trimis. Te rugăm să îți verifici căsuța de email.",

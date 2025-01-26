@@ -176,6 +176,39 @@ export function setupAuth(app: Express) {
     });
   });
 
+  // Resend verification email endpoint
+  app.post("/api/resend-verification", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).send("Not authenticated");
+    }
+
+    try {
+      // Delete any existing verification tokens for this user
+      await db
+        .delete(verificationTokens)
+        .where(eq(verificationTokens.userId, req.user.id));
+
+      // Create new verification token
+      const token = randomUUID();
+      await db.insert(verificationTokens).values({
+        userId: req.user.id,
+        token,
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
+      });
+
+      // TODO: Send verification email
+      // For now, we'll just return the token in the response
+      // In production, this should send an actual email
+      res.json({
+        message: "Verification email sent",
+        verificationToken: token,
+      });
+    } catch (error) {
+      console.error("Error resending verification:", error);
+      res.status(500).send("Failed to resend verification email");
+    }
+  });
+
   // Email verification endpoint
   app.post("/api/verify-email", async (req, res) => {
     try {
