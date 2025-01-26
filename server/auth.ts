@@ -228,4 +228,57 @@ export function setupAuth(app: Express) {
       emailVerified: user.emailVerified,
     });
   });
+
+  // Login endpoint
+  app.post("/api/login", async (req, res, next) => {
+    try {
+      const { email, password } = req.body;
+
+      // Find user by email
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.email, email))
+        .limit(1);
+
+      if (!user) {
+        return res.status(401).send("Email sau parola incorecte.");
+      }
+
+      const isMatch = await argon2.verify(user.password, password);
+      if (!isMatch) {
+        return res.status(401).send("Email sau parola incorecte.");
+      }
+
+      // Log the user in
+      req.login(user, (err) => {
+        if (err) {
+          return next(err);
+        }
+
+        return res.json({
+          message: "Login successful",
+          user: {
+            id: user.id,
+            email: user.email,
+            role: user.role,
+            emailVerified: user.emailVerified,
+          },
+        });
+      });
+    } catch (error) {
+      console.error("Login error:", error);
+      return res.status(500).send("A apărut o eroare la autentificare.");
+    }
+  });
+
+  // Logout endpoint
+  app.post("/api/logout", (req, res) => {
+    req.logout((err) => {
+      if (err) {
+        return res.status(500).send("Logout failed");
+      }
+      res.json({ message: "Logged out successfully" });
+    });
+  });
 }
