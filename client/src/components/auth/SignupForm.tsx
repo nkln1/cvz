@@ -143,15 +143,12 @@ export default function SignupForm() {
 
       // Store additional user data in Firestore
       const collectionPath = role === "client" ? "clients" : "services";
-      const userDocRef = doc(db, collectionPath, userCredential.user.uid);
+      console.log(`Saving user data to ${collectionPath} collection...`);
 
       try {
-        console.log("Attempting to save user data to Firestore:", {
-          path: `${collectionPath}/${userCredential.user.uid}`,
-          data: { ...userData, email, role }
-        });
+        const userDocRef = doc(db, collectionPath, userCredential.user.uid);
 
-        // Create a simplified data object
+        // Prepare user data
         const userDataToSave = {
           ...userData,
           email,
@@ -160,44 +157,25 @@ export default function SignupForm() {
           uid: userCredential.user.uid
         };
 
-        // Try to save to Firestore with retries
-        let retryCount = 0;
-        const maxRetries = 3;
+        // Set the document with merge option to ensure it works with existing documents
+        await setDoc(userDocRef, userDataToSave, { merge: true });
+        console.log("User data saved successfully to Firestore");
 
-        while (retryCount < maxRetries) {
-          try {
-            await setDoc(userDocRef, userDataToSave);
-            console.log("User data saved successfully to Firestore");
-
-            toast({
-              title: "Success",
-              description: "Cont creat cu succes!",
-            });
-            return; // Exit function on success
-          } catch (error: any) {
-            console.error(`Firestore save attempt ${retryCount + 1} failed:`, error);
-            retryCount++;
-
-            if (retryCount === maxRetries) {
-              throw error; // Throw on final retry
-            }
-
-            // Wait before retrying (exponential backoff)
-            await new Promise(resolve => setTimeout(resolve, Math.pow(2, retryCount) * 1000));
-          }
-        }
+        toast({
+          title: "Success",
+          description: "Cont creat cu succes!",
+        });
       } catch (error: any) {
-        console.error("Final Firestore Error:", {
-          error,
+        console.error("Firestore Error:", {
           code: error.code,
           message: error.message,
-          name: error.name
+          details: error
         });
 
-        // Clean up: delete the auth user if Firestore save fails
+        // Clean up auth user if Firestore save fails
         try {
           await userCredential.user.delete();
-          console.log("Cleaned up auth user after Firestore error");
+          console.log("Auth user cleaned up after Firestore error");
         } catch (deleteError) {
           console.error("Error cleaning up auth user:", deleteError);
         }
