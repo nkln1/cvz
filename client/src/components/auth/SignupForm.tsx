@@ -21,81 +21,68 @@ import {
 import { Input } from "@/components/ui/input";
 import { signInWithGoogle } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
-import {
-  Mail,
-  Lock,
-  User,
-  MapPin,
-  Phone,
-  Building,
-  ArrowLeft,
-} from "lucide-react";
+import { Mail, Lock, User, MapPin, Phone, Building, ArrowLeft } from "lucide-react";
 import RoleSelection from "./RoleSelection";
 import { doc, setDoc } from "firebase/firestore";
 import { db, auth } from "@/lib/firebase";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { romanianCounties, getCitiesForCounty } from "@/lib/romaniaData";
 
-const clientSchema = z
-  .object({
-    name: z.string().min(2, {
-      message: "Numele trebuie să conțină cel puțin 2 caractere.",
-    }),
-    email: z.string().email({
-      message: "Te rugăm să introduci o adresă de email validă.",
-    }),
-    phone: z.string().min(10, {
-      message: "Te rugăm să introduci un număr de telefon valid.",
-    }),
-    county: z.string().min(1, {
-      message: "Te rugăm să selectezi județul.",
-    }),
-    city: z.string().min(1, {
-      message: "Te rugăm să selectezi localitatea.",
-    }),
-    password: z.string().min(6, {
-      message: "Parola trebuie să conțină cel puțin 6 caractere.",
-    }),
-    confirmPassword: z.string(),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: "Parolele nu coincid",
-    path: ["confirmPassword"],
-  });
+const clientSchema = z.object({
+  name: z.string().min(2, {
+    message: "Numele trebuie să conțină cel puțin 2 caractere.",
+  }),
+  email: z.string().email({
+    message: "Te rugăm să introduci o adresă de email validă.",
+  }),
+  phone: z.string().min(10, {
+    message: "Te rugăm să introduci un număr de telefon valid.",
+  }),
+  county: z.string().min(1, {
+    message: "Te rugăm să selectezi județul.",
+  }),
+  city: z.string().min(1, {
+    message: "Te rugăm să selectezi localitatea.",
+  }),
+  password: z.string().min(6, {
+    message: "Parola trebuie să conțină cel puțin 6 caractere.",
+  }),
+  confirmPassword: z.string(),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Parolele nu coincid",
+  path: ["confirmPassword"],
+});
 
-const serviceSchema = z
-  .object({
-    companyName: z.string().min(2, {
-      message: "Numele companiei trebuie să conțină cel puțin 2 caractere.",
-    }),
-    representativeName: z.string().min(2, {
-      message:
-        "Numele reprezentantului trebuie să conțină cel puțin 2 caractere.",
-    }),
-    email: z.string().email({
-      message: "Te rugăm să introduci o adresă de email validă.",
-    }),
-    phone: z.string().min(10, {
-      message: "Te rugăm să introduci un număr de telefon valid.",
-    }),
-    address: z.string().min(5, {
-      message: "Te rugăm să introduci adresa completă.",
-    }),
-    county: z.string().min(1, {
-      message: "Te rugăm să selectezi județul.",
-    }),
-    city: z.string().min(1, {
-      message: "Te rugăm să selectezi localitatea.",
-    }),
-    password: z.string().min(6, {
-      message: "Parola trebuie să conțină cel puțin 6 caractere.",
-    }),
-    confirmPassword: z.string(),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: "Parolele nu coincid",
-    path: ["confirmPassword"],
-  });
+const serviceSchema = z.object({
+  companyName: z.string().min(2, {
+    message: "Numele companiei trebuie să conțină cel puțin 2 caractere.",
+  }),
+  representativeName: z.string().min(2, {
+    message: "Numele reprezentantului trebuie să conțină cel puțin 2 caractere.",
+  }),
+  email: z.string().email({
+    message: "Te rugăm să introduci o adresă de email validă.",
+  }),
+  phone: z.string().min(10, {
+    message: "Te rugăm să introduci un număr de telefon valid.",
+  }),
+  address: z.string().min(5, {
+    message: "Te rugăm să introduci adresa completă.",
+  }),
+  county: z.string().min(1, {
+    message: "Te rugăm să selectezi județul.",
+  }),
+  city: z.string().min(1, {
+    message: "Te rugăm să selectezi localitatea.",
+  }),
+  password: z.string().min(6, {
+    message: "Parola trebuie să conțină cel puțin 6 caractere.",
+  }),
+  confirmPassword: z.string(),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Parolele nu coincid",
+  path: ["confirmPassword"],
+});
 
 type UserRole = "client" | "service" | null;
 
@@ -133,9 +120,7 @@ export default function SignupForm() {
     },
   });
 
-  async function onSubmit(
-    values: z.infer<typeof clientSchema> | z.infer<typeof serviceSchema>,
-  ) {
+  async function onSubmit(values: z.infer<typeof clientSchema> | z.infer<typeof serviceSchema>) {
     setIsLoading(true);
     try {
       const { email, password, ...userData } = values;
@@ -144,27 +129,23 @@ export default function SignupForm() {
       let userCredential;
       try {
         console.log("Creating user with Firebase Auth...");
-        userCredential = await createUserWithEmailAndPassword(
-          auth,
-          email,
-          password,
-        );
+        userCredential = await createUserWithEmailAndPassword(auth, email, password);
         console.log("Auth user created successfully:", userCredential.user.uid);
       } catch (error: any) {
         console.error("Firebase Auth Error:", error);
         let errorMessage = "A apărut o eroare la crearea contului.";
 
         switch (error.code) {
-          case "auth/email-already-in-use":
+          case 'auth/email-already-in-use':
             errorMessage = "Această adresă de email este deja folosită.";
             break;
-          case "auth/invalid-email":
+          case 'auth/invalid-email':
             errorMessage = "Adresa de email nu este validă.";
             break;
-          case "auth/operation-not-allowed":
+          case 'auth/operation-not-allowed':
             errorMessage = "Înregistrarea cu email și parolă nu este activată.";
             break;
-          case "auth/weak-password":
+          case 'auth/weak-password':
             errorMessage = "Parola trebuie să aibă cel puțin 6 caractere.";
             break;
         }
@@ -190,7 +171,7 @@ export default function SignupForm() {
           email,
           createdAt: new Date().toISOString(),
           role: role,
-          uid: userCredential.user.uid,
+          uid: userCredential.user.uid
         };
 
         // Set the document with merge option to ensure it works with existing documents
@@ -205,7 +186,7 @@ export default function SignupForm() {
         console.error("Firestore Error:", {
           code: error.code,
           message: error.message,
-          details: error,
+          details: error
         });
 
         // Clean up auth user if Firestore save fails
@@ -219,8 +200,7 @@ export default function SignupForm() {
         toast({
           variant: "destructive",
           title: "Eroare",
-          description:
-            "A apărut o eroare la salvarea datelor. Te rugăm să încerci din nou.",
+          description: "A apărut o eroare la salvarea datelor. Te rugăm să încerci din nou.",
         });
       }
     } catch (error: any) {
@@ -228,8 +208,7 @@ export default function SignupForm() {
       toast({
         variant: "destructive",
         title: "Eroare",
-        description:
-          "A apărut o eroare neașteptată. Te rugăm să încerci din nou.",
+        description: "A apărut o eroare neașteptată. Te rugăm să încerci din nou.",
       });
     } finally {
       setIsLoading(false);
@@ -270,17 +249,12 @@ export default function SignupForm() {
 
       <div className="space-y-2 text-center">
         <h2 className="text-2xl font-bold text-[#00aff5]">
-          {role === "client"
-            ? "Înregistrare Client"
-            : "Înregistrare Service Auto"}
+          {role === "client" ? "Înregistrare Client" : "Înregistrare Service Auto"}
         </h2>
       </div>
 
       <Form {...currentForm}>
-        <form
-          onSubmit={currentForm.handleSubmit(onSubmit)}
-          className="space-y-4"
-        >
+        <form onSubmit={currentForm.handleSubmit(onSubmit)} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {role === "client" ? (
               <FormField
@@ -288,17 +262,11 @@ export default function SignupForm() {
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-[#00aff5]">
-                      Nume și Prenume
-                    </FormLabel>
+                    <FormLabel className="text-[#00aff5]">Nume și Prenume</FormLabel>
                     <FormControl>
                       <div className="relative">
                         <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                        <Input
-                          {...field}
-                          placeholder="Ion Popescu"
-                          className="pl-10"
-                        />
+                        <Input {...field} placeholder="Ion Popescu" className="pl-10" />
                       </div>
                     </FormControl>
                     <FormMessage />
@@ -312,17 +280,11 @@ export default function SignupForm() {
                   name="companyName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-[#00aff5]">
-                        Numele Service-ului
-                      </FormLabel>
+                      <FormLabel className="text-[#00aff5]">Numele Service-ului</FormLabel>
                       <FormControl>
                         <div className="relative">
                           <Building className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                          <Input
-                            {...field}
-                            placeholder="Auto Service SRL"
-                            className="pl-10"
-                          />
+                          <Input {...field} placeholder="Auto Service SRL" className="pl-10" />
                         </div>
                       </FormControl>
                       <FormMessage />
@@ -334,17 +296,11 @@ export default function SignupForm() {
                   name="representativeName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-[#00aff5]">
-                        Nume Reprezentant
-                      </FormLabel>
+                      <FormLabel className="text-[#00aff5]">Nume Reprezentant</FormLabel>
                       <FormControl>
                         <div className="relative">
                           <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                          <Input
-                            {...field}
-                            placeholder="Ion Popescu"
-                            className="pl-10"
-                          />
+                          <Input {...field} placeholder="Ion Popescu" className="pl-10" />
                         </div>
                       </FormControl>
                       <FormMessage />
@@ -363,12 +319,7 @@ export default function SignupForm() {
                   <FormControl>
                     <div className="relative">
                       <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                      <Input
-                        {...field}
-                        type="email"
-                        placeholder="email@example.com"
-                        className="pl-10"
-                      />
+                      <Input {...field} type="email" placeholder="email@example.com" className="pl-10" />
                     </div>
                   </FormControl>
                   <FormMessage />
@@ -384,11 +335,7 @@ export default function SignupForm() {
                   <FormControl>
                     <div className="relative">
                       <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                      <Input
-                        {...field}
-                        placeholder="0712 345 678"
-                        className="pl-10"
-                      />
+                      <Input {...field} placeholder="0712 345 678" className="pl-10" />
                     </div>
                   </FormControl>
                   <FormMessage />
@@ -405,11 +352,7 @@ export default function SignupForm() {
                     <FormControl>
                       <div className="relative">
                         <MapPin className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                        <Input
-                          {...field}
-                          placeholder="Strada, Număr"
-                          className="pl-10"
-                        />
+                        <Input {...field} placeholder="Strada, Număr" className="pl-10" />
                       </div>
                     </FormControl>
                     <FormMessage />
@@ -482,6 +425,7 @@ export default function SignupForm() {
               )}
             />
 
+
             <FormField
               control={currentForm.control}
               name="password"
@@ -491,12 +435,7 @@ export default function SignupForm() {
                   <FormControl>
                     <div className="relative">
                       <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                      <Input
-                        {...field}
-                        type="password"
-                        placeholder="••••••••"
-                        className="pl-10"
-                      />
+                      <Input {...field} type="password" placeholder="••••••••" className="pl-10" />
                     </div>
                   </FormControl>
                   <FormMessage />
@@ -508,18 +447,11 @@ export default function SignupForm() {
               name="confirmPassword"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-[#00aff5]">
-                    Confirmă Parola
-                  </FormLabel>
+                  <FormLabel className="text-[#00aff5]">Confirmă Parola</FormLabel>
                   <FormControl>
                     <div className="relative">
                       <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                      <Input
-                        {...field}
-                        type="password"
-                        placeholder="••••••••"
-                        className="pl-10"
-                      />
+                      <Input {...field} type="password" placeholder="••••••••" className="pl-10" />
                     </div>
                   </FormControl>
                   <FormMessage />
@@ -529,11 +461,7 @@ export default function SignupForm() {
           </div>
 
           <div className="flex flex-col items-center space-y-4 pt-4">
-            <Button
-              type="submit"
-              className="w-full max-w-md bg-[#00aff5] hover:bg-[#0099d6]"
-              disabled={isLoading}
-            >
+            <Button type="submit" className="w-full max-w-md bg-[#00aff5] hover:bg-[#0099d6]" disabled={isLoading}>
               {isLoading ? "Se încarcă..." : "Creează cont"}
             </Button>
 
@@ -542,9 +470,7 @@ export default function SignupForm() {
                 <div className="w-full border-t border-gray-200" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="bg-white px-2 text-gray-500">
-                  Sau continuă cu
-                </span>
+                <span className="bg-white px-2 text-gray-500">Sau continuă cu</span>
               </div>
             </div>
 
