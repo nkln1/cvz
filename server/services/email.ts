@@ -43,8 +43,8 @@ export async function sendVerificationEmail(email: string, token: string) {
     await transporter.verify();
     console.log("SMTP connection verified successfully");
 
-    // Always use the production URL for verification links
-    const verificationUrl = `https://carvizio.ro/verify-email?token=${token}`;
+    // Always use www subdomain for verification links
+    const verificationUrl = `https://www.carvizio.ro/verify-email?token=${token}`;
     console.log("Generated verification URL:", verificationUrl);
 
     console.log("Sending verification email to:", email);

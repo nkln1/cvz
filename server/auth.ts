@@ -179,8 +179,14 @@ export function setupAuth(app: Express) {
   });
 
   app.post("/api/verify-email", async (req, res) => {
-    // Enable CORS for the verification endpoint
-    res.header('Access-Control-Allow-Origin', 'https://www.carvizio.ro');
+    // Enable CORS for both www and non-www domains
+    const allowedOrigins = ['https://www.carvizio.ro', 'https://carvizio.ro'];
+    const origin = req.headers.origin;
+
+    if (origin && allowedOrigins.includes(origin)) {
+      res.header('Access-Control-Allow-Origin', origin);
+    }
+
     res.header('Access-Control-Allow-Methods', 'POST');
     res.header('Access-Control-Allow-Headers', 'Content-Type');
     res.header('Access-Control-Allow-Credentials', 'true');
