@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
+import { getAuth, setPersistence, browserLocalPersistence } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
@@ -16,6 +16,15 @@ const firebaseConfig = {
 let app;
 try {
   app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  // Enable persistence
+  setPersistence(auth, browserLocalPersistence)
+    .then(() => {
+      console.log("Firebase persistence enabled successfully");
+    })
+    .catch((error) => {
+      console.error("Error enabling persistence:", error);
+    });
   console.log("Firebase initialized successfully");
 } catch (error) {
   console.error("Error initializing Firebase:", error);
