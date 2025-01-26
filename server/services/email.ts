@@ -14,24 +14,20 @@ async function createTestAccount() {
   });
 }
 
-// Create transporter with provided SMTP credentials or test account
 async function getTransporter() {
   if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
     return nodemailer.createTransport({
       host: process.env.SMTP_HOST,
-      port: parseInt(process.env.SMTP_PORT || "587"),
-      secure: false,
+      port: parseInt(process.env.SMTP_PORT || "465"),
+      secure: true, // Use SSL/TLS
       auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
       },
-      // Add additional configuration for better reliability
-      pool: true,
-      maxConnections: 1,
-      rateDelta: 20000,
-      rateLimit: 5,
-      logger: true,
-      debug: true
+      tls: {
+        // Do not fail on invalid certs
+        rejectUnauthorized: false
+      }
     });
   }
   console.log("No SMTP credentials found, using test account");
@@ -40,9 +36,10 @@ async function getTransporter() {
 
 export async function sendVerificationEmail(email: string, token: string) {
   try {
+    console.log("Creating email transporter...");
     const transporter = await getTransporter();
 
-    // Verify SMTP connection configuration
+    console.log("Verifying SMTP connection...");
     await transporter.verify();
     console.log("SMTP connection verified successfully");
 
@@ -50,6 +47,7 @@ export async function sendVerificationEmail(email: string, token: string) {
       ? 'https://' 
       : 'http://'}${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co/verify-email?token=${token}`;
 
+    console.log("Sending verification email to:", email);
     const mailOptions = {
       from: `"CARVIZIO" <${process.env.SMTP_USER || 'noreply@carvizio.com'}>`,
       to: email,
