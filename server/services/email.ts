@@ -8,8 +8,6 @@ const transporter = nodemailer.createTransport({
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
   },
-  debug: true, // Enable debug logs
-  logger: true // Enable logger
 });
 
 export async function sendVerificationEmail(email: string, token: string) {
@@ -48,26 +46,10 @@ export async function sendVerificationEmail(email: string, token: string) {
   };
 
   try {
-    console.log("Attempting to send verification email to:", email);
-    console.log("SMTP Configuration:", {
-      host: process.env.SMTP_HOST,
-      port: process.env.SMTP_PORT,
-      user: process.env.SMTP_USER?.substring(0, 3) + "..." // Log only first 3 chars for security
-    });
-
-    await transporter.verify();
-    console.log("SMTP connection verified successfully");
-
-    const info = await transporter.sendMail(mailOptions);
-    console.log("Verification email sent successfully:", info.messageId);
-    return true;
-  } catch (error: any) {
-    console.error("Error sending verification email:", {
-      code: error.code,
-      command: error.command,
-      message: error.message,
-      stack: error.stack
-    });
+    await transporter.sendMail(mailOptions);
+    console.log("Verification email sent successfully");
+  } catch (error) {
+    console.error("Error sending verification email:", error);
     throw new Error("Failed to send verification email");
   }
 }

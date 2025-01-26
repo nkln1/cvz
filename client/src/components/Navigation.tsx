@@ -2,13 +2,11 @@ import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import LoginDropdown from "./LoginDropdown";
 import { Button } from "./ui/button";
-import { Mail, Loader2 } from "lucide-react";
-import { useAuth } from "@/hooks/use-auth";
+import { Mail } from "lucide-react";
 
 export default function Navigation() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [, setLocation] = useLocation();
-  const { user, isLoading } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -66,9 +64,7 @@ export default function Navigation() {
               <span className="hidden sm:inline">Contactează-ne</span>
               <span className="sm:hidden">Contact</span>
             </Button>
-            {isLoading ? (
-              <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
-            ) : !user && <LoginDropdown />}
+            <LoginDropdown />
           </div>
         </div>
       </div>
