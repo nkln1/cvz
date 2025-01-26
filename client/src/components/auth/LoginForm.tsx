@@ -76,10 +76,7 @@ export default function LoginForm() {
   return (
     <div className="w-full max-w-md space-y-6 p-6 bg-white rounded-lg shadow-lg">
       <div className="space-y-2 text-center">
-        <h2 className="text-2xl font-bold">Conectare</h2>
-        <p className="text-sm text-gray-500">
-          Intră în cont pentru a accesa toate funcționalitățile
-        </p>
+        <h2 className="text-2xl font-bold">Intră în cont</h2>
       </div>
 
       <Form {...form}>

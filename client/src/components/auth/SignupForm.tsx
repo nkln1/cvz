@@ -107,24 +107,68 @@ export default function SignupForm() {
     setIsLoading(true);
     try {
       const { email, password, ...userData } = values;
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-      await setDoc(doc(db, role === "client" ? "clients" : "services", user.uid), {
-        ...userData,
-        email,
-        createdAt: new Date().toISOString(),
-      });
 
-      toast({
-        title: "Success",
-        description: "Cont creat cu succes!",
-      });
-    } catch (error) {
-      console.error("Error during registration:", error);
+      // Create auth user
+      let userCredential;
+      try {
+        userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      } catch (error: any) {
+        console.error("Firebase Auth Error:", error);
+        let errorMessage = "A apărut o eroare la crearea contului.";
+
+        switch (error.code) {
+          case 'auth/email-already-in-use':
+            errorMessage = "Această adresă de email este deja folosită.";
+            break;
+          case 'auth/invalid-email':
+            errorMessage = "Adresa de email nu este validă.";
+            break;
+          case 'auth/operation-not-allowed':
+            errorMessage = "Înregistrarea cu email și parolă nu este activată.";
+            break;
+          case 'auth/weak-password':
+            errorMessage = "Parola trebuie să aibă cel puțin 6 caractere.";
+            break;
+        }
+
+        toast({
+          variant: "destructive",
+          title: "Eroare",
+          description: errorMessage,
+        });
+        return;
+      }
+
+      // Store additional user data in Firestore
+      try {
+        await setDoc(doc(db, role === "client" ? "clients" : "services", userCredential.user.uid), {
+          ...userData,
+          email,
+          createdAt: new Date().toISOString(),
+          role: role,
+        });
+
+        toast({
+          title: "Success",
+          description: "Cont creat cu succes!",
+        });
+      } catch (error: any) {
+        console.error("Firestore Error:", error);
+        // If Firestore fails, delete the auth user to maintain consistency
+        await userCredential.user.delete();
+
+        toast({
+          variant: "destructive",
+          title: "Eroare",
+          description: "A apărut o eroare la salvarea datelor. Te rugăm să încerci din nou.",
+        });
+      }
+    } catch (error: any) {
+      console.error("Unexpected Error:", error);
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "A apărut o eroare la crearea contului. Te rugăm să încerci din nou.",
+        title: "Eroare",
+        description: "A apărut o eroare neașteptată. Te rugăm să încerci din nou.",
       });
     } finally {
       setIsLoading(false);
