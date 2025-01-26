@@ -9,38 +9,39 @@ interface User {
 }
 
 interface AuthResponse {
-  user: User;
-  message: string;
-}
-
-interface AuthError {
-  error: true;
-  message: string;
+  success: boolean;
+  user?: User;
+  message?: string;
 }
 
 async function handleAuthRequest(
   url: string,
   method: string,
   body?: Record<string, any>
-): Promise<AuthResponse | AuthError> {
-  const response = await fetch(url, {
-    method,
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: body ? JSON.stringify(body) : undefined,
-    credentials: "include",
-  });
+): Promise<AuthResponse> {
+  try {
+    const response = await fetch(url, {
+      method,
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: body ? JSON.stringify(body) : undefined,
+      credentials: "include",
+    });
 
-  if (!response.ok) {
-    // Handle specific error cases
-    if (response.status === 401 || response.status === 400) {
-      return { error: true, message: "Email sau parolă incorecte" };
+    if (!response.ok) {
+      // Handle specific error cases
+      if (response.status === 401 || response.status === 400) {
+        return { success: false, message: "Email sau parolă incorecte" };
+      }
+      return { success: false, message: "A apărut o eroare. Vă rugăm încercați din nou." };
     }
-    return { error: true, message: "A apărut o eroare. Vă rugăm încercați din nou." };
-  }
 
-  return response.json();
+    const data = await response.json();
+    return { success: true, user: data.user };
+  } catch (error) {
+    return { success: false, message: "A apărut o eroare de rețea. Vă rugăm încercați din nou." };
+  }
 }
 
 export function useAuth() {
@@ -72,23 +73,22 @@ export function useAuth() {
   const login = useMutation({
     mutationFn: async (credentials: { email: string; password: string }) => {
       const result = await handleAuthRequest("/api/login", "POST", credentials);
-      if ('error' in result) {
-        throw new Error(result.message);
-      }
       return result;
     },
     onSuccess: (data) => {
+      if (!data.success) {
+        toast({
+          variant: "destructive",
+          title: "Eroare de autentificare",
+          description: data.message,
+        });
+        return;
+      }
+
       queryClient.setQueryData(["user"], data.user);
       toast({
         title: "Success",
         description: "Te-ai conectat cu succes!",
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        variant: "destructive",
-        title: "Eroare de autentificare",
-        description: error.message,
       });
     },
   });
@@ -107,23 +107,22 @@ export function useAuth() {
       city?: string;
     }) => {
       const result = await handleAuthRequest("/api/register", "POST", userData);
-      if ('error' in result) {
-        throw new Error(result.message);
-      }
       return result;
     },
     onSuccess: (data) => {
+      if (!data.success) {
+        toast({
+          variant: "destructive",
+          title: "Eroare la înregistrare",
+          description: data.message,
+        });
+        return;
+      }
+
       queryClient.setQueryData(["user"], data.user);
       toast({
         title: "Success",
         description: "Cont creat cu succes! Te rugăm să verifici email-ul pentru confirmare.",
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        variant: "destructive",
-        title: "Eroare la înregistrare",
-        description: error.message || "A apărut o eroare la crearea contului.",
       });
     },
   });
@@ -131,46 +130,22 @@ export function useAuth() {
   const logout = useMutation({
     mutationFn: async () => {
       const result = await handleAuthRequest("/api/logout", "POST");
-      if ('error' in result) {
-        throw new Error(result.message);
-      }
       return result;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      if (!data.success) {
+        toast({
+          variant: "destructive",
+          title: "Eroare",
+          description: data.message,
+        });
+        return;
+      }
+
       queryClient.setQueryData(["user"], null);
       toast({
         title: "Success",
         description: "Te-ai deconectat cu succes!",
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        variant: "destructive",
-        title: "Eroare",
-        description: error.message || "A apărut o eroare la deconectare.",
-      });
-    },
-  });
-
-  const resendVerification = useMutation({
-    mutationFn: async () => {
-      const result = await handleAuthRequest("/api/resend-verification", "POST");
-      if ('error' in result) {
-        throw new Error(result.message);
-      }
-      return result;
-    },
-    onSuccess: () => {
-      toast({
-        title: "Email trimis",
-        description: "Un nou email de verificare a fost trimis. Te rugăm să verifici căsuța de email.",
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        variant: "destructive",
-        title: "Eroare",
-        description: error.message || "Nu s-a putut trimite emailul de verificare.",
       });
     },
   });
@@ -181,6 +156,5 @@ export function useAuth() {
     login: login.mutateAsync,
     register: register.mutateAsync,
     logout: logout.mutateAsync,
-    resendVerification: resendVerification.mutateAsync,
   };
 }

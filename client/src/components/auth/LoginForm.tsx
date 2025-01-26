@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Mail, Lock } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
+import { useToast } from "@/hooks/use-toast";
 
 const formSchema = z.object({
   email: z.string().email({
@@ -29,6 +30,7 @@ export default function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -41,8 +43,16 @@ export default function LoginForm() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     try {
-      await login(values);
-      setLocation("/dashboard");
+      const result = await login(values);
+      if (result.success) {
+        setLocation("/dashboard");
+      } else {
+        //Handle error from result object if needed.  For example:
+        //toast({title:result.error})
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      toast({title: "Autentificare nereuşită. Verifică datele introduse."}) //Example toast message
     } finally {
       setIsLoading(false);
     }
