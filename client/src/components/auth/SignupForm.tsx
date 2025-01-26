@@ -24,7 +24,7 @@ import { Mail, Lock, User, MapPin, Phone, Building, ArrowLeft } from "lucide-rea
 import RoleSelection from "./RoleSelection";
 import { doc, setDoc } from "firebase/firestore";
 import { db, auth } from "@/lib/firebase";
-import { createUserWithEmailAndPassword } from "firebase/auth";
+import { createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
 import { romanianCounties, getCitiesForCounty } from "@/lib/romaniaData";
 
 const clientSchema = z.object({
@@ -130,6 +130,11 @@ export default function SignupForm() {
         console.log("Creating user with Firebase Auth...");
         userCredential = await createUserWithEmailAndPassword(auth, email, password);
         console.log("Auth user created successfully:", userCredential.user.uid);
+
+        // Send email verification
+        await sendEmailVerification(userCredential.user);
+        console.log("Verification email sent successfully");
+
       } catch (error: any) {
         console.error("Firebase Auth Error:", error);
         let errorMessage = "A apărut o eroare la crearea contului.";
@@ -168,6 +173,7 @@ export default function SignupForm() {
         const userDataToSave = {
           ...userData,
           email,
+          emailVerified: false,
           createdAt: new Date().toISOString(),
           role: role,
           uid: userCredential.user.uid
@@ -179,7 +185,7 @@ export default function SignupForm() {
 
         toast({
           title: "Success",
-          description: "Cont creat cu succes!",
+          description: "Cont creat cu succes! Te rugăm să verifici email-ul pentru a confirma adresa.",
         });
       } catch (error: any) {
         console.error("Firestore Error:", {
