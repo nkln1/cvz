@@ -11,6 +11,13 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { signInWithGoogle } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
@@ -19,6 +26,7 @@ import RoleSelection from "./RoleSelection";
 import { doc, setDoc } from "firebase/firestore";
 import { db, auth } from "@/lib/firebase";
 import { createUserWithEmailAndPassword } from "firebase/auth";
+import { romanianCounties, getCitiesForCounty } from "@/lib/romaniaData";
 
 const clientSchema = z.object({
   name: z.string().min(2, {
@@ -30,8 +38,11 @@ const clientSchema = z.object({
   phone: z.string().min(10, {
     message: "Te rugăm să introduci un număr de telefon valid.",
   }),
-  location: z.string().min(2, {
-    message: "Te rugăm să introduci localitatea.",
+  county: z.string().min(1, {
+    message: "Te rugăm să selectezi județul.",
+  }),
+  city: z.string().min(1, {
+    message: "Te rugăm să selectezi localitatea.",
   }),
   password: z.string().min(6, {
     message: "Parola trebuie să conțină cel puțin 6 caractere.",
@@ -58,8 +69,11 @@ const serviceSchema = z.object({
   address: z.string().min(5, {
     message: "Te rugăm să introduci adresa completă.",
   }),
-  location: z.string().min(2, {
-    message: "Te rugăm să introduci localitatea.",
+  county: z.string().min(1, {
+    message: "Te rugăm să selectezi județul.",
+  }),
+  city: z.string().min(1, {
+    message: "Te rugăm să selectezi localitatea.",
   }),
   password: z.string().min(6, {
     message: "Parola trebuie să conțină cel puțin 6 caractere.",
@@ -75,6 +89,7 @@ type UserRole = "client" | "service" | null;
 export default function SignupForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [role, setRole] = useState<UserRole>(null);
+  const [selectedCounty, setSelectedCounty] = useState<string>("");
   const { toast } = useToast();
 
   const clientForm = useForm<z.infer<typeof clientSchema>>({
@@ -83,7 +98,8 @@ export default function SignupForm() {
       name: "",
       email: "",
       phone: "",
-      location: "",
+      county: "",
+      city: "",
       password: "",
       confirmPassword: "",
     },
@@ -97,7 +113,8 @@ export default function SignupForm() {
       email: "",
       phone: "",
       address: "",
-      location: "",
+      county: "",
+      city: "",
       password: "",
       confirmPassword: "",
     },
@@ -343,22 +360,72 @@ export default function SignupForm() {
                 )}
               />
             )}
+            {/* County Dropdown */}
             <FormField
               control={currentForm.control}
-              name="location"
+              name="county"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-[#00aff5]">Localitate</FormLabel>
-                  <FormControl>
-                    <div className="relative">
-                      <MapPin className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                      <Input {...field} placeholder="București" className="pl-10" />
-                    </div>
-                  </FormControl>
+                  <FormLabel className="text-[#00aff5]">Județ</FormLabel>
+                  <Select
+                    value={field.value}
+                    onValueChange={(value) => {
+                      field.onChange(value);
+                      setSelectedCounty(value);
+                      // Reset city when county changes
+                      currentForm.setValue("city", "");
+                    }}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selectează județul" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {romanianCounties.map((county) => (
+                        <SelectItem key={county} value={county}>
+                          {county}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
             />
+
+            {/* City Dropdown */}
+            <FormField
+              control={currentForm.control}
+              name="city"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-[#00aff5]">Localitate</FormLabel>
+                  <Select
+                    value={field.value}
+                    onValueChange={field.onChange}
+                    disabled={!selectedCounty}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selectează localitatea" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {selectedCounty &&
+                        getCitiesForCounty(selectedCounty).map((city) => (
+                          <SelectItem key={city} value={city}>
+                            {city}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+
             <FormField
               control={currentForm.control}
               name="password"
