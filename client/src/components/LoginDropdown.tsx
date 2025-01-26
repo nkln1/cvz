@@ -5,12 +5,14 @@ import { ChevronDown } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { signOut } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
 
 export default function LoginDropdown() {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -33,6 +35,7 @@ export default function LoginDropdown() {
         title: "Success",
         description: "Te-ai deconectat cu succes!",
       });
+      setLocation("/"); // Redirect to home page after logout
     } catch (error) {
       toast({
         variant: "destructive",
@@ -40,6 +43,11 @@ export default function LoginDropdown() {
         description: "A apărut o eroare la deconectare.",
       });
     }
+  };
+
+  const navigateToDashboard = () => {
+    setLocation("/dashboard");
+    setIsOpen(false);
   };
 
   if (user) {
@@ -63,7 +71,10 @@ export default function LoginDropdown() {
         </Button>
         {isOpen && (
           <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
-            <div className="px-4 py-2 text-sm text-gray-700 border-b border-gray-100">
+            <div 
+              onClick={navigateToDashboard}
+              className="px-4 py-2 text-sm text-gray-700 border-b border-gray-100 cursor-pointer hover:bg-gray-100"
+            >
               {user.displayName || user.email}
             </div>
             <button
