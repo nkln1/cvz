@@ -1,7 +1,8 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, setPersistence, browserLocalPersistence } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { getFirestore, collection } from "firebase/firestore";
 
+// Firebase configuration
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: `${import.meta.env.VITE_FIREBASE_PROJECT_ID}.firebaseapp.com`,
@@ -31,9 +32,28 @@ try {
   throw error;
 }
 
+// Initialize Firebase services
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+
+// Define collections
+export const collectionsConfig = {
+  users: collection(db, 'users'),
+  clients: collection(db, 'clients'),
+  services: collection(db, 'services'),
+  bookings: collection(db, 'bookings'),
+  reviews: collection(db, 'reviews')
+};
 
 // Log Firebase configuration status
 console.log("Firebase Auth Status:", auth.currentUser ? "Logged in" : "Not logged in");
 console.log("Firestore Status:", db ? "Initialized" : "Not initialized");
+
+// Collection References - use these for database operations
+export const {
+  users: usersCollection,
+  clients: clientsCollection,
+  services: servicesCollection,
+  bookings: bookingsCollection,
+  reviews: reviewsCollection
+} = collectionsConfig;
