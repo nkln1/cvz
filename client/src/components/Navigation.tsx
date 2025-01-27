@@ -47,7 +47,8 @@ export default function Navigation() {
               className="h-10 sm:h-16 w-auto"
             />
             <span
-              className="ml-2 text-xl sm:text-3xl font-bold text-gray-900 logo-text"
+              className="ml-2 text-xl sm:text-3xl font-bold text-gray-900"
+              style={{ fontFamily: '"Gugi", sans-serif' }}
             >
               CARVIZIO
             </span>

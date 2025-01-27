@@ -1,41 +1,45 @@
 import { 
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
+  signInWithPopup, 
   signOut as firebaseSignOut,
+  GoogleAuthProvider,
   onAuthStateChanged,
   type User
 } from "firebase/auth";
 import { auth } from "./firebase";
 
-// Simple sign in function
-export const signIn = async (email: string, password: string) => {
-  try {
-    const result = await signInWithEmailAndPassword(auth, email, password);
-    return { success: true, user: result.user };
-  } catch (error: any) {
-    console.error("Login error:", error);
-    return { 
-      success: false, 
-      error: error.code === 'auth/invalid-credential' 
-        ? "Email sau parolă incorecte" 
-        : "Eroare la autentificare" 
-    };
-  }
-};
+// Create Google Auth Provider with custom parameters
+const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({
+  prompt: 'select_account'
+});
 
-// Simple sign up function
-export const signUp = async (email: string, password: string) => {
+// Sign in with Google
+export const signInWithGoogle = async () => {
   try {
-    const result = await createUserWithEmailAndPassword(auth, email, password);
-    return { success: true, user: result.user };
+    console.log("Attempting Google sign in...");
+    // Add scopes for additional access if needed
+    googleProvider.addScope('email');
+    googleProvider.addScope('profile');
+
+    const result = await signInWithPopup(auth, googleProvider);
+    console.log("Google sign in successful:", result.user);
+    return result.user;
   } catch (error: any) {
-    console.error("Signup error:", error);
-    return { 
-      success: false, 
-      error: error.code === 'auth/email-already-in-use'
-        ? "Această adresă de email este deja folosită"
-        : "Eroare la crearea contului"
-    };
+    console.error("Error signing in with Google:", {
+      code: error.code,
+      message: error.message,
+      email: error.customData?.email,
+      credential: error.credential
+    });
+
+    if (error.code === 'auth/popup-blocked') {
+      throw new Error('Popup was blocked by the browser. Please allow popups and try again.');
+    } else if (error.code === 'auth/cancelled-popup-request') {
+      throw new Error('Authentication cancelled.');
+    } else if (error.code === 'auth/unauthorized-domain') {
+      throw new Error('This domain is not authorized for OAuth operations.');
+    }
+    throw error;
   }
 };
 
@@ -43,19 +47,18 @@ export const signUp = async (email: string, password: string) => {
 export const signOut = async () => {
   try {
     await firebaseSignOut(auth);
-    return { success: true };
   } catch (error) {
-    console.error("Sign out error:", error);
-    return { success: false, error: "Eroare la deconectare" };
+    console.error("Error signing out:", error);
+    throw error;
   }
-};
-
-// Subscribe to auth state changes
-export const onAuthChange = (callback: (user: User | null) => void) => {
-  return onAuthStateChanged(auth, callback);
 };
 
 // Get current user
 export const getCurrentUser = (): User | null => {
   return auth.currentUser;
+};
+
+// Subscribe to auth state changes
+export const onAuthChange = (callback: (user: User | null) => void) => {
+  return onAuthStateChanged(auth, callback);
 };

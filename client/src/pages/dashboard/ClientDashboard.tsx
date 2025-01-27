@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/context/AuthContext";
 import {
   User,
   MailOpen,
@@ -35,7 +35,7 @@ import { useToast } from "@/hooks/use-toast";
 import { romanianCounties, getCitiesForCounty } from "@/lib/romaniaData";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { auth } from "@/lib/firebase";
-
+import { sendEmailVerification } from "firebase/auth";
 
 // Mock data for requests and offers
 const mockRequests = [
@@ -90,6 +90,7 @@ export default function ClientDashboard() {
   const [isEditing, setIsEditing] = useState(false);
   const [editedProfile, setEditedProfile] = useState<UserProfile>({});
   const [selectedCounty, setSelectedCounty] = useState<string>("");
+  const [isResendingVerification, setIsResendingVerification] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -165,10 +166,11 @@ export default function ClientDashboard() {
   };
 
   const handleResendVerification = async () => {
-    if (!user) return;
+    if (!auth.currentUser) return;
 
+    setIsResendingVerification(true);
     try {
-      await user.sendEmailVerification();
+      await sendEmailVerification(auth.currentUser);
       toast({
         title: "Email trimis",
         description: "Un nou email de verificare a fost trimis. Te rugăm să îți verifici căsuța de email.",
@@ -180,6 +182,8 @@ export default function ClientDashboard() {
         title: "Eroare",
         description: "Nu s-a putut trimite emailul de verificare. Te rugăm să încerci din nou mai târziu.",
       });
+    } finally {
+      setIsResendingVerification(false);
     }
   };
 
@@ -454,12 +458,11 @@ export default function ClientDashboard() {
     }
   };
 
-  return (
-    <MainLayout>
-      <div className="container mx-auto p-6 space-y-6">
-        {/* Show warning banner if email is not verified */}
-        {user && !user.emailVerified && (
-          <Alert variant="warning" className="mb-6">
+  if (!user?.emailVerified) {
+    return (
+      <MainLayout>
+        <div className="container mx-auto p-6">
+          <Alert variant="destructive" className="mb-6">
             <AlertTriangle className="h-4 w-4" />
             <AlertTitle>Email neverificat</AlertTitle>
             <AlertDescription>
@@ -467,8 +470,21 @@ export default function ClientDashboard() {
               Verifică-ți căsuța de email pentru linkul de confirmare.
             </AlertDescription>
           </Alert>
-        )}
+          <Button
+            onClick={handleResendVerification}
+            disabled={isResendingVerification}
+            className="w-full max-w-md mx-auto block"
+          >
+            {isResendingVerification ? "Se trimite..." : "Retrimite email de verificare"}
+          </Button>
+        </div>
+      </MainLayout>
+    );
+  }
 
+  return (
+    <MainLayout>
+      <div className="container mx-auto p-6 space-y-6">
         <nav className="flex gap-2 border-b pb-4">
           <Button
             variant={activeTab === "requests" ? "default" : "ghost"}

@@ -15,8 +15,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Mail, Phone } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
-import { useMutation } from "@tanstack/react-query";
-import { useToast } from "@/hooks/use-toast";
 
 const formSchema = z.object({
   name: z.string().min(2, {
@@ -34,8 +32,6 @@ const formSchema = z.object({
 });
 
 export default function Contact() {
-  const { toast } = useToast();
-
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -46,41 +42,9 @@ export default function Contact() {
     },
   });
 
-  const mutation = useMutation({
-    mutationFn: async (values: z.infer<typeof formSchema>) => {
-      const response = await fetch("/api/contact", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(values),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message);
-      }
-
-      return response.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: "Succes!",
-        description: "Mesajul tău a fost trimis cu succes. Îți vom răspunde în curând!",
-      });
-      form.reset();
-    },
-    onError: (error) => {
-      toast({
-        title: "Eroare",
-        description: error.message || "A apărut o eroare la trimiterea mesajului. Te rugăm să încerci din nou.",
-        variant: "destructive",
-      });
-    },
-  });
-
   function onSubmit(values: z.infer<typeof formSchema>) {
-    mutation.mutate(values);
+    console.log(values);
+    // Here we will implement the form submission logic later
   }
 
   return (
@@ -165,10 +129,9 @@ export default function Contact() {
                 <Button
                   type="submit"
                   className="w-full bg-[#00aff5] hover:bg-[#0099d6] transition-colors duration-200"
-                  disabled={mutation.isPending}
                 >
                   <Mail className="mr-2 h-4 w-4" />
-                  {mutation.isPending ? "Se trimite..." : "Trimite Mesajul"}
+                  Trimite Mesajul
                 </Button>
               </form>
             </Form>
@@ -177,7 +140,7 @@ export default function Contact() {
           <div className="mt-8 sm:mt-12 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
             <div className="flex items-center justify-center sm:justify-start space-x-4 text-gray-600 p-4 bg-white rounded-lg shadow-md">
               <Mail className="h-6 w-6 text-[#00aff5]" />
-              <span className="font-sans">contact@carvizio.ro</span>
+              <span className="font-sans">contact@carvizio.com</span>
             </div>
             <div className="flex items-center justify-center sm:justify-start space-x-4 text-gray-600 p-4 bg-white rounded-lg shadow-md">
               <Phone className="h-6 w-6 text-[#00aff5]" />

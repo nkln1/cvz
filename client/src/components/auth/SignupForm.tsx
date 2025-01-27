@@ -22,10 +22,9 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Mail, Lock, User, MapPin, Phone, Building, ArrowLeft } from "lucide-react";
 import RoleSelection from "./RoleSelection";
-import { useLocation } from "wouter";
-import { createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
-import { auth, db } from "@/lib/firebase";
+import { db, auth } from "@/lib/firebase";
+import { createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
 import { romanianCounties, getCitiesForCounty } from "@/lib/romaniaData";
 
 const clientSchema = z.object({
@@ -85,17 +84,14 @@ const serviceSchema = z.object({
 });
 
 type UserRole = "client" | "service" | null;
-type ClientFormData = z.infer<typeof clientSchema>;
-type ServiceFormData = z.infer<typeof serviceSchema>;
 
-export default function SignupForm({ onSuccess }: { onSuccess?: () => void }) {
+export default function SignupForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [role, setRole] = useState<UserRole>(null);
   const [selectedCounty, setSelectedCounty] = useState<string>("");
   const { toast } = useToast();
-  const [, setLocation] = useLocation();
 
-  const clientForm = useForm<ClientFormData>({
+  const clientForm = useForm<z.infer<typeof clientSchema>>({
     resolver: zodResolver(clientSchema),
     defaultValues: {
       name: "",
@@ -108,7 +104,7 @@ export default function SignupForm({ onSuccess }: { onSuccess?: () => void }) {
     },
   });
 
-  const serviceForm = useForm<ServiceFormData>({
+  const serviceForm = useForm<z.infer<typeof serviceSchema>>({
     resolver: zodResolver(serviceSchema),
     defaultValues: {
       companyName: "",
@@ -123,42 +119,101 @@ export default function SignupForm({ onSuccess }: { onSuccess?: () => void }) {
     },
   });
 
-  async function onSubmit(values: ClientFormData | ServiceFormData) {
+  async function onSubmit(values: z.infer<typeof clientSchema> | z.infer<typeof serviceSchema>) {
     setIsLoading(true);
     try {
-      // Create Firebase auth user
-      const { email, password, confirmPassword, ...userData } = values;
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
+      const { email, password, ...userData } = values;
+
+      // Create auth user
+      let userCredential;
+      try {
+        console.log("Creating user with Firebase Auth...");
+        userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        console.log("Auth user created successfully:", userCredential.user.uid);
+
+        // Send email verification
+        await sendEmailVerification(userCredential.user);
+        console.log("Verification email sent successfully");
+
+      } catch (error: any) {
+        console.error("Firebase Auth Error:", error);
+        let errorMessage = "A apărut o eroare la crearea contului.";
+
+        switch (error.code) {
+          case 'auth/email-already-in-use':
+            errorMessage = "Această adresă de email este deja folosită.";
+            break;
+          case 'auth/invalid-email':
+            errorMessage = "Adresa de email nu este validă.";
+            break;
+          case 'auth/operation-not-allowed':
+            errorMessage = "Înregistrarea cu email și parolă nu este activată.";
+            break;
+          case 'auth/weak-password':
+            errorMessage = "Parola trebuie să aibă cel puțin 6 caractere.";
+            break;
+        }
+
+        toast({
+          variant: "destructive",
+          title: "Eroare",
+          description: errorMessage,
+        });
+        return;
+      }
 
       // Store additional user data in Firestore
-      const collectionName = role === 'client' ? 'clients' : 'services';
-      await setDoc(doc(db, collectionName, user.uid), {
-        ...userData,
-        email,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      });
+      const collectionPath = role === "client" ? "clients" : "services";
+      console.log(`Saving user data to ${collectionPath} collection...`);
 
-      // Send verification email
-      await sendEmailVerification(user);
+      try {
+        const userDocRef = doc(db, collectionPath, userCredential.user.uid);
 
-      toast({
-        title: "Success",
-        description: "Cont creat cu succes! Te rugăm să verifici email-ul pentru a confirma adresa.",
-      });
+        // Prepare user data
+        const userDataToSave = {
+          ...userData,
+          email,
+          emailVerified: false,
+          createdAt: new Date().toISOString(),
+          role: role,
+          uid: userCredential.user.uid
+        };
 
-      // Handle success callback and navigation
-      onSuccess?.();
-      setLocation("/verify-email");
+        // Set the document with merge option to ensure it works with existing documents
+        await setDoc(userDocRef, userDataToSave, { merge: true });
+        console.log("User data saved successfully to Firestore");
+
+        toast({
+          title: "Success",
+          description: "Cont creat cu succes! Te rugăm să verifici email-ul pentru a confirma adresa.",
+        });
+      } catch (error: any) {
+        console.error("Firestore Error:", {
+          code: error.code,
+          message: error.message,
+          details: error
+        });
+
+        // Clean up auth user if Firestore save fails
+        try {
+          await userCredential.user.delete();
+          console.log("Auth user cleaned up after Firestore error");
+        } catch (deleteError) {
+          console.error("Error cleaning up auth user:", deleteError);
+        }
+
+        toast({
+          variant: "destructive",
+          title: "Eroare",
+          description: "A apărut o eroare la salvarea datelor. Te rugăm să încerci din nou.",
+        });
+      }
     } catch (error: any) {
-      console.error("Registration error:", error);
+      console.error("Registration Process Error:", error);
       toast({
         variant: "destructive",
         title: "Eroare",
-        description: error.code === 'auth/email-already-in-use'
-          ? "Această adresă de email este deja folosită."
-          : "A apărut o eroare la crearea contului.",
+        description: "A apărut o eroare neașteptată. Te rugăm să încerci din nou.",
       });
     } finally {
       setIsLoading(false);
@@ -168,6 +223,8 @@ export default function SignupForm({ onSuccess }: { onSuccess?: () => void }) {
   if (!role) {
     return <RoleSelection onSelect={setRole} />;
   }
+
+  const currentForm = role === "client" ? clientForm : serviceForm;
 
   return (
     <div className="w-full max-w-4xl space-y-6 p-6 bg-white rounded-lg shadow-lg relative max-h-[80vh] overflow-y-auto">
@@ -185,16 +242,16 @@ export default function SignupForm({ onSuccess }: { onSuccess?: () => void }) {
         </h2>
       </div>
 
-      {role === "client" ? (
-        <Form {...clientForm}>
-          <form onSubmit={clientForm.handleSubmit(onSubmit)} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <Form {...currentForm}>
+        <form onSubmit={currentForm.handleSubmit(onSubmit)} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {role === "client" ? (
               <FormField
-                control={clientForm.control}
+                control={currentForm.control}
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Nume și Prenume</FormLabel>
+                    <FormLabel className="text-[#00aff5]">Nume și Prenume</FormLabel>
                     <FormControl>
                       <div className="relative">
                         <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
@@ -205,227 +262,82 @@ export default function SignupForm({ onSuccess }: { onSuccess?: () => void }) {
                   </FormItem>
                 )}
               />
-
-              <FormField
-                control={clientForm.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                        <Input {...field} type="email" placeholder="email@example.com" className="pl-10" />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={clientForm.control}
-                name="phone"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Telefon</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                        <Input {...field} placeholder="0712 345 678" className="pl-10" />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={clientForm.control}
-                name="county"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Județ</FormLabel>
-                    <Select
-                      value={field.value}
-                      onValueChange={(value) => {
-                        field.onChange(value);
-                        setSelectedCounty(value);
-                        clientForm.setValue("city", "");
-                      }}
-                    >
+            ) : (
+              <>
+                <FormField
+                  control={currentForm.control}
+                  name="companyName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-[#00aff5]">Numele Service-ului</FormLabel>
                       <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selectează județul" />
-                        </SelectTrigger>
+                        <div className="relative">
+                          <Building className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                          <Input {...field} placeholder="Auto Service SRL" className="pl-10" />
+                        </div>
                       </FormControl>
-                      <SelectContent>
-                        {romanianCounties.map((county) => (
-                          <SelectItem key={county} value={county}>
-                            {county}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={clientForm.control}
-                name="city"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Localitate</FormLabel>
-                    <Select
-                      value={field.value}
-                      onValueChange={field.onChange}
-                      disabled={!selectedCounty}
-                    >
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={currentForm.control}
+                  name="representativeName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-[#00aff5]">Nume Reprezentant</FormLabel>
                       <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selectează localitatea" />
-                        </SelectTrigger>
+                        <div className="relative">
+                          <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                          <Input {...field} placeholder="Ion Popescu" className="pl-10" />
+                        </div>
                       </FormControl>
-                      <SelectContent>
-                        {selectedCounty &&
-                          getCitiesForCounty(selectedCounty).map((city) => (
-                            <SelectItem key={city} value={city}>
-                              {city}
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </>
+            )}
 
+            <FormField
+              control={currentForm.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-[#00aff5]">Email</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Input {...field} type="email" placeholder="email@example.com" className="pl-10" />
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={currentForm.control}
+              name="phone"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-[#00aff5]">Telefon</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Input {...field} placeholder="0712 345 678" className="pl-10" />
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            {role === "service" && (
               <FormField
-                control={clientForm.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Parolă</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                        <Input {...field} type="password" placeholder="••••••••" className="pl-10" />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={clientForm.control}
-                name="confirmPassword"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Confirmă Parola</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                        <Input {...field} type="password" placeholder="••••••••" className="pl-10" />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <div className="flex flex-col items-center space-y-4 pt-4">
-              <Button
-                type="submit"
-                className="w-full max-w-md bg-[#00aff5] hover:bg-[#0099d6]"
-                disabled={isLoading}
-              >
-                {isLoading ? "Se încarcă..." : "Creează cont"}
-              </Button>
-            </div>
-          </form>
-        </Form>
-      ) : (
-        <Form {...serviceForm}>
-          <form onSubmit={serviceForm.handleSubmit(onSubmit)} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={serviceForm.control}
-                name="companyName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Numele Service-ului</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <Building className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                        <Input {...field} placeholder="Auto Service SRL" className="pl-10" />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={serviceForm.control}
-                name="representativeName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nume Reprezentant</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                        <Input {...field} placeholder="Ion Popescu" className="pl-10" />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={serviceForm.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                        <Input {...field} type="email" placeholder="email@example.com" className="pl-10" />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={serviceForm.control}
-                name="phone"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Telefon</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                        <Input {...field} placeholder="0712 345 678" className="pl-10" />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={serviceForm.control}
+                control={currentForm.control}
                 name="address"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Adresă</FormLabel>
+                    <FormLabel className="text-[#00aff5]">Adresă</FormLabel>
                     <FormControl>
                       <div className="relative">
                         <MapPin className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
@@ -436,116 +348,114 @@ export default function SignupForm({ onSuccess }: { onSuccess?: () => void }) {
                   </FormItem>
                 )}
               />
+            )}
+            {/* County Dropdown */}
+            <FormField
+              control={currentForm.control}
+              name="county"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-[#00aff5]">Județ</FormLabel>
+                  <Select
+                    value={field.value}
+                    onValueChange={(value) => {
+                      field.onChange(value);
+                      setSelectedCounty(value);
+                      // Reset city when county changes
+                      currentForm.setValue("city", "");
+                    }}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selectează județul" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {romanianCounties.map((county) => (
+                        <SelectItem key={county} value={county}>
+                          {county}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-              <FormField
-                control={serviceForm.control}
-                name="county"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Județ</FormLabel>
-                    <Select
-                      value={field.value}
-                      onValueChange={(value) => {
-                        field.onChange(value);
-                        setSelectedCounty(value);
-                        serviceForm.setValue("city", "");
-                      }}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selectează județul" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {romanianCounties.map((county) => (
-                          <SelectItem key={county} value={county}>
-                            {county}
+            {/* City Dropdown */}
+            <FormField
+              control={currentForm.control}
+              name="city"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-[#00aff5]">Localitate</FormLabel>
+                  <Select
+                    value={field.value}
+                    onValueChange={field.onChange}
+                    disabled={!selectedCounty}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selectează localitatea" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {selectedCounty &&
+                        getCitiesForCounty(selectedCounty).map((city) => (
+                          <SelectItem key={city} value={city}>
+                            {city}
                           </SelectItem>
                         ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-              <FormField
-                control={serviceForm.control}
-                name="city"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Localitate</FormLabel>
-                    <Select
-                      value={field.value}
-                      onValueChange={field.onChange}
-                      disabled={!selectedCounty}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selectează localitatea" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {selectedCounty &&
-                          getCitiesForCounty(selectedCounty).map((city) => (
-                            <SelectItem key={city} value={city}>
-                              {city}
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
 
-              <FormField
-                control={serviceForm.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Parolă</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                        <Input {...field} type="password" placeholder="••••••••" className="pl-10" />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            <FormField
+              control={currentForm.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-[#00aff5]">Parolă</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Input {...field} type="password" placeholder="••••••••" className="pl-10" />
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={currentForm.control}
+              name="confirmPassword"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-[#00aff5]">Confirmă Parola</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Input {...field} type="password" placeholder="••••••••" className="pl-10" />
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
 
-              <FormField
-                control={serviceForm.control}
-                name="confirmPassword"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Confirmă Parola</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                        <Input {...field} type="password" placeholder="••••••••" className="pl-10" />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <div className="flex flex-col items-center space-y-4 pt-4">
-              <Button
-                type="submit"
-                className="w-full max-w-md bg-[#00aff5] hover:bg-[#0099d6]"
-                disabled={isLoading}
-              >
-                {isLoading ? "Se încarcă..." : "Creează cont"}
-              </Button>
-            </div>
-          </form>
-        </Form>
-      )}
+          <div className="flex flex-col items-center space-y-4 pt-4">
+            <Button type="submit" className="w-full max-w-md bg-[#00aff5] hover:bg-[#0099d6]" disabled={isLoading}>
+              {isLoading ? "Se încarcă..." : "Creează cont"}
+            </Button>
+          </div>
+        </form>
+      </Form>
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
+import { useLocation } from "wouter";
 import {
   Form,
   FormControl,
@@ -12,13 +13,11 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Mail, Lock } from "lucide-react";
-import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
-import { signInWithEmailAndPassword } from "firebase/auth";
+import { Mail, Lock } from "lucide-react";
+import { signInWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useAuth } from "@/context/AuthContext";
-import { Switch } from "@/components/ui/switch";
 
 const formSchema = z.object({
   email: z.string().email({
@@ -29,11 +28,12 @@ const formSchema = z.object({
   }),
 });
 
-export default function LoginForm({ onSuccess }: { onSuccess?: () => void }) {
+export default function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
-  const [, setLocation] = useLocation();
+  const [isSendingReset, setIsSendingReset] = useState(false);
   const { toast } = useToast();
-  const { user, setRememberMe, rememberMe } = useAuth();
+  const { user } = useAuth();
+  const [, setLocation] = useLocation();
 
   useEffect(() => {
     // If user is already logged in, redirect to dashboard
@@ -53,29 +53,90 @@ export default function LoginForm({ onSuccess }: { onSuccess?: () => void }) {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, values.email, values.password);
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        values.email,
+        values.password
+      );
+
+      console.log("Sign in successful:", userCredential.user.uid);
 
       toast({
-        title: "Succes!",
+        title: "Success",
         description: "Te-ai conectat cu succes!",
       });
 
-      // Handle success callback and navigation
-      onSuccess?.();
+      // Redirect to dashboard after successful login
       setLocation("/dashboard");
     } catch (error: any) {
-      console.error("Login error:", error);
+      console.error("Login Error:", error);
+      let errorMessage = "A apărut o eroare la conectare.";
+
+      switch (error.code) {
+        case 'auth/invalid-email':
+          errorMessage = "Adresa de email nu este validă.";
+          break;
+        case 'auth/user-disabled':
+          errorMessage = "Acest cont a fost dezactivat.";
+          break;
+        case 'auth/user-not-found':
+          errorMessage = "Nu există niciun cont cu această adresă de email.";
+          break;
+        case 'auth/wrong-password':
+          errorMessage = "Parolă incorectă.";
+          break;
+      }
+
       toast({
         variant: "destructive",
         title: "Eroare",
-        description: error.code === 'auth/invalid-credential'
-          ? "Email sau parolă incorecte"
-          : "Autentificare nereușită. Verifică datele introduse."
+        description: errorMessage,
       });
     } finally {
       setIsLoading(false);
     }
   }
+
+  const handlePasswordReset = async () => {
+    const email = form.getValues("email");
+    if (!email) {
+      toast({
+        variant: "destructive",
+        title: "Eroare",
+        description: "Te rugăm să introduci adresa de email pentru resetarea parolei.",
+      });
+      return;
+    }
+
+    setIsSendingReset(true);
+    try {
+      await sendPasswordResetEmail(auth, email);
+      toast({
+        title: "Email trimis",
+        description: "Verifică-ți email-ul pentru instrucțiuni de resetare a parolei.",
+      });
+    } catch (error: any) {
+      console.error("Password Reset Error:", error);
+      let errorMessage = "A apărut o eroare la trimiterea email-ului de resetare.";
+
+      switch (error.code) {
+        case 'auth/invalid-email':
+          errorMessage = "Adresa de email nu este validă.";
+          break;
+        case 'auth/user-not-found':
+          errorMessage = "Nu există niciun cont cu această adresă de email.";
+          break;
+      }
+
+      toast({
+        variant: "destructive",
+        title: "Eroare",
+        description: errorMessage,
+      });
+    } finally {
+      setIsSendingReset(false);
+    }
+  };
 
   return (
     <div className="w-full max-w-md space-y-6 p-6 bg-white rounded-lg shadow-lg">
@@ -129,24 +190,23 @@ export default function LoginForm({ onSuccess }: { onSuccess?: () => void }) {
               </FormItem>
             )}
           />
-          <div className="flex items-center space-x-2">
-            <Switch
-              checked={rememberMe}
-              onCheckedChange={setRememberMe}
-              id="remember-me"
-            />
-            <label
-              htmlFor="remember-me"
-              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-            >
-              Ține-mă minte
-            </label>
-          </div>
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading ? "Se încarcă..." : "Conectare"}
           </Button>
         </form>
       </Form>
+
+      <div className="flex justify-center">
+        <Button
+          type="button"
+          variant="link"
+          className="text-sm text-[#00aff5] hover:text-[#0099d6]"
+          onClick={handlePasswordReset}
+          disabled={isSendingReset}
+        >
+          {isSendingReset ? "Se trimite..." : "Mi-am uitat parola"}
+        </Button>
+      </div>
     </div>
   );
 }

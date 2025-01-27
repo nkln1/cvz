@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import AuthDialog from "./auth/AuthDialog";
 import { Button } from "./ui/button";
 import { ChevronDown } from "lucide-react";
-import { useAuth } from "@/context/AuthContext"; 
+import { useAuth } from "@/context/AuthContext";
 import { signOut } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
@@ -35,7 +35,7 @@ export default function LoginDropdown() {
         title: "Success",
         description: "Te-ai deconectat cu succes!",
       });
-      setLocation("/"); 
+      setLocation("/"); // Redirect to home page after logout
     } catch (error) {
       toast({
         variant: "destructive",

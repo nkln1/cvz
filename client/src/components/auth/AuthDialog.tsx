@@ -17,9 +17,9 @@ interface AuthDialogProps {
   defaultView?: "login" | "signup";
 }
 
-export default function AuthDialog({
+export default function AuthDialog({ 
   trigger,
-  defaultView = "login"
+  defaultView = "login" 
 }: AuthDialogProps) {
   const [view, setView] = useState<"login" | "signup">(defaultView);
   const [open, setOpen] = useState(false);
@@ -32,10 +32,6 @@ export default function AuthDialog({
     }
   }, [user]);
 
-  const handleSuccess = () => {
-    setOpen(false);
-  };
-
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -47,17 +43,13 @@ export default function AuthDialog({
             {view === "login" ? "Conectare" : "Creează cont"}
           </DialogTitle>
           <DialogDescription className="text-center">
-            {view === "login"
+            {view === "login" 
               ? "Conectează-te pentru a accesa toate funcționalitățile"
               : "Creează un cont nou pentru a începe"
             }
           </DialogDescription>
         </DialogHeader>
-        {view === "login" ? (
-          <LoginForm onSuccess={handleSuccess} />
-        ) : (
-          <SignupForm onSuccess={handleSuccess} />
-        )}
+        {view === "login" ? <LoginForm /> : <SignupForm />}
         <div className="text-center mt-4">
           <Button
             variant="link"
