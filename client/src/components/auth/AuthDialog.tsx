@@ -32,6 +32,10 @@ export default function AuthDialog({
     }
   }, [user]);
 
+  const handleSuccess = () => {
+    setOpen(false);
+  };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -49,7 +53,11 @@ export default function AuthDialog({
             }
           </DialogDescription>
         </DialogHeader>
-        {view === "login" ? <LoginForm /> : <SignupForm />}
+        {view === "login" ? (
+          <LoginForm onSuccess={handleSuccess} />
+        ) : (
+          <SignupForm onSuccess={handleSuccess} />
+        )}
         <div className="text-center mt-4">
           <Button
             variant="link"

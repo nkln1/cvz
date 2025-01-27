@@ -26,7 +26,7 @@ const formSchema = z.object({
   }),
 });
 
-export default function LoginForm() {
+export default function LoginForm({ onSuccess }: { onSuccess?: () => void }) {
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
   const [, setLocation] = useLocation();
@@ -45,14 +45,20 @@ export default function LoginForm() {
     try {
       const result = await login(values);
       if (result.success) {
+        toast({
+          title: "Succes!",
+          description: "Te-ai conectat cu succes!",
+        });
+        onSuccess?.();
         setLocation("/dashboard");
-      } else {
-        //Handle error from result object if needed.  For example:
-        //toast({title:result.error})
       }
     } catch (error) {
       console.error("Login error:", error);
-      toast({title: "Autentificare nereuşită. Verifică datele introduse."}) //Example toast message
+      toast({
+        variant: "destructive",
+        title: "Eroare",
+        description: "Autentificare nereușită. Verifică datele introduse."
+      });
     } finally {
       setIsLoading(false);
     }
