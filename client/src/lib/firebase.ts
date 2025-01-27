@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getAuth, setPersistence, browserLocalPersistence } from "firebase/auth";
+import { getAuth, setPersistence, browserLocalPersistence, onAuthStateChanged, type User } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
 // Firebase configuration
@@ -26,6 +26,11 @@ setPersistence(auth, browserLocalPersistence)
 
 // Initialize Firestore
 const db = getFirestore(app);
+
+// Auth state change listener
+export const onAuthChange = (callback: (user: User | null) => void) => {
+  return onAuthStateChanged(auth, callback);
+};
 
 export { auth, db };
 

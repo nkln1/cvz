@@ -18,6 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useAuth } from "@/context/AuthContext";
+import { Switch } from "@/components/ui/switch";
 
 const formSchema = z.object({
   email: z.string().email({
@@ -32,7 +33,7 @@ export default function LoginForm({ onSuccess }: { onSuccess?: () => void }) {
   const [isLoading, setIsLoading] = useState(false);
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, setRememberMe, rememberMe } = useAuth();
 
   useEffect(() => {
     // If user is already logged in, redirect to dashboard
@@ -67,7 +68,7 @@ export default function LoginForm({ onSuccess }: { onSuccess?: () => void }) {
       toast({
         variant: "destructive",
         title: "Eroare",
-        description: error.code === 'auth/invalid-credential' 
+        description: error.code === 'auth/invalid-credential'
           ? "Email sau parolă incorecte"
           : "Autentificare nereușită. Verifică datele introduse."
       });
@@ -128,6 +129,19 @@ export default function LoginForm({ onSuccess }: { onSuccess?: () => void }) {
               </FormItem>
             )}
           />
+          <div className="flex items-center space-x-2">
+            <Switch
+              checked={rememberMe}
+              onCheckedChange={setRememberMe}
+              id="remember-me"
+            />
+            <label
+              htmlFor="remember-me"
+              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            >
+              Ține-mă minte
+            </label>
+          </div>
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading ? "Se încarcă..." : "Conectare"}
           </Button>

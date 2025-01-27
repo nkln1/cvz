@@ -1,1 +1,3 @@
-// This file is deprecated. We now use Firebase Authentication through @/context/AuthContext
+// This hook is now implemented in @/context/AuthContext
+// Import { useAuth } from "@/context/AuthContext" instead
+export {};
