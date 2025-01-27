@@ -84,13 +84,12 @@ interface UserProfile {
 
 export default function ClientDashboard() {
   const [activeTab, setActiveTab] = useState<TabType>("requests");
-  const { user, resendVerification } = useAuth();
+  const { user } = useAuth();
   const { toast } = useToast();
   const [userProfile, setUserProfile] = useState<UserProfile>({});
   const [isEditing, setIsEditing] = useState(false);
   const [editedProfile, setEditedProfile] = useState<UserProfile>({});
   const [selectedCounty, setSelectedCounty] = useState<string>("");
-  const [isResendingVerification, setIsResendingVerification] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -168,9 +167,8 @@ export default function ClientDashboard() {
   const handleResendVerification = async () => {
     if (!user) return;
 
-    setIsResendingVerification(true);
     try {
-      await resendVerification();
+      await user.sendEmailVerification();
       toast({
         title: "Email trimis",
         description: "Un nou email de verificare a fost trimis. Te rugăm să îți verifici căsuța de email.",
@@ -182,8 +180,6 @@ export default function ClientDashboard() {
         title: "Eroare",
         description: "Nu s-a putut trimite emailul de verificare. Te rugăm să încerci din nou mai târziu.",
       });
-    } finally {
-      setIsResendingVerification(false);
     }
   };
 
@@ -458,11 +454,12 @@ export default function ClientDashboard() {
     }
   };
 
-  if (!user?.emailVerified) {
-    return (
-      <MainLayout>
-        <div className="container mx-auto p-6">
-          <Alert variant="destructive" className="mb-6">
+  return (
+    <MainLayout>
+      <div className="container mx-auto p-6 space-y-6">
+        {/* Show warning banner if email is not verified */}
+        {user && !user.emailVerified && (
+          <Alert variant="warning" className="mb-6">
             <AlertTriangle className="h-4 w-4" />
             <AlertTitle>Email neverificat</AlertTitle>
             <AlertDescription>
@@ -470,21 +467,8 @@ export default function ClientDashboard() {
               Verifică-ți căsuța de email pentru linkul de confirmare.
             </AlertDescription>
           </Alert>
-          <Button
-            onClick={handleResendVerification}
-            disabled={isResendingVerification}
-            className="w-full max-w-md mx-auto block"
-          >
-            {isResendingVerification ? "Se trimite..." : "Retrimite email de verificare"}
-          </Button>
-        </div>
-      </MainLayout>
-    );
-  }
+        )}
 
-  return (
-    <MainLayout>
-      <div className="container mx-auto p-6 space-y-6">
         <nav className="flex gap-2 border-b pb-4">
           <Button
             variant={activeTab === "requests" ? "default" : "ghost"}
