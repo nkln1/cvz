@@ -38,7 +38,7 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/contact" component={Contact} />
       <Route path="/dashboard">
-        {(params) => <ProtectedRoute component={ClientDashboard} />}
+        {() => <ProtectedRoute component={ClientDashboard} />}
       </Route>
       <Route path="/verify-email" component={VerifyEmail} />
       <Route component={NotFound} />
