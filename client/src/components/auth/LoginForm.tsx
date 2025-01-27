@@ -34,13 +34,12 @@ export default function LoginForm({ onSuccess }: { onSuccess?: () => void }) {
   const { toast } = useToast();
   const { user } = useAuth();
 
-  // Add effect to handle redirection when user state changes
   useEffect(() => {
+    // If user is already logged in, redirect to dashboard
     if (user) {
-      onSuccess?.();
       setLocation("/dashboard");
     }
-  }, [user, onSuccess, setLocation]);
+  }, [user, setLocation]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -54,11 +53,13 @@ export default function LoginForm({ onSuccess }: { onSuccess?: () => void }) {
     setIsLoading(true);
     try {
       await signInWithEmailAndPassword(auth, values.email, values.password);
+      onSuccess?.();
       toast({
         title: "Succes!",
         description: "Te-ai conectat cu succes!",
       });
-      // The redirection will be handled by the useEffect
+      // Force navigation after successful login
+      setLocation("/dashboard");
     } catch (error: any) {
       console.error("Login error:", error);
       toast({
