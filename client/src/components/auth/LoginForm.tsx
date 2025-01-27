@@ -13,11 +13,11 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Mail, Lock } from "lucide-react";
-import { useAuth } from "@/context/AuthContext";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "@/lib/firebase";
+import { useAuth } from "@/context/AuthContext";
 
 const formSchema = z.object({
   email: z.string().email({
@@ -53,12 +53,14 @@ export default function LoginForm({ onSuccess }: { onSuccess?: () => void }) {
     setIsLoading(true);
     try {
       await signInWithEmailAndPassword(auth, values.email, values.password);
-      onSuccess?.();
+
       toast({
         title: "Succes!",
         description: "Te-ai conectat cu succes!",
       });
-      // Force navigation after successful login
+
+      // Handle success callback and navigation
+      onSuccess?.();
       setLocation("/dashboard");
     } catch (error: any) {
       console.error("Login error:", error);
