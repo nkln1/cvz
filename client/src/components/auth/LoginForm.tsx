@@ -13,9 +13,11 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Mail, Lock } from "lucide-react";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/context/AuthContext";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 
 const formSchema = z.object({
   email: z.string().email({
@@ -28,7 +30,6 @@ const formSchema = z.object({
 
 export default function LoginForm({ onSuccess }: { onSuccess?: () => void }) {
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
@@ -43,21 +44,21 @@ export default function LoginForm({ onSuccess }: { onSuccess?: () => void }) {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     try {
-      const result = await login(values);
-      if (result.success) {
-        toast({
-          title: "Succes!",
-          description: "Te-ai conectat cu succes!",
-        });
-        onSuccess?.();
-        setLocation("/dashboard");
-      }
-    } catch (error) {
+      await signInWithEmailAndPassword(auth, values.email, values.password);
+      toast({
+        title: "Succes!",
+        description: "Te-ai conectat cu succes!",
+      });
+      onSuccess?.();
+      setLocation("/dashboard");
+    } catch (error: any) {
       console.error("Login error:", error);
       toast({
         variant: "destructive",
         title: "Eroare",
-        description: "Autentificare nereușită. Verifică datele introduse."
+        description: error.code === 'auth/invalid-credential' 
+          ? "Email sau parolă incorecte"
+          : "Autentificare nereușită. Verifică datele introduse."
       });
     } finally {
       setIsLoading(false);
