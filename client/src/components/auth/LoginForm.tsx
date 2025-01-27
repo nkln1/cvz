@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -32,6 +32,15 @@ export default function LoginForm({ onSuccess }: { onSuccess?: () => void }) {
   const [isLoading, setIsLoading] = useState(false);
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { user } = useAuth();
+
+  // Add effect to handle redirection when user state changes
+  useEffect(() => {
+    if (user) {
+      onSuccess?.();
+      setLocation("/dashboard");
+    }
+  }, [user, onSuccess, setLocation]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -49,8 +58,7 @@ export default function LoginForm({ onSuccess }: { onSuccess?: () => void }) {
         title: "Succes!",
         description: "Te-ai conectat cu succes!",
       });
-      onSuccess?.();
-      setLocation("/dashboard");
+      // The redirection will be handled by the useEffect
     } catch (error: any) {
       console.error("Login error:", error);
       toast({
