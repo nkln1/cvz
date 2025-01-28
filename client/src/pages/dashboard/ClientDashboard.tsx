@@ -10,8 +10,15 @@ import {
   MapPin,
   AlertTriangle,
   Car,
+  Plus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
@@ -31,7 +38,7 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import MainLayout from "@/components/layout/MainLayout";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc, addDoc, collection } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { romanianCounties, getCitiesForCounty } from "@/lib/romaniaData";
@@ -39,6 +46,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { auth } from "@/lib/firebase";
 import { sendEmailVerification } from "firebase/auth";
 import CarManagement from "./CarManagement";
+import { RequestForm } from "@/components/dashboard/RequestForm";
 
 // Mock data for requests and offers
 const mockRequests = [
@@ -135,6 +143,8 @@ export default function ClientDashboard() {
   const [editedProfile, setEditedProfile] = useState<UserProfile>({});
   const [selectedCounty, setSelectedCounty] = useState<string>("");
   const [isResendingVerification, setIsResendingVerification] = useState(false);
+  const [isRequestDialogOpen, setIsRequestDialogOpen] = useState(false);
+  const [isCarDialogOpen, setIsCarDialogOpen] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -410,13 +420,13 @@ export default function ClientDashboard() {
             <TabsTrigger value="canceled">Anulate</TabsTrigger>
           </TabsList>
           <TabsContent value="active">
-            {renderRequestsTable(mockRequests.filter(req => req.status === "Active"))}
+            {renderRequestsTable(mockRequests.filter((req) => req.status === "Active"))}
           </TabsContent>
           <TabsContent value="solved">
-            {renderRequestsTable(mockRequests.filter(req => req.status === "Rezolvat"))}
+            {renderRequestsTable(mockRequests.filter((req) => req.status === "Rezolvat"))}
           </TabsContent>
           <TabsContent value="canceled">
-            {renderRequestsTable(mockRequests.filter(req => req.status === "Anulat"))}
+            {renderRequestsTable(mockRequests.filter((req) => req.status === "Anulat"))}
           </TabsContent>
         </Tabs>
       </CardContent>
@@ -487,6 +497,35 @@ export default function ClientDashboard() {
         return renderProfile();
       default:
         return null;
+    }
+  };
+
+  const handleRequestSubmit = async (data: any) => {
+    if (!user) return;
+
+    try {
+      const requestData = {
+        ...data,
+        userId: user.uid,
+        status: "Active",
+        createdAt: new Date().toISOString(),
+      };
+
+      await addDoc(collection(db, "requests"), requestData);
+
+      toast({
+        title: "Succes",
+        description: "Cererea ta a fost adăugată cu succes!",
+      });
+
+      setIsRequestDialogOpen(false);
+    } catch (error) {
+      console.error("Error submitting request:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Nu s-a putut adăuga cererea. Te rugăm să încerci din nou.",
+      });
     }
   };
 
@@ -578,9 +617,43 @@ export default function ClientDashboard() {
             <User className="w-4 h-4 mr-2" />
             Cont
           </Button>
+          <div className="ml-auto">
+            <Button
+              onClick={() => setIsRequestDialogOpen(true)}
+              className="bg-[#00aff5] hover:bg-[#0099d6] text-white"
+            >
+              <Plus className="w-5 h-5 mr-2" />
+              <span className="font-semibold">Adaugă cerere</span>
+            </Button>
+          </div>
         </nav>
 
         {renderContent()}
+
+        <Dialog open={isRequestDialogOpen} onOpenChange={setIsRequestDialogOpen}>
+          <DialogContent className="sm:max-w-[600px]">
+            <DialogHeader>
+              <DialogTitle>Adaugă o cerere nouă</DialogTitle>
+            </DialogHeader>
+            <RequestForm
+              onSubmit={handleRequestSubmit}
+              onCancel={() => setIsRequestDialogOpen(false)}
+              onAddCar={() => {
+                setIsRequestDialogOpen(false);
+                setIsCarDialogOpen(true);
+              }}
+            />
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={isCarDialogOpen} onOpenChange={setIsCarDialogOpen}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Adaugă o mașină nouă</DialogTitle>
+            </DialogHeader>
+            <CarManagement />
+          </DialogContent>
+        </Dialog>
       </div>
     </MainLayout>
   );
