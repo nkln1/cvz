@@ -27,6 +27,7 @@ import { db } from "@/lib/firebase";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { useAuth } from "@/context/AuthContext";
 import type { Car as CarType } from "@/pages/dashboard/CarManagement";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const formSchema = z.object({
   title: z.string().min(3, {
@@ -44,8 +45,10 @@ const formSchema = z.object({
   county: z.string().min(1, {
     message: "Te rugăm să selectezi județul.",
   }),
-  city: z.string().min(1, {
-    message: "Te rugăm să selectezi localitatea.",
+  cities: z.array(z.string()).min(1, {
+    message: "Te rugăm să selectezi cel puțin o localitate.",
+  }).max(3, {
+    message: "Poți selecta maxim 3 localități.",
   }),
 });
 
@@ -60,6 +63,7 @@ export function RequestForm({ onSubmit, onCancel, onAddCar, initialData }: Reque
   const [cars, setCars] = useState<CarType[]>([]);
   const { user } = useAuth();
   const [selectedCounty, setSelectedCounty] = useState<string>(initialData?.county || "");
+  const [availableCities, setAvailableCities] = useState<string[]>([]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -69,9 +73,19 @@ export function RequestForm({ onSubmit, onCancel, onAddCar, initialData }: Reque
       carId: initialData?.carId || "",
       preferredDate: initialData?.preferredDate || "",
       county: initialData?.county || "",
-      city: initialData?.city || "",
+      cities: initialData?.cities || [],
     },
   });
+
+  useEffect(() => {
+    if (selectedCounty) {
+      const citiesForCounty = getCitiesForCounty(selectedCounty);
+      setAvailableCities(citiesForCounty);
+
+      // Reset cities selection when county changes
+      form.setValue("cities", []);
+    }
+  }, [selectedCounty, form]);
 
   useEffect(() => {
     const loadCars = async () => {
@@ -193,7 +207,7 @@ export function RequestForm({ onSubmit, onCancel, onAddCar, initialData }: Reque
                     onValueChange={(value) => {
                       field.onChange(value);
                       setSelectedCounty(value);
-                      form.setValue("city", "");
+                      form.setValue("cities", []);
                     }}
                     value={field.value}
                   >
@@ -217,29 +231,39 @@ export function RequestForm({ onSubmit, onCancel, onAddCar, initialData }: Reque
 
             <FormField
               control={form.control}
-              name="city"
-              render={({ field }) => (
+              name="cities"
+              render={() => (
                 <FormItem>
-                  <FormLabel>Localitate</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    value={field.value}
-                    disabled={!selectedCounty}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selectează localitatea" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {selectedCounty &&
-                        getCitiesForCounty(selectedCounty).map((city) => (
-                          <SelectItem key={city} value={city}>
-                            {city}
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
+                  <FormLabel>Localități (selectați maxim 3)</FormLabel>
+                  <div className="space-y-2">
+                    {availableCities.map((city) => (
+                      <div key={city} className="flex items-center space-x-2">
+                        <Checkbox
+                          checked={form.watch("cities")?.includes(city)}
+                          onCheckedChange={(checked) => {
+                            const currentCities = form.getValues("cities") || [];
+                            if (checked) {
+                              if (currentCities.length < 3) {
+                                form.setValue("cities", [...currentCities, city]);
+                              }
+                            } else {
+                              form.setValue(
+                                "cities",
+                                currentCities.filter((c) => c !== city)
+                              );
+                            }
+                          }}
+                          disabled={
+                            !form.watch("cities")?.includes(city) &&
+                            (form.watch("cities")?.length || 0) >= 3
+                          }
+                        />
+                        <label className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                          {city}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}
