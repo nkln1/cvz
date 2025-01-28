@@ -1,5 +1,5 @@
 import { useAuth } from "@/context/AuthContext";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useEffect, useState } from "react";
 import {
@@ -17,6 +17,8 @@ import {
   Store,
   Clock,
   SendHorizontal,
+  Pen,
+  Save,
 } from "lucide-react";
 import {
   Card,
@@ -26,8 +28,10 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
+import { useToast } from "@/components/ui/use-toast";
 
 interface ServiceData {
   companyName: string;
@@ -39,13 +43,36 @@ interface ServiceData {
   address: string;
   county: string;
   city: string;
+  [key: string]: string; // Add index signature to fix type error with updateDoc
+}
+
+interface EditableField {
+  label: string;
+  key: keyof ServiceData;
+  editable: boolean;
 }
 
 export default function ServiceDashboard() {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [serviceData, setServiceData] = useState<ServiceData | null>(null);
+  const [editedData, setEditedData] = useState<ServiceData | null>(null);
+  const [editingFields, setEditingFields] = useState<{ [key: string]: boolean }>({});
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState("requests");
+
+  const fields: EditableField[] = [
+    { label: "Nume Companie", key: "companyName", editable: true },
+    { label: "Nume Reprezentant", key: "representativeName", editable: true },
+    { label: "Email", key: "email", editable: false },
+    { label: "Telefon", key: "phone", editable: true },
+    { label: "CUI", key: "cui", editable: false },
+    { label: "Nr. Înregistrare", key: "tradeRegNumber", editable: false },
+    { label: "Adresă", key: "address", editable: true },
+    { label: "Județ", key: "county", editable: true },
+    { label: "Oraș", key: "city", editable: true },
+  ];
 
   useEffect(() => {
     async function fetchServiceData() {
@@ -54,10 +81,17 @@ export default function ServiceDashboard() {
       try {
         const serviceDoc = await getDoc(doc(db, "services", user.uid));
         if (serviceDoc.exists()) {
-          setServiceData(serviceDoc.data() as ServiceData);
+          const data = serviceDoc.data() as ServiceData;
+          setServiceData(data);
+          setEditedData(data);
         }
       } catch (error) {
         console.error("Error fetching service data:", error);
+        toast({
+          variant: "destructive",
+          title: "Eroare",
+          description: "Nu am putut încărca datele serviciului.",
+        });
       } finally {
         setLoading(false);
       }
@@ -65,6 +99,43 @@ export default function ServiceDashboard() {
 
     fetchServiceData();
   }, [user]);
+
+  const handleEdit = (field: string) => {
+    setEditingFields((prev) => ({ ...prev, [field]: true }));
+  };
+
+  const handleChange = (field: keyof ServiceData, value: string) => {
+    if (editedData) {
+      setEditedData({ ...editedData, [field]: value });
+    }
+  };
+
+  const handleSave = async () => {
+    if (!user || !editedData) return;
+
+    setSaving(true);
+    try {
+      const serviceRef = doc(db, "services", user.uid);
+      await updateDoc(serviceRef, editedData);
+      setServiceData(editedData);
+      setEditingFields({});
+      toast({
+        title: "Succes",
+        description: "Datele au fost actualizate cu succes.",
+      });
+    } catch (error) {
+      console.error("Error updating service data:", error);
+      toast({
+        variant: "destructive",
+        title: "Eroare",
+        description: "Nu am putut actualiza datele. Vă rugăm încercați din nou.",
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const hasChanges = JSON.stringify(serviceData) !== JSON.stringify(editedData);
 
   if (loading) {
     return (
@@ -281,9 +352,48 @@ export default function ServiceDashboard() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground">
-                  Setările contului vor apărea aici
-                </p>
+                <div className="space-y-4">
+                  {fields.map(({ label, key, editable }) => (
+                    <div key={key} className="flex flex-col space-y-2">
+                      <div className="flex items-center justify-between">
+                        <label className="text-sm font-medium">{label}</label>
+                        {editable && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEdit(key)}
+                            className="h-8 w-8 p-0"
+                          >
+                            <Pen className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                      <Input
+                        value={editedData?.[key] || ""}
+                        onChange={(e) => handleChange(key, e.target.value)}
+                        disabled={!editable || !editingFields[key]}
+                        className={`${
+                          !editable ? "bg-gray-100" : ""
+                        }`}
+                      />
+                    </div>
+                  ))}
+
+                  {hasChanges && (
+                    <Button
+                      onClick={handleSave}
+                      disabled={saving}
+                      className="mt-4 w-full bg-[#00aff5] hover:bg-[#0099d6]"
+                    >
+                      {saving ? (
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      ) : (
+                        <Save className="h-4 w-4 mr-2" />
+                      )}
+                      Salvează Modificările
+                    </Button>
+                  )}
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
