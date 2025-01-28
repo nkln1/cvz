@@ -140,7 +140,7 @@ export function CarForm({ onSubmit, onCancel, initialData }: CarFormProps) {
                 <FormItem>
                   <FormLabel>Serie șasiu (VIN)</FormLabel>
                   <FormControl>
-                    <Input placeholder="Optional, dar recomandat" {...field} />
+                    <Input placeholder="Optional" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
