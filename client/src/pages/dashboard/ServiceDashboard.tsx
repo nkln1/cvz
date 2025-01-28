@@ -10,6 +10,13 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Loader2,
   MessageSquare,
   Calendar,
@@ -32,7 +39,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
+import romanianCitiesData from "../../../../attached_assets/municipii_orase_romania.json";
 
 // Validation schema
 const serviceDataSchema = z.object({
@@ -64,6 +72,8 @@ interface EditableField {
   label: string;
   key: keyof ServiceData;
   editable: boolean;
+  type?: "text" | "select";
+  options?: string[];
 }
 
 interface ValidationErrors {
@@ -79,7 +89,10 @@ export default function ServiceDashboard() {
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState("requests");
+  const [activeTab, setActiveTab] = useState("account");
+  const [availableCities, setAvailableCities] = useState<string[]>([]);
+
+  const romanianCounties = Object.keys(romanianCitiesData);
 
   const fields: EditableField[] = [
     { label: "Nume Companie", key: "companyName", editable: true },
@@ -89,8 +102,20 @@ export default function ServiceDashboard() {
     { label: "CUI", key: "cui", editable: false },
     { label: "Nr. Înregistrare", key: "tradeRegNumber", editable: false },
     { label: "Adresă", key: "address", editable: true },
-    { label: "Județ", key: "county", editable: true },
-    { label: "Oraș", key: "city", editable: true },
+    { 
+      label: "Județ", 
+      key: "county", 
+      editable: true,
+      type: "select",
+      options: romanianCounties 
+    },
+    { 
+      label: "Oraș", 
+      key: "city", 
+      editable: true,
+      type: "select",
+      options: availableCities 
+    },
   ];
 
   useEffect(() => {
@@ -103,6 +128,10 @@ export default function ServiceDashboard() {
           const data = serviceDoc.data() as ServiceData;
           setServiceData(data);
           setEditedData(data);
+          // Set available cities based on the current county
+          if (data.county) {
+            setAvailableCities(romanianCitiesData[data.county as keyof typeof romanianCitiesData] || []);
+          }
         }
       } catch (error) {
         console.error("Error fetching service data:", error);
@@ -121,7 +150,7 @@ export default function ServiceDashboard() {
 
   const validateField = (field: keyof ServiceData, value: string) => {
     try {
-      const schema = z.object({ [field]: serviceDataSchema.shape[field] });
+      const schema = z.object({ [field]: serviceDataSchema.shape[field as keyof typeof serviceDataSchema.shape] });
       schema.parse({ [field]: value });
       setValidationErrors(prev => {
         const newErrors = { ...prev };
@@ -147,7 +176,6 @@ export default function ServiceDashboard() {
       ...prev,
       [field]: !prev[field]
     }));
-    // Clear validation error when starting to edit
     if (validationErrors[field]) {
       setValidationErrors(prev => {
         const newErrors = { ...prev };
@@ -159,7 +187,15 @@ export default function ServiceDashboard() {
 
   const handleChange = (field: keyof ServiceData, value: string) => {
     if (editedData) {
-      setEditedData({ ...editedData, [field]: value });
+      const newData = { ...editedData, [field]: value };
+
+      // Handle county change to update city options
+      if (field === 'county') {
+        setAvailableCities(romanianCitiesData[value as keyof typeof romanianCitiesData] || []);
+        newData.city = ''; // Reset city when county changes
+      }
+
+      setEditedData(newData);
       validateField(field, value);
     }
   };
@@ -174,7 +210,7 @@ export default function ServiceDashboard() {
     fields.forEach(({ key, editable }) => {
       if (editable && editingFields[key]) {
         try {
-          const schema = z.object({ [key]: serviceDataSchema.shape[key] });
+          const schema = z.object({ [key]: serviceDataSchema.shape[key as keyof typeof serviceDataSchema.shape] });
           schema.parse({ [key]: editedData[key] });
         } catch (error) {
           if (error instanceof z.ZodError) {
@@ -436,7 +472,7 @@ export default function ServiceDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {fields.map(({ label, key, editable }) => (
+                  {fields.map(({ label, key, editable, type, options }) => (
                     <div key={key} className="relative">
                       <div className="flex items-center justify-between mb-1">
                         <label className="text-sm font-medium text-gray-700">{label}</label>
@@ -452,14 +488,37 @@ export default function ServiceDashboard() {
                         )}
                       </div>
                       <div className="space-y-1">
-                        <Input
-                          value={editedData?.[key] || ""}
-                          onChange={(e) => handleChange(key, e.target.value)}
-                          disabled={!editable || !editingFields[key]}
-                          className={`${
-                            !editable || !editingFields[key] ? "bg-gray-50" : "bg-white"
-                          } ${validationErrors[key] ? "border-red-500" : ""} pr-8`}
-                        />
+                        {type === 'select' && options ? (
+                          <Select
+                            value={editedData?.[key]}
+                            onValueChange={(value) => handleChange(key, value)}
+                            disabled={!editable || !editingFields[key]}
+                          >
+                            <SelectTrigger
+                              className={`${
+                                !editable || !editingFields[key] ? "bg-gray-50" : "bg-white"
+                              } ${validationErrors[key] ? "border-red-500" : ""}`}
+                            >
+                              <SelectValue placeholder={`Selectează ${label.toLowerCase()}`} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {options.map((option) => (
+                                <SelectItem key={option} value={option}>
+                                  {option}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <Input
+                            value={editedData?.[key] || ""}
+                            onChange={(e) => handleChange(key, e.target.value)}
+                            disabled={!editable || !editingFields[key]}
+                            className={`${
+                              !editable || !editingFields[key] ? "bg-gray-50" : "bg-white"
+                            } ${validationErrors[key] ? "border-red-500" : ""} pr-8`}
+                          />
+                        )}
                         {validationErrors[key] && (
                           <p className="text-xs text-red-500 mt-1">
                             {validationErrors[key]}
