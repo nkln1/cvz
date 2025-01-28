@@ -38,7 +38,7 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import MainLayout from "@/components/layout/MainLayout";
-import { doc, getDoc, updateDoc, addDoc, collection } from "firebase/firestore";
+import { doc, getDoc, updateDoc, addDoc, collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { romanianCounties, getCitiesForCounty } from "@/lib/romaniaData";
@@ -47,47 +47,20 @@ import { auth } from "@/lib/firebase";
 import { sendEmailVerification } from "firebase/auth";
 import CarManagement from "./CarManagement";
 import { RequestForm } from "@/components/dashboard/RequestForm";
+import { format } from "date-fns";
 
-// Mock data for requests and offers
-const mockRequests = [
-  {
-    id: "REQ-001",
-    date: "2024-01-26",
-    status: "Active",
-    service: "Schimb ulei",
-  },
-  {
-    id: "REQ-002",
-    date: "2024-01-25",
-    status: "Rezolvat",
-    service: "Schimb plăcuțe frână",
-  },
-  {
-    id: "REQ-003",
-    date: "2024-01-24",
-    status: "Anulat",
-    service: "Verificare sistem climatizare",
-  },
-];
-
-const mockOffers = [
-  {
-    id: "OFF-001",
-    serviceId: "SRV-001",
-    serviceName: "Auto Service Pro",
-    price: 250,
-    availability: "2024-01-28",
-    requestId: "REQ-001",
-  },
-  {
-    id: "OFF-002",
-    serviceId: "SRV-002",
-    serviceName: "MasterMech Auto",
-    price: 280,
-    availability: "2024-01-27",
-    requestId: "REQ-001",
-  },
-];
+interface Request {
+  id: string;
+  title: string;
+  description: string;
+  carId: string;
+  preferredDate: string;
+  county: string;
+  city: string;
+  status: "Active" | "Rezolvat" | "Anulat";
+  createdAt: string;
+  userId: string;
+}
 
 type TabType = "requests" | "offers" | "messages" | "profile" | "car";
 
@@ -108,22 +81,24 @@ interface RequestFormData {
   city: string;
 }
 
-const renderRequestsTable = (requests: typeof mockRequests) => (
+const renderRequestsTable = (filteredRequests: Request[]) => (
   <Table>
     <TableHeader>
       <TableRow>
-        <TableHead>ID</TableHead>
+        <TableHead>Titlu</TableHead>
         <TableHead>Data</TableHead>
-        <TableHead>Serviciu</TableHead>
+        <TableHead>Locație</TableHead>
         <TableHead>Status</TableHead>
       </TableRow>
     </TableHeader>
     <TableBody>
-      {requests.map((request) => (
+      {filteredRequests.map((request) => (
         <TableRow key={request.id} className="hover:bg-gray-50">
-          <TableCell className="font-medium">{request.id}</TableCell>
-          <TableCell>{request.date}</TableCell>
-          <TableCell>{request.service}</TableCell>
+          <TableCell className="font-medium">{request.title}</TableCell>
+          <TableCell>
+            {format(new Date(request.preferredDate), "dd.MM.yyyy")}
+          </TableCell>
+          <TableCell>{`${request.city}, ${request.county}`}</TableCell>
           <TableCell>
             <span
               className={`px-2 py-1 rounded-full text-sm ${
@@ -139,6 +114,13 @@ const renderRequestsTable = (requests: typeof mockRequests) => (
           </TableCell>
         </TableRow>
       ))}
+      {filteredRequests.length === 0 && (
+        <TableRow>
+          <TableCell colSpan={4} className="text-center text-muted-foreground">
+            Nu există cereri în această categorie.
+          </TableCell>
+        </TableRow>
+      )}
     </TableBody>
   </Table>
 );
@@ -155,10 +137,12 @@ export default function ClientDashboard() {
   const [isRequestDialogOpen, setIsRequestDialogOpen] = useState(false);
   const [isCarDialogOpen, setIsCarDialogOpen] = useState(false);
   const [requestFormData, setRequestFormData] = useState<Partial<RequestFormData>>({});
+  const [requests, setRequests] = useState<Request[]>([]);
 
   useEffect(() => {
     if (user) {
       fetchUserProfile();
+      fetchRequests();
     }
   }, [user]);
 
@@ -184,6 +168,30 @@ export default function ClientDashboard() {
         variant: "destructive",
         title: "Error",
         description: "Nu s-au putut încărca datele profilului.",
+      });
+    }
+  };
+
+  const fetchRequests = async () => {
+    if (!user?.uid) return;
+
+    try {
+      const requestsQuery = query(
+        collection(db, "requests"),
+        where("userId", "==", user.uid)
+      );
+      const querySnapshot = await getDocs(requestsQuery);
+      const loadedRequests: Request[] = [];
+      querySnapshot.forEach((doc) => {
+        loadedRequests.push({ id: doc.id, ...doc.data() } as Request);
+      });
+      setRequests(loadedRequests);
+    } catch (error) {
+      console.error("Error loading requests:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Nu s-au putut încărca cererile.",
       });
     }
   };
@@ -419,7 +427,7 @@ export default function ClientDashboard() {
       <CardHeader className="border-b bg-gray-50">
         <CardTitle className="text-[#00aff5] flex items-center gap-2">
           <FileText className="h-5 w-5" />
-          Cererile Mele
+          Cererile mele
         </CardTitle>
       </CardHeader>
       <CardContent className="p-6">
@@ -430,13 +438,13 @@ export default function ClientDashboard() {
             <TabsTrigger value="canceled">Anulate</TabsTrigger>
           </TabsList>
           <TabsContent value="active">
-            {renderRequestsTable(mockRequests.filter((req) => req.status === "Active"))}
+            {renderRequestsTable(requests.filter((req) => req.status === "Active"))}
           </TabsContent>
           <TabsContent value="solved">
-            {renderRequestsTable(mockRequests.filter((req) => req.status === "Rezolvat"))}
+            {renderRequestsTable(requests.filter((req) => req.status === "Rezolvat"))}
           </TabsContent>
           <TabsContent value="canceled">
-            {renderRequestsTable(mockRequests.filter((req) => req.status === "Anulat"))}
+            {renderRequestsTable(requests.filter((req) => req.status === "Anulat"))}
           </TabsContent>
         </Tabs>
       </CardContent>
@@ -453,27 +461,8 @@ export default function ClientDashboard() {
       </CardHeader>
       <CardContent className="p-6">
         <div className="grid gap-4">
-          {mockOffers.map((offer) => (
-            <Card key={offer.id} className="hover:shadow-md transition-shadow duration-200">
-              <CardContent className="p-4">
-                <div className="flex justify-between items-center">
-                  <div className="space-y-2">
-                    <h3 className="font-semibold text-[#00aff5]">{offer.serviceName}</h3>
-                    <p className="text-sm text-gray-600">
-                      Pentru cererea: {offer.requestId}
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      Disponibilitate: {offer.availability}
-                    </p>
-                    <p className="font-medium text-lg">{offer.price} RON</p>
-                  </div>
-                  <Button className="bg-[#00aff5] hover:bg-[#0099d6]">
-                    Acceptă Oferta
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+          {/*  Need to fetch real offers data here */}
+          <p>No offers yet</p>
         </div>
       </CardContent>
     </Card>
@@ -524,9 +513,12 @@ export default function ClientDashboard() {
       await addDoc(collection(db, "requests"), requestData);
 
       toast({
-        title: "Succes",
+        title: "Success",
         description: "Cererea ta a fost adăugată cu succes!",
       });
+
+      // Refresh the requests list
+      fetchRequests();
 
       setRequestFormData({});
       setIsRequestDialogOpen(false);
@@ -578,7 +570,7 @@ export default function ClientDashboard() {
             }`}
           >
             <FileText className="w-4 h-4 mr-2" />
-            Cererile Mele
+            Cererile mele
           </Button>
           <Button
             variant={activeTab === "offers" ? "default" : "ghost"}
