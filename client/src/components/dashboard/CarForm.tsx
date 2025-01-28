@@ -19,7 +19,8 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Car } from "@/pages/dashboard/CarManagement";
+import { Car, ArrowLeft } from "lucide-react";
+import { Car as CarType } from "@/pages/dashboard/CarManagement";
 
 const currentYear = new Date().getFullYear();
 
@@ -40,9 +41,9 @@ const carFormSchema = z.object({
 type CarFormValues = z.infer<typeof carFormSchema>;
 
 interface CarFormProps {
-  onSubmit: (data: Omit<Car, "id">) => void;
+  onSubmit: (data: Omit<CarType, "id">) => void;
   onCancel: () => void;
-  initialData?: Car;
+  initialData?: CarType;
 }
 
 export function CarForm({ onSubmit, onCancel, initialData }: CarFormProps) {
@@ -61,6 +62,16 @@ export function CarForm({ onSubmit, onCancel, initialData }: CarFormProps) {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={onCancel}
+          className="mb-4"
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Înapoi
+        </Button>
+
         <ScrollArea className="h-[400px] pr-4">
           <div className="grid grid-cols-1 gap-4">
             <FormField
