@@ -46,7 +46,7 @@ export default function LoginDropdown() {
   };
 
   const navigateToDashboard = () => {
-    setLocation("/dashboard/service");
+    setLocation("/service-dashboard");
     setIsOpen(false);
   };
 
