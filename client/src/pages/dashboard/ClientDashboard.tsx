@@ -9,8 +9,10 @@ import {
   Phone,
   MapPin,
   AlertTriangle,
-  Car,
+  Car as CarIcon,
   Plus,
+  Eye,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -38,7 +40,7 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import MainLayout from "@/components/layout/MainLayout";
-import { doc, getDoc, updateDoc, addDoc, collection, query, where, getDocs } from "firebase/firestore";
+import { doc, getDoc, updateDoc, addDoc, collection, query, where, getDocs, deleteDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { romanianCounties, getCitiesForCounty } from "@/lib/romaniaData";
@@ -48,6 +50,18 @@ import { sendEmailVerification } from "firebase/auth";
 import CarManagement from "./CarManagement";
 import { RequestForm } from "@/components/dashboard/RequestForm";
 import { format } from "date-fns";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { type Car } from "./CarManagement";
+
 
 interface Request {
   id: string;
@@ -81,49 +95,204 @@ interface RequestFormData {
   city: string;
 }
 
-const renderRequestsTable = (filteredRequests: Request[]) => (
-  <Table>
-    <TableHeader>
-      <TableRow>
-        <TableHead>Titlu</TableHead>
-        <TableHead>Data</TableHead>
-        <TableHead>Locație</TableHead>
-        <TableHead>Status</TableHead>
-      </TableRow>
-    </TableHeader>
-    <TableBody>
-      {filteredRequests.map((request) => (
-        <TableRow key={request.id} className="hover:bg-gray-50">
-          <TableCell className="font-medium">{request.title}</TableCell>
-          <TableCell>
-            {format(new Date(request.preferredDate), "dd.MM.yyyy")}
-          </TableCell>
-          <TableCell>{`${request.city}, ${request.county}`}</TableCell>
-          <TableCell>
-            <span
-              className={`px-2 py-1 rounded-full text-sm ${
-                request.status === "Active"
-                  ? "bg-yellow-100 text-yellow-800"
-                  : request.status === "Rezolvat"
-                  ? "bg-green-100 text-green-800"
-                  : "bg-red-100 text-red-800"
-              }`}
+const renderRequestsTable = (
+  filteredRequests: Request[],
+  cars: Car[],
+  onDelete: (id: string) => Promise<void>,
+  refreshRequests: () => Promise<void>
+) => {
+  const [selectedRequest, setSelectedRequest] = useState<Request | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showViewDialog, setShowViewDialog] = useState(false);
+  const { toast } = useToast();
+
+  const handleDelete = async (requestId: string) => {
+    try {
+      await onDelete(requestId);
+      toast({
+        title: "Success",
+        description: "Cererea a fost ștearsă cu succes.",
+      });
+      await refreshRequests();
+    } catch (error) {
+      console.error("Error deleting request:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Nu s-a putut șterge cererea. Încercați din nou.",
+      });
+    }
+    setShowDeleteDialog(false);
+  };
+
+  return (
+    <>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Titlu</TableHead>
+            <TableHead>Mașină</TableHead>
+            <TableHead>Data preferată</TableHead>
+            <TableHead>Locație</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead className="text-right">Acțiuni</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {filteredRequests.map((request) => (
+            <TableRow key={request.id} className="hover:bg-gray-50">
+              <TableCell className="font-medium">{request.title}</TableCell>
+              <TableCell>
+                {cars.find((car) => car.id === request.carId)?.brand}{" "}
+                {cars.find((car) => car.id === request.carId)?.model}
+              </TableCell>
+              <TableCell>
+                {format(new Date(request.preferredDate), "dd.MM.yyyy")}
+              </TableCell>
+              <TableCell>{`${request.city}, ${request.county}`}</TableCell>
+              <TableCell>
+                <span
+                  className={`px-2 py-1 rounded-full text-sm ${
+                    request.status === "Active"
+                      ? "bg-yellow-100 text-yellow-800"
+                      : request.status === "Rezolvat"
+                      ? "bg-green-100 text-green-800"
+                      : "bg-red-100 text-red-800"
+                  }`}
+                >
+                  {request.status}
+                </span>
+              </TableCell>
+              <TableCell className="text-right">
+                <div className="flex justify-end gap-2">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                      setSelectedRequest(request);
+                      setShowViewDialog(true);
+                    }}
+                    className="h-8 w-8 text-blue-500 hover:text-blue-700 hover:bg-blue-50"
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                      setSelectedRequest(request);
+                      setShowDeleteDialog(true);
+                    }}
+                    className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </TableCell>
+            </TableRow>
+          ))}
+          {filteredRequests.length === 0 && (
+            <TableRow>
+              <TableCell
+                colSpan={6}
+                className="text-center text-muted-foreground"
+              >
+                Nu există cereri în această categorie.
+              </TableCell>
+            </TableRow>
+          )}
+        </TableBody>
+      </Table>
+
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Ștergeți această cerere?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Această acțiune nu poate fi anulată. Cererea va fi ștearsă
+              permanent.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Anulează</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => selectedRequest && handleDelete(selectedRequest.id)}
+              className="bg-red-500 hover:bg-red-600"
             >
-              {request.status}
-            </span>
-          </TableCell>
-        </TableRow>
-      ))}
-      {filteredRequests.length === 0 && (
-        <TableRow>
-          <TableCell colSpan={4} className="text-center text-muted-foreground">
-            Nu există cereri în această categorie.
-          </TableCell>
-        </TableRow>
-      )}
-    </TableBody>
-  </Table>
-);
+              Șterge
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Detalii Cerere</DialogTitle>
+          </DialogHeader>
+          {selectedRequest && (
+            <div className="space-y-4">
+              <div>
+                <h3 className="font-medium text-sm text-muted-foreground">
+                  Titlu
+                </h3>
+                <p>{selectedRequest.title}</p>
+              </div>
+              <div>
+                <h3 className="font-medium text-sm text-muted-foreground">
+                  Descriere
+                </h3>
+                <p>{selectedRequest.description}</p>
+              </div>
+              <div>
+                <h3 className="font-medium text-sm text-muted-foreground">
+                  Mașină
+                </h3>
+                <p>
+                  {cars.find((car) => car.id === selectedRequest.carId)?.brand}{" "}
+                  {cars.find((car) => car.id === selectedRequest.carId)?.model}
+                </p>
+              </div>
+              <div>
+                <h3 className="font-medium text-sm text-muted-foreground">
+                  Data preferată
+                </h3>
+                <p>
+                  {format(
+                    new Date(selectedRequest.preferredDate),
+                    "dd.MM.yyyy"
+                  )}
+                </p>
+              </div>
+              <div>
+                <h3 className="font-medium text-sm text-muted-foreground">
+                  Locație
+                </h3>
+                <p>{selectedRequest.city}, {selectedRequest.county}</p>
+              </div>
+              <div>
+                <h3 className="font-medium text-sm text-muted-foreground">
+                  Status
+                </h3>
+                <span
+                  className={`px-2 py-1 rounded-full text-sm ${
+                    selectedRequest.status === "Active"
+                      ? "bg-yellow-100 text-yellow-800"
+                      : selectedRequest.status === "Rezolvat"
+                      ? "bg-green-100 text-green-800"
+                      : "bg-red-100 text-red-800"
+                  }`}
+                >
+                  {selectedRequest.status}
+                </span>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+};
 
 export default function ClientDashboard() {
   const [activeTab, setActiveTab] = useState<TabType>("requests");
@@ -138,11 +307,13 @@ export default function ClientDashboard() {
   const [isCarDialogOpen, setIsCarDialogOpen] = useState(false);
   const [requestFormData, setRequestFormData] = useState<Partial<RequestFormData>>({});
   const [requests, setRequests] = useState<Request[]>([]);
+  const [cars, setCars] = useState<Car[]>([]);
 
   useEffect(() => {
     if (user) {
       fetchUserProfile();
       fetchRequests();
+      fetchCars();
     }
   }, [user]);
 
@@ -196,6 +367,31 @@ export default function ClientDashboard() {
     }
   };
 
+  const fetchCars = async () => {
+    if (!user?.uid) return;
+
+    try {
+      const carsQuery = query(
+        collection(db, "cars"),
+        where("userId", "==", user.uid)
+      );
+      const querySnapshot = await getDocs(carsQuery);
+      const loadedCars: Car[] = [];
+      querySnapshot.forEach((doc) => {
+        loadedCars.push({ id: doc.id, ...doc.data() } as Car);
+      });
+      setCars(loadedCars);
+    } catch (error) {
+      console.error("Error loading cars:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Nu s-au putut încărca mașinile.",
+      });
+    }
+  };
+
+
   const handleEditClick = () => {
     setIsEditing(true);
   };
@@ -232,7 +428,7 @@ export default function ClientDashboard() {
       setEditedProfile((prev) => ({
         ...prev,
         county: value,
-        city: "", // Reset city when county changes
+        city: "",
       }));
     }
   };
@@ -245,18 +441,25 @@ export default function ClientDashboard() {
       await sendEmailVerification(auth.currentUser);
       toast({
         title: "Email trimis",
-        description: "Un nou email de verificare a fost trimis. Te rugăm să îți verifici căsuța de email.",
+        description:
+          "Un nou email de verificare a fost trimis. Te rugăm să îți verifici căsuța de email.",
       });
     } catch (error) {
       console.error("Error sending verification email:", error);
       toast({
         variant: "destructive",
         title: "Eroare",
-        description: "Nu s-a putut trimite emailul de verificare. Te rugăm să încerci din nou mai târziu.",
+        description:
+          "Nu s-a putut trimite emailul de verificare. Te rugăm să încerci din nou mai târziu.",
       });
     } finally {
       setIsResendingVerification(false);
     }
+  };
+
+  const handleDeleteRequest = async (requestId: string) => {
+    if (!user?.uid) return;
+    await deleteDoc(doc(db, "requests", requestId));
   };
 
   const renderProfile = () => (
@@ -276,12 +479,16 @@ export default function ClientDashboard() {
                 {isEditing ? (
                   <Input
                     value={editedProfile.name || ""}
-                    onChange={(e) => handleInputChange("name", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("name", e.target.value)
+                    }
                     placeholder="Nume complet"
                     className="border-gray-300 focus:border-[#00aff5] focus:ring-[#00aff5]"
                   />
                 ) : (
-                  <p className="text-gray-900">{userProfile.name || "Nespecificat"}</p>
+                  <p className="text-gray-900">
+                    {userProfile.name || "Nespecificat"}
+                  </p>
                 )}
                 {!isEditing && (
                   <Button
@@ -307,12 +514,16 @@ export default function ClientDashboard() {
                 {isEditing ? (
                   <Input
                     value={editedProfile.phone || ""}
-                    onChange={(e) => handleInputChange("phone", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("phone", e.target.value)
+                    }
                     placeholder="Număr de telefon"
                     className="border-gray-300 focus:border-[#00aff5] focus:ring-[#00aff5]"
                   />
                 ) : (
-                  <p className="text-gray-900">{userProfile.phone || "Nespecificat"}</p>
+                  <p className="text-gray-900">
+                    {userProfile.phone || "Nespecificat"}
+                  </p>
                 )}
                 {!isEditing && (
                   <Button
@@ -333,7 +544,9 @@ export default function ClientDashboard() {
                 {isEditing ? (
                   <Select
                     value={editedProfile.county || ""}
-                    onValueChange={(value) => handleInputChange("county", value)}
+                    onValueChange={(value) =>
+                      handleInputChange("county", value)
+                    }
                   >
                     <SelectTrigger className="border-gray-300 focus:border-[#00aff5] focus:ring-[#00aff5]">
                       <SelectValue placeholder="Selectează județul" />
@@ -347,7 +560,9 @@ export default function ClientDashboard() {
                     </SelectContent>
                   </Select>
                 ) : (
-                  <p className="text-gray-900">{userProfile.county || "Nespecificat"}</p>
+                  <p className="text-gray-900">
+                    {userProfile.county || "Nespecificat"}
+                  </p>
                 )}
                 {!isEditing && (
                   <Button
@@ -368,7 +583,9 @@ export default function ClientDashboard() {
                 {isEditing ? (
                   <Select
                     value={editedProfile.city || ""}
-                    onValueChange={(value) => handleInputChange("city", value)}
+                    onValueChange={(value) =>
+                      handleInputChange("city", value)
+                    }
                     disabled={!selectedCounty}
                   >
                     <SelectTrigger className="border-gray-300 focus:border-[#00aff5] focus:ring-[#00aff5]">
@@ -384,7 +601,9 @@ export default function ClientDashboard() {
                     </SelectContent>
                   </Select>
                 ) : (
-                  <p className="text-gray-900">{userProfile.city || "Nespecificat"}</p>
+                  <p className="text-gray-900">
+                    {userProfile.city || "Nespecificat"}
+                  </p>
                 )}
                 {!isEditing && (
                   <Button
@@ -438,13 +657,28 @@ export default function ClientDashboard() {
             <TabsTrigger value="canceled">Anulate</TabsTrigger>
           </TabsList>
           <TabsContent value="active">
-            {renderRequestsTable(requests.filter((req) => req.status === "Active"))}
+            {renderRequestsTable(
+              requests.filter((req) => req.status === "Active"),
+              cars,
+              handleDeleteRequest,
+              fetchRequests
+            )}
           </TabsContent>
           <TabsContent value="solved">
-            {renderRequestsTable(requests.filter((req) => req.status === "Rezolvat"))}
+            {renderRequestsTable(
+              requests.filter((req) => req.status === "Rezolvat"),
+              cars,
+              handleDeleteRequest,
+              fetchRequests
+            )}
           </TabsContent>
           <TabsContent value="canceled">
-            {renderRequestsTable(requests.filter((req) => req.status === "Anulat"))}
+            {renderRequestsTable(
+              requests.filter((req) => req.status === "Anulat"),
+              cars,
+              handleDeleteRequest,
+              fetchRequests
+            )}
           </TabsContent>
         </Tabs>
       </CardContent>
@@ -461,7 +695,6 @@ export default function ClientDashboard() {
       </CardHeader>
       <CardContent className="p-6">
         <div className="grid gap-4">
-          {/*  Need to fetch real offers data here */}
           <p>No offers yet</p>
         </div>
       </CardContent>
@@ -517,7 +750,6 @@ export default function ClientDashboard() {
         description: "Cererea ta a fost adăugată cu succes!",
       });
 
-      // Refresh the requests list
       fetchRequests();
 
       setRequestFormData({});
@@ -527,7 +759,8 @@ export default function ClientDashboard() {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Nu s-a putut adăuga cererea. Te rugăm să încerci din nou.",
+        description:
+          "Nu s-a putut adăuga cererea. Te rugăm să încerci din nou.",
       });
     }
   };
@@ -540,8 +773,9 @@ export default function ClientDashboard() {
             <AlertTriangle className="h-4 w-4" />
             <AlertTitle>Email neverificat</AlertTitle>
             <AlertDescription>
-              Te rugăm să îți confirmi adresa de email pentru a avea acces la toate funcționalitățile.
-              Verifică-ți căsuța de email pentru linkul de confirmare.
+              Te rugăm să îți confirmi adresa de email pentru a avea acces la
+              toate funcționalitățile. Verifică-ți căsuța de email pentru
+              linkul de confirmare.
             </AlertDescription>
           </Alert>
           <Button
@@ -549,7 +783,9 @@ export default function ClientDashboard() {
             disabled={isResendingVerification}
             className="w-full max-w-md mx-auto block"
           >
-            {isResendingVerification ? "Se trimite..." : "Retrimite email de verificare"}
+            {isResendingVerification
+              ? "Se trimite..."
+              : "Retrimite email de verificare"}
           </Button>
         </div>
       </MainLayout>
@@ -605,7 +841,7 @@ export default function ClientDashboard() {
                 : "hover:text-[#00aff5]"
             }`}
           >
-            <Car className="w-4 h-4 mr-2" />
+            <CarIcon className="w-4 h-4 mr-2" />
             Mașina Mea
           </Button>
           <Button
