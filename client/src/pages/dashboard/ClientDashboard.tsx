@@ -93,7 +93,7 @@ interface RequestFormData {
   carId: string;
   preferredDate: string;
   county: string;
-  cities: string[];
+  cities: string[]; // Changed from city string to cities array
 }
 
 const renderRequestsTable = (
@@ -150,7 +150,7 @@ const renderRequestsTable = (
               <TableCell>
                 {format(new Date(request.preferredDate), "dd.MM.yyyy")}
               </TableCell>
-              <TableCell>{request.cities.join(", ")}</TableCell>
+              <TableCell>{request.cities.join(", ")}</TableCell> {/* Changed location display */}
               <TableCell>
                 <span
                   className={`px-2 py-1 rounded-full text-sm ${
@@ -271,7 +271,7 @@ const renderRequestsTable = (
                 <h3 className="font-medium text-sm text-muted-foreground">
                   Locație
                 </h3>
-                <p>{selectedRequest.cities.join(", ")}</p>
+                <p>{selectedRequest.cities.join(", ")}</p> {/* Changed location display */}
               </div>
               <div>
                 <h3 className="font-medium text-sm text-muted-foreground">
@@ -470,6 +470,7 @@ export default function ClientDashboard() {
         updatedAt: new Date().toISOString(),
       });
 
+      // Refresh requests after updating
       await fetchRequests();
 
       toast({
@@ -765,6 +766,7 @@ export default function ClientDashboard() {
         userId: user.uid,
         status: "Active",
         createdAt: new Date().toISOString(),
+        // Removed cities array conversion since we're already getting an array
       };
 
       await addDoc(collection(db, "requests"), requestData);
@@ -820,7 +822,7 @@ export default function ClientDashboard() {
     <MainLayout>
       <div className="container mx-auto p-4 md:p-6 space-y-4 md:space-y-6">
         {/* Mobile-optimized navigation */}
-        <nav className="flex flex-col sm:flex-row gap-2 border-b pb-4 overflow-x-auto shadow-lg">
+        <nav className="flex flex-col sm:flex-row gap-2 border-b pb-4 overflow-x-auto">
           <div className="flex flex-col sm:flex-row gap-2 w-full">
             <Button
               variant={activeTab === "requests" ? "default" : "ghost"}
