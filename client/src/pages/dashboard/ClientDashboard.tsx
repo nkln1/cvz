@@ -71,7 +71,7 @@ interface Request {
   carId: string;
   preferredDate: string;
   county: string;
-  city: string;
+  cities: string[]; // Changed from city to cities array
   status: "Active" | "Rezolvat" | "Anulat";
   createdAt: string;
   userId: string;
@@ -150,7 +150,7 @@ const renderRequestsTable = (
               <TableCell>
                 {format(new Date(request.preferredDate), "dd.MM.yyyy")}
               </TableCell>
-              <TableCell>{`${request.city}, ${request.county}`}</TableCell>
+              <TableCell>{request.cities.join(", ")}</TableCell> {/* Changed location display */}
               <TableCell>
                 <span
                   className={`px-2 py-1 rounded-full text-sm ${
@@ -177,7 +177,7 @@ const renderRequestsTable = (
                   >
                     <Eye className="h-4 w-4" />
                   </Button>
-                  {request.status !== "Anulat" && ( // Condition to hide delete button
+                  {request.status !== "Anulat" && (
                     <Button
                       variant="ghost"
                       size="icon"
@@ -271,7 +271,7 @@ const renderRequestsTable = (
                 <h3 className="font-medium text-sm text-muted-foreground">
                   Locație
                 </h3>
-                <p>{selectedRequest.city}, {selectedRequest.county}</p>
+                <p>{selectedRequest.cities.join(", ")}</p> {/* Changed location display */}
               </div>
               <div>
                 <h3 className="font-medium text-sm text-muted-foreground">
@@ -766,6 +766,7 @@ export default function ClientDashboard() {
         userId: user.uid,
         status: "Active",
         createdAt: new Date().toISOString(),
+        cities: [data.city] //Added cities array with the single city
       };
 
       await addDoc(collection(db, "requests"), requestData);

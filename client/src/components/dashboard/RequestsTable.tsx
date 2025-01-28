@@ -36,7 +36,7 @@ interface Request {
   carId: string;
   preferredDate: string;
   county: string;
-  city: string;
+  cities: string[]; // Updated to array of cities
   status: "Active" | "Rezolvat" | "Anulat";
 }
 
@@ -101,7 +101,10 @@ export function RequestsTable({
               <TableCell>
                 {format(new Date(request.preferredDate), "dd.MM.yyyy")}
               </TableCell>
-              <TableCell>{`${request.city}, ${request.county}`}</TableCell>
+              <TableCell>
+                {/* Display all selected cities */}
+                {request.cities.join(", ")}, {request.county}
+              </TableCell>
               <TableCell>
                 <span
                   className={`px-2 py-1 rounded-full text-sm ${
@@ -147,7 +150,10 @@ export function RequestsTable({
           ))}
           {requests.length === 0 && (
             <TableRow>
-              <TableCell colSpan={6} className="text-center text-muted-foreground">
+              <TableCell
+                colSpan={6}
+                className="text-center text-muted-foreground"
+              >
                 Nu există cereri în această categorie.
               </TableCell>
             </TableRow>
@@ -218,7 +224,7 @@ export function RequestsTable({
                 <h3 className="font-medium text-sm text-muted-foreground">
                   Locație
                 </h3>
-                <p>{selectedRequest.city}, {selectedRequest.county}</p>
+                <p>{selectedRequest.cities.join(", ")}, {selectedRequest.county}</p>
               </div>
               <div>
                 <h3 className="font-medium text-sm text-muted-foreground">
