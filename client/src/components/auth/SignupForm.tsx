@@ -26,6 +26,7 @@ import { doc, setDoc } from "firebase/firestore";
 import { db, auth } from "@/lib/firebase";
 import { createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
 import { romanianCounties, getCitiesForCounty } from "@/lib/romaniaData";
+import { useLocation } from "wouter";
 
 const clientSchema = z.object({
   name: z.string().min(2, {
@@ -98,6 +99,7 @@ export default function SignupForm() {
   const [role, setRole] = useState<UserRole>(null);
   const [selectedCounty, setSelectedCounty] = useState<string>("");
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
 
   const clientForm = useForm<z.infer<typeof clientSchema>>({
     resolver: zodResolver(clientSchema),
@@ -134,14 +136,12 @@ export default function SignupForm() {
     try {
       const { email, password, ...userData } = values;
 
-      // Create auth user
       let userCredential;
       try {
         console.log("Creating user with Firebase Auth...");
         userCredential = await createUserWithEmailAndPassword(auth, email, password);
         console.log("Auth user created successfully:", userCredential.user.uid);
 
-        // Send email verification
         await sendEmailVerification(userCredential.user);
         console.log("Verification email sent successfully");
 
@@ -172,14 +172,12 @@ export default function SignupForm() {
         return;
       }
 
-      // Store additional user data in Firestore
       const collectionPath = role === "client" ? "clients" : "services";
       console.log(`Saving user data to ${collectionPath} collection...`);
 
       try {
         const userDocRef = doc(db, collectionPath, userCredential.user.uid);
 
-        // Prepare user data
         const userDataToSave = {
           ...userData,
           email,
@@ -189,7 +187,6 @@ export default function SignupForm() {
           uid: userCredential.user.uid
         };
 
-        // Set the document with merge option to ensure it works with existing documents
         await setDoc(userDocRef, userDataToSave, { merge: true });
         console.log("User data saved successfully to Firestore");
 
@@ -197,6 +194,13 @@ export default function SignupForm() {
           title: "Success",
           description: "Cont creat cu succes! Te rugăm să verifici email-ul pentru a confirma adresa.",
         });
+
+        if (role === "client") {
+          setLocation("/dashboard");
+        } else if (role === "service") {
+          setLocation("/service-dashboard");
+        }
+
       } catch (error: any) {
         console.error("Firestore Error:", {
           code: error.code,
@@ -204,7 +208,6 @@ export default function SignupForm() {
           details: error
         });
 
-        // Clean up auth user if Firestore save fails
         try {
           await userCredential.user.delete();
           console.log("Auth user cleaned up after Firestore error");
@@ -391,7 +394,6 @@ export default function SignupForm() {
                 )}
               />
             )}
-            {/* County Dropdown */}
             <FormField
               control={currentForm.control}
               name="county"
@@ -403,7 +405,6 @@ export default function SignupForm() {
                     onValueChange={(value) => {
                       field.onChange(value);
                       setSelectedCounty(value);
-                      // Reset city when county changes
                       currentForm.setValue("city", "");
                     }}
                   >
@@ -425,7 +426,6 @@ export default function SignupForm() {
               )}
             />
 
-            {/* City Dropdown */}
             <FormField
               control={currentForm.control}
               name="city"

@@ -18,6 +18,9 @@ import { Mail, Lock } from "lucide-react";
 import { signInWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useAuth } from "@/context/AuthContext";
+import { getDoc, doc } from "firebase/firestore";
+import { db } from "@/lib/firebase"; // Assuming db is exported from firebase.ts
+
 
 const formSchema = z.object({
   email: z.string().email({
@@ -61,13 +64,29 @@ export default function LoginForm() {
 
       console.log("Sign in successful:", userCredential.user.uid);
 
+      // Check user role and redirect accordingly
+      const clientDoc = await getDoc(doc(db, 'clients', userCredential.user.uid));
+      const serviceDoc = await getDoc(doc(db, 'services', userCredential.user.uid));
+
       toast({
         title: "Success",
         description: "Te-ai conectat cu succes!",
       });
 
-      // Redirect to dashboard after successful login
-      setLocation("/dashboard");
+      // Redirect based on user role
+      if (clientDoc.exists()) {
+        setLocation("/dashboard");
+      } else if (serviceDoc.exists()) {
+        setLocation("/service-dashboard");
+      } else {
+        console.error("User role not found");
+        toast({
+          variant: "destructive",
+          title: "Eroare",
+          description: "Nu s-a putut determina rolul utilizatorului.",
+        });
+      }
+
     } catch (error: any) {
       console.error("Login Error:", error);
       let errorMessage = "A apărut o eroare la conectare.";

@@ -7,6 +7,7 @@ import Home from "@/pages/Home";
 import Contact from "@/pages/Contact";
 import { AuthProvider } from "@/context/AuthContext";
 import ClientDashboard from "@/pages/dashboard/ClientDashboard";
+import ServiceDashboard from "@/pages/dashboard/ServiceDashboard";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
 function Router() {
@@ -18,6 +19,13 @@ function Router() {
         {() => (
           <ProtectedRoute allowedRoles={["client"]}>
             <ClientDashboard />
+          </ProtectedRoute>
+        )}
+      </Route>
+      <Route path="/service-dashboard">
+        {() => (
+          <ProtectedRoute allowedRoles={["service"]}>
+            <ServiceDashboard />
           </ProtectedRoute>
         )}
       </Route>
