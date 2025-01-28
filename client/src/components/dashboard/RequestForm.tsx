@@ -20,7 +20,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Car, Plus, ArrowLeft } from "lucide-react";
+import { Car, Plus } from "lucide-react";
 import { romanianCounties, getCitiesForCounty } from "@/lib/romaniaData";
 import { useEffect, useState } from "react";
 import { db } from "@/lib/firebase";
@@ -98,16 +98,6 @@ export function RequestForm({ onSubmit, onCancel, onAddCar }: RequestFormProps) 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <Button
-          type="button"
-          variant="ghost"
-          onClick={onCancel}
-          className="mb-4"
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Înapoi
-        </Button>
-
         <ScrollArea className="h-[400px] pr-4">
           <div className="grid grid-cols-1 gap-4">
             <FormField
@@ -123,6 +113,7 @@ export function RequestForm({ onSubmit, onCancel, onAddCar }: RequestFormProps) 
                 </FormItem>
               )}
             />
+
             <FormField
               control={form.control}
               name="description"
@@ -140,6 +131,7 @@ export function RequestForm({ onSubmit, onCancel, onAddCar }: RequestFormProps) 
                 </FormItem>
               )}
             />
+
             <FormField
               control={form.control}
               name="carId"
@@ -175,6 +167,7 @@ export function RequestForm({ onSubmit, onCancel, onAddCar }: RequestFormProps) 
                 </FormItem>
               )}
             />
+
             <FormField
               control={form.control}
               name="preferredDate"
@@ -188,6 +181,7 @@ export function RequestForm({ onSubmit, onCancel, onAddCar }: RequestFormProps) 
                 </FormItem>
               )}
             />
+
             <FormField
               control={form.control}
               name="county"
@@ -219,6 +213,7 @@ export function RequestForm({ onSubmit, onCancel, onAddCar }: RequestFormProps) 
                 </FormItem>
               )}
             />
+
             <FormField
               control={form.control}
               name="city"
