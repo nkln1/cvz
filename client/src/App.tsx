@@ -6,14 +6,14 @@ import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 import Contact from "@/pages/Contact";
 import { AuthProvider } from "@/context/AuthContext";
-import ClientDashboard from "@/pages/dashboard/ClientDashboard";
+import ClientDashboard from "@/pages/dashboard-clients/ClientDashboard";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/contact" component={Contact} />
-      <Route path="/dashboard" component={ClientDashboard} />
+      <Route path="/dashboard-clients" component={ClientDashboard} />
       <Route component={NotFound} />
     </Switch>
   );
