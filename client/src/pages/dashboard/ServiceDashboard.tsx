@@ -2,6 +2,7 @@ import { useAuth } from "@/context/AuthContext";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useEffect, useState } from "react";
+import { z } from "zod";
 import {
   Tabs,
   TabsContent,
@@ -33,6 +34,19 @@ import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { useToast } from "@/components/ui/use-toast";
 
+// Validation schema
+const serviceDataSchema = z.object({
+  companyName: z.string().min(3, "Numele companiei trebuie să aibă cel puțin 3 caractere"),
+  representativeName: z.string().min(3, "Numele reprezentantului trebuie să aibă cel puțin 3 caractere"),
+  email: z.string().email("Adresa de email nu este validă"),
+  phone: z.string().regex(/^(\+4|)?(07[0-8]{1}[0-9]{1}|02[0-9]{2}|03[0-9]{2}){1}?(\s|\.|\-)?([0-9]{3}(\s|\.|\-|)){2}$/, "Numărul de telefon nu este valid"),
+  cui: z.string(),
+  tradeRegNumber: z.string(),
+  address: z.string().min(5, "Adresa trebuie să aibă cel puțin 5 caractere"),
+  county: z.string().min(2, "Selectați județul"),
+  city: z.string().min(2, "Selectați orașul"),
+});
+
 interface ServiceData {
   companyName: string;
   representativeName: string;
@@ -52,12 +66,17 @@ interface EditableField {
   editable: boolean;
 }
 
+interface ValidationErrors {
+  [key: string]: string;
+}
+
 export default function ServiceDashboard() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [serviceData, setServiceData] = useState<ServiceData | null>(null);
   const [editedData, setEditedData] = useState<ServiceData | null>(null);
   const [editingFields, setEditingFields] = useState<Record<string, boolean>>({});
+  const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState("requests");
@@ -100,21 +119,82 @@ export default function ServiceDashboard() {
     fetchServiceData();
   }, [user]);
 
+  const validateField = (field: keyof ServiceData, value: string) => {
+    try {
+      const schema = z.object({ [field]: serviceDataSchema.shape[field] });
+      schema.parse({ [field]: value });
+      setValidationErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
+      return true;
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        const fieldError = error.errors[0]?.message;
+        setValidationErrors(prev => ({
+          ...prev,
+          [field]: fieldError,
+        }));
+        return false;
+      }
+      return false;
+    }
+  };
+
   const handleEdit = (field: keyof ServiceData) => {
     setEditingFields(prev => ({
       ...prev,
       [field]: !prev[field]
     }));
+    // Clear validation error when starting to edit
+    if (validationErrors[field]) {
+      setValidationErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
+    }
   };
 
   const handleChange = (field: keyof ServiceData, value: string) => {
     if (editedData) {
       setEditedData({ ...editedData, [field]: value });
+      validateField(field, value);
     }
   };
 
   const handleSave = async () => {
     if (!user || !editedData) return;
+
+    // Validate all editable fields before saving
+    let isValid = true;
+    const newErrors: ValidationErrors = {};
+
+    fields.forEach(({ key, editable }) => {
+      if (editable && editingFields[key]) {
+        try {
+          const schema = z.object({ [key]: serviceDataSchema.shape[key] });
+          schema.parse({ [key]: editedData[key] });
+        } catch (error) {
+          if (error instanceof z.ZodError) {
+            isValid = false;
+            newErrors[key] = error.errors[0]?.message || `${key} is invalid`;
+          }
+        }
+      }
+    });
+
+    setValidationErrors(newErrors);
+
+    if (!isValid) {
+      toast({
+        variant: "destructive",
+        title: "Eroare de validare",
+        description: "Verificați câmpurile cu erori și încercați din nou.",
+      });
+      return;
+    }
 
     setSaving(true);
     try {
@@ -371,14 +451,21 @@ export default function ServiceDashboard() {
                           </Button>
                         )}
                       </div>
-                      <Input
-                        value={editedData?.[key] || ""}
-                        onChange={(e) => handleChange(key, e.target.value)}
-                        disabled={!editable || !editingFields[key]}
-                        className={`${
-                          !editable || !editingFields[key] ? "bg-gray-50" : "bg-white"
-                        } pr-8`}
-                      />
+                      <div className="space-y-1">
+                        <Input
+                          value={editedData?.[key] || ""}
+                          onChange={(e) => handleChange(key, e.target.value)}
+                          disabled={!editable || !editingFields[key]}
+                          className={`${
+                            !editable || !editingFields[key] ? "bg-gray-50" : "bg-white"
+                          } ${validationErrors[key] ? "border-red-500" : ""} pr-8`}
+                        />
+                        {validationErrors[key] && (
+                          <p className="text-xs text-red-500 mt-1">
+                            {validationErrors[key]}
+                          </p>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -386,7 +473,7 @@ export default function ServiceDashboard() {
                 {hasChanges && (
                   <Button
                     onClick={handleSave}
-                    disabled={saving}
+                    disabled={saving || Object.keys(validationErrors).length > 0}
                     className="mt-6 bg-[#00aff5] hover:bg-[#0099d6] float-right"
                   >
                     {saving ? (
