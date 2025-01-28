@@ -177,17 +177,19 @@ const renderRequestsTable = (
                   >
                     <Eye className="h-4 w-4" />
                   </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => {
-                      setSelectedRequest(request);
-                      setShowDeleteDialog(true);
-                    }}
-                    className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  {request.status !== "Anulat" && ( // Condition to hide delete button
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => {
+                        setSelectedRequest(request);
+                        setShowDeleteDialog(true);
+                      }}
+                      className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
               </TableCell>
             </TableRow>
@@ -208,10 +210,10 @@ const renderRequestsTable = (
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Ștergeți această cerere?</AlertDialogTitle>
+            <AlertDialogTitle>Anulați această cerere?</AlertDialogTitle>
             <AlertDialogDescription>
-              Această acțiune nu poate fi anulată. Cererea va fi ștearsă
-              permanent.
+              Această acțiune nu poate fi anulată. Cererea va fi marcată ca
+              Anulat.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -220,7 +222,7 @@ const renderRequestsTable = (
               onClick={() => selectedRequest && handleDelete(selectedRequest.id)}
               className="bg-red-500 hover:bg-red-600"
             >
-              Șterge
+              Anulează
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -460,7 +462,29 @@ export default function ClientDashboard() {
 
   const handleDeleteRequest = async (requestId: string) => {
     if (!user?.uid) return;
-    await deleteDoc(doc(db, "requests", requestId));
+
+    try {
+      const requestRef = doc(db, "requests", requestId);
+      await updateDoc(requestRef, {
+        status: "Anulat",
+        updatedAt: new Date().toISOString(),
+      });
+
+      // Refresh requests after updating
+      await fetchRequests();
+
+      toast({
+        title: "Success",
+        description: "Cererea a fost anulată cu succes.",
+      });
+    } catch (error) {
+      console.error("Error updating request:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Nu s-a putut anula cererea. Te rugăm să încerci din nou.",
+      });
+    }
   };
 
   const renderProfile = () => (
