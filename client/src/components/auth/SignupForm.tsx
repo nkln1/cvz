@@ -65,6 +65,14 @@ const serviceSchema = z.object({
   phone: z.string().min(10, {
     message: "Te rugăm să introduci un număr de telefon valid.",
   }),
+  cui: z.string()
+    .min(6, { message: "CUI trebuie să conțină minim 6 caractere." })
+    .max(10, { message: "CUI nu poate depăși 10 caractere." })
+    .regex(/^[0-9]+$/, { message: "CUI trebuie să conțină doar cifre." }),
+  tradeRegNumber: z.string()
+    .regex(/^J[0-9]{2}\/[0-9]{1,6}\/[0-9]{4}$/, {
+      message: "Format invalid. Exemplu corect: J40/1234/2025",
+    }),
   address: z.string().min(5, {
     message: "Te rugăm să introduci adresa completă.",
   }),
@@ -111,6 +119,8 @@ export default function SignupForm() {
       representativeName: "",
       email: "",
       phone: "",
+      cui: "",
+      tradeRegNumber: "",
       address: "",
       county: "",
       city: "",
@@ -290,6 +300,38 @@ export default function SignupForm() {
                         <div className="relative">
                           <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                           <Input {...field} placeholder="Ion Popescu" className="pl-10" />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={currentForm.control}
+                  name="cui"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-[#00aff5]">CUI</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Building className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                          <Input {...field} placeholder="12345678" className="pl-10" />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={currentForm.control}
+                  name="tradeRegNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-[#00aff5]">Nr. Înregistrare Reg. Comerțului</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Building className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                          <Input {...field} placeholder="J40/1234/2025" className="pl-10" />
                         </div>
                       </FormControl>
                       <FormMessage />
