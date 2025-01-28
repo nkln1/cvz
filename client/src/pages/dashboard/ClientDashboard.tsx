@@ -652,9 +652,8 @@ export default function ClientDashboard() {
                 setRequestFormData({});
                 setIsRequestDialogOpen(false);
               }}
-              onAddCar={() => {
-                // Store current form data before switching to car dialog
-                setRequestFormData(form.getValues());
+              onAddCar={(currentFormData) => {
+                setRequestFormData(currentFormData);
                 setIsRequestDialogOpen(false);
                 setIsCarDialogOpen(true);
               }}

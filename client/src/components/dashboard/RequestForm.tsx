@@ -52,7 +52,7 @@ const formSchema = z.object({
 interface RequestFormProps {
   onSubmit: (data: z.infer<typeof formSchema>) => void;
   onCancel: () => void;
-  onAddCar: () => void;
+  onAddCar: (currentFormData: z.infer<typeof formSchema>) => void;
   initialData?: Partial<z.infer<typeof formSchema>>;
 }
 
@@ -157,7 +157,7 @@ export function RequestForm({ onSubmit, onCancel, onAddCar, initialData }: Reque
                     <Button
                       type="button"
                       variant="outline"
-                      onClick={onAddCar}
+                      onClick={() => onAddCar(form.getValues())}
                       className="whitespace-nowrap"
                     >
                       <Plus className="w-4 h-4 mr-2" />
