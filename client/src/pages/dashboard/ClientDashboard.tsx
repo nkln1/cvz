@@ -61,6 +61,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { type Car } from "./CarManagement";
+import { RequestsTable } from "@/components/dashboard/RequestsTable";
 
 
 interface Request {
@@ -657,28 +658,28 @@ export default function ClientDashboard() {
             <TabsTrigger value="canceled">Anulate</TabsTrigger>
           </TabsList>
           <TabsContent value="active">
-            {renderRequestsTable(
-              requests.filter((req) => req.status === "Active"),
-              cars,
-              handleDeleteRequest,
-              fetchRequests
-            )}
+            <RequestsTable
+              requests={requests.filter((req) => req.status === "Active")}
+              cars={cars}
+              onDelete={handleDeleteRequest}
+              refreshRequests={fetchRequests}
+            />
           </TabsContent>
           <TabsContent value="solved">
-            {renderRequestsTable(
-              requests.filter((req) => req.status === "Rezolvat"),
-              cars,
-              handleDeleteRequest,
-              fetchRequests
-            )}
+            <RequestsTable
+              requests={requests.filter((req) => req.status === "Rezolvat")}
+              cars={cars}
+              onDelete={handleDeleteRequest}
+              refreshRequests={fetchRequests}
+            />
           </TabsContent>
           <TabsContent value="canceled">
-            {renderRequestsTable(
-              requests.filter((req) => req.status === "Anulat"),
-              cars,
-              handleDeleteRequest,
-              fetchRequests
-            )}
+            <RequestsTable
+              requests={requests.filter((req) => req.status === "Anulat")}
+              cars={cars}
+              onDelete={handleDeleteRequest}
+              refreshRequests={fetchRequests}
+            />
           </TabsContent>
         </Tabs>
       </CardContent>
