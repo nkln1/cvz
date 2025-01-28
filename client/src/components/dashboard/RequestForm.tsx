@@ -1,6 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
+import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
@@ -25,7 +26,6 @@ import { useEffect, useState } from "react";
 import { db } from "@/lib/firebase";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { useAuth } from "@/context/AuthContext";
-import { Button } from "@/components/ui/button";
 import type { Car as CarType } from "@/pages/dashboard/CarManagement";
 
 const formSchema = z.object({
@@ -53,10 +53,9 @@ interface RequestFormProps {
   onSubmit: (data: z.infer<typeof formSchema>) => void;
   onCancel: () => void;
   onAddCar: () => void;
-  isVisible?: boolean;
 }
 
-export function RequestForm({ onSubmit, onCancel, onAddCar, isVisible = true }: RequestFormProps) {
+export function RequestForm({ onSubmit, onCancel, onAddCar }: RequestFormProps) {
   const [cars, setCars] = useState<CarType[]>([]);
   const { user } = useAuth();
   const [selectedCounty, setSelectedCounty] = useState<string>("");
@@ -73,31 +72,28 @@ export function RequestForm({ onSubmit, onCancel, onAddCar, isVisible = true }: 
     },
   });
 
-  const loadCars = async () => {
-    if (!user) return;
-
-    try {
-      const carsQuery = query(
-        collection(db, "cars"),
-        where("userId", "==", user.uid)
-      );
-      const querySnapshot = await getDocs(carsQuery);
-      const loadedCars: CarType[] = [];
-      querySnapshot.forEach((doc) => {
-        loadedCars.push({ id: doc.id, ...doc.data() } as CarType);
-      });
-      setCars(loadedCars);
-    } catch (error) {
-      console.error("Error loading cars:", error);
-    }
-  };
-
-  // Load cars when component mounts or becomes visible.  Reload when isVisible changes to true.
   useEffect(() => {
-    if (isVisible) {
-      loadCars();
-    }
-  }, [user, isVisible]);
+    const loadCars = async () => {
+      if (!user) return;
+
+      try {
+        const carsQuery = query(
+          collection(db, "cars"),
+          where("userId", "==", user.uid)
+        );
+        const querySnapshot = await getDocs(carsQuery);
+        const loadedCars: CarType[] = [];
+        querySnapshot.forEach((doc) => {
+          loadedCars.push({ id: doc.id, ...doc.data() } as CarType);
+        });
+        setCars(loadedCars);
+      } catch (error) {
+        console.error("Error loading cars:", error);
+      }
+    };
+
+    loadCars();
+  }, [user]);
 
   return (
     <Form {...form}>
