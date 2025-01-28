@@ -255,7 +255,7 @@ export default function CarManagement({ isDialog, onBackClick }: CarManagementPr
         </DialogContent>
       </Dialog>
 
-      <ScrollArea className="h-[500px]">
+      <ScrollArea className="h-[400px] pr-4">
         <div className="grid gap-4 md:grid-cols-2">
           {cars.map((car) => (
             <Card key={car.id}>
@@ -306,18 +306,20 @@ export default function CarManagement({ isDialog, onBackClick }: CarManagementPr
 
   if (isDialog) {
     return (
-      <div className="relative space-y-4">
-        {onBackClick && (
-          <Button
-            variant="ghost"
-            onClick={onBackClick}
-            className="absolute top-0 left-0 p-2"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Înapoi
-          </Button>
-        )}
-        <div className="mt-12">
+      <div className="space-y-4">
+        <div className="sticky top-0 z-10 bg-white pb-4 mb-4 border-b">
+          {onBackClick && (
+            <Button
+              variant="ghost"
+              onClick={onBackClick}
+              className="flex items-center text-[#00aff5] hover:text-[#0099d6] hover:bg-[#e6f7ff]"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Înapoi la cerere
+            </Button>
+          )}
+        </div>
+        <div className="px-4">
           {content}
         </div>
       </div>
