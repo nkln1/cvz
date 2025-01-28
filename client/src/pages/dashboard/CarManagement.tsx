@@ -14,6 +14,7 @@ import { useAuth } from "@/context/AuthContext";
 import { db } from "@/lib/firebase";
 import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, where } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 export interface Car {
   id: string;
@@ -254,67 +255,71 @@ export default function CarManagement({ isDialog, onBackClick }: CarManagementPr
         </DialogContent>
       </Dialog>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        {cars.map((car) => (
-          <Card key={car.id}>
-            <CardContent className="pt-6">
-              <div className="space-y-2">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h3 className="font-semibold">{car.brand} {car.model}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      An fabricație: {car.year}
-                    </p>
-                  </div>
-                  {!isDialog && (
-                    <div className="space-y-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => startEditing(car)}
-                        className="w-full"
-                      >
-                        Editează
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleDeleteCar(car.id)}
-                        className="w-full text-red-500 hover:text-red-700 hover:bg-red-50"
-                      >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Șterge
-                      </Button>
+      <ScrollArea className="h-[500px]">
+        <div className="grid gap-4 md:grid-cols-2">
+          {cars.map((car) => (
+            <Card key={car.id}>
+              <CardContent className="pt-6">
+                <div className="space-y-2">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h3 className="font-semibold">{car.brand} {car.model}</h3>
+                      <p className="text-sm text-muted-foreground">
+                        An fabricație: {car.year}
+                      </p>
                     </div>
-                  )}
+                    {!isDialog && (
+                      <div className="space-y-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => startEditing(car)}
+                          className="w-full"
+                        >
+                          Editează
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleDeleteCar(car.id)}
+                          className="w-full text-red-500 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Șterge
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                  <div className="text-sm">
+                    <p>Tip carburant: {car.fuelType}</p>
+                    <p>Kilometraj: {car.mileage} km</p>
+                    {car.vin && <p>Serie șasiu: {car.vin}</p>}
+                  </div>
                 </div>
-                <div className="text-sm">
-                  <p>Tip carburant: {car.fuelType}</p>
-                  <p>Kilometraj: {car.mileage} km</p>
-                  {car.vin && <p>Serie șasiu: {car.vin}</p>}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </ScrollArea>
     </div>
   );
 
   if (isDialog) {
     return (
-      <div className="space-y-4">
+      <div className="relative space-y-4">
         {onBackClick && (
           <Button
             variant="ghost"
             onClick={onBackClick}
-            className="mb-4"
+            className="absolute top-0 left-0 p-2"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Înapoi
           </Button>
         )}
-        {content}
+        <div className="mt-12">
+          {content}
+        </div>
       </div>
     );
   }
