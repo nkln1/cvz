@@ -43,7 +43,7 @@ interface ServiceData {
   address: string;
   county: string;
   city: string;
-  [key: string]: string; // Add index signature to fix type error with updateDoc
+  [key: string]: string;
 }
 
 interface EditableField {
@@ -57,7 +57,7 @@ export default function ServiceDashboard() {
   const { toast } = useToast();
   const [serviceData, setServiceData] = useState<ServiceData | null>(null);
   const [editedData, setEditedData] = useState<ServiceData | null>(null);
-  const [editingFields, setEditingFields] = useState<{ [key: string]: boolean }>({});
+  const [editingFields, setEditingFields] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState("requests");
@@ -100,8 +100,11 @@ export default function ServiceDashboard() {
     fetchServiceData();
   }, [user]);
 
-  const handleEdit = (field: string) => {
-    setEditingFields((prev) => ({ ...prev, [field]: true }));
+  const handleEdit = (field: keyof ServiceData) => {
+    setEditingFields(prev => ({
+      ...prev,
+      [field]: !prev[field]
+    }));
   };
 
   const handleChange = (field: keyof ServiceData, value: string) => {
@@ -362,7 +365,7 @@ export default function ServiceDashboard() {
                             variant="ghost"
                             size="sm"
                             onClick={() => handleEdit(key)}
-                            className="h-6 w-6 p-0 absolute right-2 top-7 hover:bg-transparent"
+                            className="h-6 w-6 p-0 absolute right-2 top-7"
                           >
                             <Pen className="h-3.5 w-3.5 text-gray-400 hover:text-gray-600" />
                           </Button>
