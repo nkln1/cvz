@@ -261,7 +261,7 @@ export default function SignupForm() {
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-[#00aff5]">Nume și Prenume</FormLabel>
+                    <FormLabel className="text-Nume și Prenume">Nume și Prenume</FormLabel>
                     <FormControl>
                       <div className="relative">
                         <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
@@ -279,7 +279,7 @@ export default function SignupForm() {
                   name="companyName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-[#00aff5]">Numele Service-ului</FormLabel>
+                      <FormLabel className="text-black">Nume Service</FormLabel>
                       <FormControl>
                         <div className="relative">
                           <Building className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
@@ -295,7 +295,7 @@ export default function SignupForm() {
                   name="representativeName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-[#00aff5]">Nume Reprezentant</FormLabel>
+                      <FormLabel className="text-black">Nume Reprezentant</FormLabel>
                       <FormControl>
                         <div className="relative">
                           <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
@@ -311,7 +311,7 @@ export default function SignupForm() {
                   name="cui"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-[#00aff5]">CUI</FormLabel>
+                      <FormLabel className="text-black">CUI</FormLabel>
                       <FormControl>
                         <div className="relative">
                           <Building className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
@@ -327,7 +327,7 @@ export default function SignupForm() {
                   name="tradeRegNumber"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-[#00aff5]">Nr. Înregistrare Reg. Comerțului</FormLabel>
+                      <FormLabel className="text-black">Nr. Înreg.</FormLabel>
                       <FormControl>
                         <div className="relative">
                           <Building className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
@@ -346,7 +346,7 @@ export default function SignupForm() {
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-[#00aff5]">Email</FormLabel>
+                  <FormLabel className="text-black">Email</FormLabel>
                   <FormControl>
                     <div className="relative">
                       <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
@@ -362,7 +362,7 @@ export default function SignupForm() {
               name="phone"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-[#00aff5]">Telefon</FormLabel>
+                  <FormLabel className="text-black">Telefon</FormLabel>
                   <FormControl>
                     <div className="relative">
                       <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
@@ -379,7 +379,7 @@ export default function SignupForm() {
                 name="address"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-[#00aff5]">Adresă</FormLabel>
+                    <FormLabel className="text-black">Adresă</FormLabel>
                     <FormControl>
                       <div className="relative">
                         <MapPin className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
@@ -397,7 +397,7 @@ export default function SignupForm() {
               name="county"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-[#00aff5]">Județ</FormLabel>
+                  <FormLabel className="text-black">Județ</FormLabel>
                   <Select
                     value={field.value}
                     onValueChange={(value) => {
@@ -431,7 +431,7 @@ export default function SignupForm() {
               name="city"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-[#00aff5]">Localitate</FormLabel>
+                  <FormLabel className="text-black">Localitate</FormLabel>
                   <Select
                     value={field.value}
                     onValueChange={field.onChange}
@@ -462,7 +462,7 @@ export default function SignupForm() {
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-[#00aff5]">Parolă</FormLabel>
+                  <FormLabel className="text-black">Parolă</FormLabel>
                   <FormControl>
                     <div className="relative">
                       <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
@@ -478,7 +478,7 @@ export default function SignupForm() {
               name="confirmPassword"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-[#00aff5]">Confirmă Parola</FormLabel>
+                  <FormLabel className="text-black">Confirmă Parola</FormLabel>
                   <FormControl>
                     <div className="relative">
                       <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
