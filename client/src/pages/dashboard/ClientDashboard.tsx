@@ -29,6 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import MainLayout from "@/components/layout/MainLayout";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -44,14 +45,20 @@ const mockRequests = [
   {
     id: "REQ-001",
     date: "2024-01-26",
-    status: "În așteptare",
+    status: "Active",
     service: "Schimb ulei",
   },
   {
     id: "REQ-002",
     date: "2024-01-25",
-    status: "Acceptat",
+    status: "Rezolvat",
     service: "Schimb plăcuțe frână",
+  },
+  {
+    id: "REQ-003",
+    date: "2024-01-24",
+    status: "Anulat",
+    service: "Verificare sistem climatizare",
   },
 ];
 
@@ -83,6 +90,41 @@ interface UserProfile {
   county?: string;
   city?: string;
 }
+
+const renderRequestsTable = (requests: typeof mockRequests) => (
+  <Table>
+    <TableHeader>
+      <TableRow>
+        <TableHead>ID</TableHead>
+        <TableHead>Data</TableHead>
+        <TableHead>Serviciu</TableHead>
+        <TableHead>Status</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      {requests.map((request) => (
+        <TableRow key={request.id} className="hover:bg-gray-50">
+          <TableCell className="font-medium">{request.id}</TableCell>
+          <TableCell>{request.date}</TableCell>
+          <TableCell>{request.service}</TableCell>
+          <TableCell>
+            <span
+              className={`px-2 py-1 rounded-full text-sm ${
+                request.status === "Active"
+                  ? "bg-yellow-100 text-yellow-800"
+                  : request.status === "Rezolvat"
+                  ? "bg-green-100 text-green-800"
+                  : "bg-red-100 text-red-800"
+              }`}
+            >
+              {request.status}
+            </span>
+          </TableCell>
+        </TableRow>
+      ))}
+    </TableBody>
+  </Table>
+);
 
 export default function ClientDashboard() {
   const [activeTab, setActiveTab] = useState<TabType>("requests");
@@ -361,36 +403,22 @@ export default function ClientDashboard() {
         </CardTitle>
       </CardHeader>
       <CardContent className="p-6">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>ID</TableHead>
-              <TableHead>Data</TableHead>
-              <TableHead>Serviciu</TableHead>
-              <TableHead>Status</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {mockRequests.map((request) => (
-              <TableRow key={request.id} className="hover:bg-gray-50">
-                <TableCell className="font-medium">{request.id}</TableCell>
-                <TableCell>{request.date}</TableCell>
-                <TableCell>{request.service}</TableCell>
-                <TableCell>
-                  <span
-                    className={`px-2 py-1 rounded-full text-sm ${
-                      request.status === "În așteptare"
-                        ? "bg-yellow-100 text-yellow-800"
-                        : "bg-green-100 text-green-800"
-                    }`}
-                  >
-                    {request.status}
-                  </span>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+        <Tabs defaultValue="active" className="w-full">
+          <TabsList className="w-full grid grid-cols-3 mb-4">
+            <TabsTrigger value="active">Active</TabsTrigger>
+            <TabsTrigger value="solved">Rezolvate</TabsTrigger>
+            <TabsTrigger value="canceled">Anulate</TabsTrigger>
+          </TabsList>
+          <TabsContent value="active">
+            {renderRequestsTable(mockRequests.filter(req => req.status === "Active"))}
+          </TabsContent>
+          <TabsContent value="solved">
+            {renderRequestsTable(mockRequests.filter(req => req.status === "Rezolvat"))}
+          </TabsContent>
+          <TabsContent value="canceled">
+            {renderRequestsTable(mockRequests.filter(req => req.status === "Anulat"))}
+          </TabsContent>
+        </Tabs>
       </CardContent>
     </Card>
   );
