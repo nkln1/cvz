@@ -177,7 +177,10 @@ export default function ServiceDashboard() {
           <TabsContent value="requests">
             <Card className="border-[#00aff5]/20">
               <CardHeader>
-                <CardTitle>Cererile Clienților</CardTitle>
+                <CardTitle className="text-[#00aff5] flex items-center gap-2">
+                  <Clock className="h-5 w-5" />
+                  Cererile Clienților
+                </CardTitle>
                 <CardDescription>
                   Vezi și gestionează toate cererile primite de la clienți
                 </CardDescription>
@@ -189,10 +192,120 @@ export default function ServiceDashboard() {
               </CardContent>
             </Card>
           </TabsContent>
+
           <TabsContent value="offers">
-            {/* Similar structure for other tabs */}
+            <Card className="border-[#00aff5]/20">
+              <CardHeader>
+                <CardTitle className="text-[#00aff5] flex items-center gap-2">
+                  <SendHorizontal className="h-5 w-5" />
+                  Oferte Trimise
+                </CardTitle>
+                <CardDescription>
+                  Urmărește și gestionează ofertele trimise către clienți
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  Lista ofertelor va apărea aici
+                </p>
+              </CardContent>
+            </Card>
           </TabsContent>
-          {/* Add remaining tab contents here */}
+
+          <TabsContent value="messages">
+            <Card className="border-[#00aff5]/20">
+              <CardHeader>
+                <CardTitle className="text-[#00aff5] flex items-center gap-2">
+                  <MessageSquare className="h-5 w-5" />
+                  Mesaje
+                </CardTitle>
+                <CardDescription>
+                  Comunicare directă cu clienții și gestionarea conversațiilor
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  Nu există mesaje noi.
+                </p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="appointments">
+            <Card className="border-[#00aff5]/20">
+              <CardHeader>
+                <CardTitle className="text-[#00aff5] flex items-center gap-2">
+                  <Calendar className="h-5 w-5" />
+                  Programări
+                </CardTitle>
+                <CardDescription>
+                  Gestionează programările și disponibilitatea serviciului
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  Calendar și programări vor apărea aici
+                </p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="reviews">
+            <Card className="border-[#00aff5]/20">
+              <CardHeader>
+                <CardTitle className="text-[#00aff5] flex items-center gap-2">
+                  <Star className="h-5 w-5" />
+                  Recenzii
+                </CardTitle>
+                <CardDescription>
+                  Vezi și răspunde la recenziile primite de la clienți
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  Lista recenziilor va apărea aici
+                </p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="account">
+            <Card className="border-[#00aff5]/20">
+              <CardHeader>
+                <CardTitle className="text-[#00aff5] flex items-center gap-2">
+                  <UserCog className="h-5 w-5" />
+                  Cont
+                </CardTitle>
+                <CardDescription>
+                  Gestionează informațiile contului și setările
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  Setările contului vor apărea aici
+                </p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="public-profile">
+            <Card className="border-[#00aff5]/20">
+              <CardHeader>
+                <CardTitle className="text-[#00aff5] flex items-center gap-2">
+                  <Store className="h-5 w-5" />
+                  Profil Public
+                </CardTitle>
+                <CardDescription>
+                  Gestionează informațiile afișate public despre serviciul tău
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  Informațiile profilului public vor apărea aici
+                </p>
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
       </div>
       <Footer />
