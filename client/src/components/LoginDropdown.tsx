@@ -46,7 +46,13 @@ export default function LoginDropdown() {
   };
 
   const navigateToDashboard = () => {
-    setLocation("/service-dashboard");
+    // Check if the user is a client or service provider and navigate accordingly
+    const userRole = user?.role || "client";
+    if (userRole === "client") {
+      setLocation("/dashboard");
+    } else {
+      setLocation("/service-dashboard");
+    }
     setIsOpen(false);
   };
 
