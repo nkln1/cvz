@@ -12,7 +12,16 @@ import { CarForm } from "@/components/dashboard/CarForm";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/context/AuthContext";
 import { db } from "@/lib/firebase";
-import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, where } from "firebase/firestore";
+import {
+  collection,
+  addDoc,
+  getDocs,
+  doc,
+  updateDoc,
+  deleteDoc,
+  query,
+  where,
+} from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
@@ -31,7 +40,10 @@ interface CarManagementProps {
   onBackClick?: () => void;
 }
 
-export default function CarManagement({ isDialog, onBackClick }: CarManagementProps) {
+export default function CarManagement({
+  isDialog,
+  onBackClick,
+}: CarManagementProps) {
   const [cars, setCars] = useState<Car[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [editingCar, setEditingCar] = useState<Car | undefined>();
@@ -52,12 +64,12 @@ export default function CarManagement({ isDialog, onBackClick }: CarManagementPr
         console.log("User auth state:", {
           isAuthenticated: !!user,
           uid: user.uid,
-          email: user.email
+          email: user.email,
         });
 
         const carsQuery = query(
           collection(db, "cars"),
-          where("userId", "==", user.uid)
+          where("userId", "==", user.uid),
         );
         const querySnapshot = await getDocs(carsQuery);
         const loadedCars: Car[] = [];
@@ -71,7 +83,8 @@ export default function CarManagement({ isDialog, onBackClick }: CarManagementPr
         toast({
           variant: "destructive",
           title: "Error",
-          description: "Nu s-au putut încărca mașinile. Te rugăm să încerci din nou.",
+          description:
+            "Nu s-au putut încărca mașinile. Te rugăm să încerci din nou.",
         });
       } finally {
         setIsLoading(false);
@@ -97,7 +110,7 @@ export default function CarManagement({ isDialog, onBackClick }: CarManagementPr
       console.log("Current user:", {
         uid: user.uid,
         email: user.email,
-        isAuthenticated: !!user
+        isAuthenticated: !!user,
       });
 
       const carData = {
@@ -128,7 +141,7 @@ export default function CarManagement({ isDialog, onBackClick }: CarManagementPr
         code: error.code,
         message: error.message,
         details: error.details,
-        stack: error.stack
+        stack: error.stack,
       });
 
       let errorMessage = "Nu s-a putut adăuga mașina. ";
@@ -162,8 +175,8 @@ export default function CarManagement({ isDialog, onBackClick }: CarManagementPr
 
       setCars((prev) =>
         prev.map((c) =>
-          c.id === editingCar.id ? { ...car, id: editingCar.id } : c
-        )
+          c.id === editingCar.id ? { ...car, id: editingCar.id } : c,
+        ),
       );
 
       setEditingCar(undefined);
@@ -178,7 +191,8 @@ export default function CarManagement({ isDialog, onBackClick }: CarManagementPr
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Nu s-a putut actualiza mașina. Te rugăm să încerci din nou.",
+        description:
+          "Nu s-a putut actualiza mașina. Te rugăm să încerci din nou.",
       });
     }
   };
@@ -223,8 +237,8 @@ export default function CarManagement({ isDialog, onBackClick }: CarManagementPr
 
   const content = (
     <div className="space-y-4">
-      <Dialog 
-        open={isOpen} 
+      <Dialog
+        open={isOpen}
         onOpenChange={(open) => {
           setIsOpen(open);
           if (!open) {
@@ -244,8 +258,8 @@ export default function CarManagement({ isDialog, onBackClick }: CarManagementPr
               {editingCar ? "Editează mașina" : "Adaugă o mașină nouă"}
             </DialogTitle>
           </DialogHeader>
-          <CarForm 
-            onSubmit={editingCar ? handleEditCar : handleAddCar} 
+          <CarForm
+            onSubmit={editingCar ? handleEditCar : handleAddCar}
             onCancel={() => {
               setIsOpen(false);
               setEditingCar(undefined);
@@ -263,23 +277,25 @@ export default function CarManagement({ isDialog, onBackClick }: CarManagementPr
                 <div className="space-y-2">
                   <div className="flex justify-between items-start">
                     <div>
-                      <h3 className="font-semibold">{car.brand} {car.model}</h3>
+                      <h3 className="font-semibold">
+                        {car.brand} {car.model}
+                      </h3>
                       <p className="text-sm text-muted-foreground">
                         An fabricație: {car.year}
                       </p>
                     </div>
                     {!isDialog && (
                       <div className="space-y-2">
-                        <Button 
-                          variant="outline" 
+                        <Button
+                          variant="outline"
                           size="sm"
                           onClick={() => startEditing(car)}
                           className="w-full"
                         >
                           Editează
                         </Button>
-                        <Button 
-                          variant="outline" 
+                        <Button
+                          variant="outline"
                           size="sm"
                           onClick={() => handleDeleteCar(car.id)}
                           className="w-full text-red-500 hover:text-red-700 hover:bg-red-50"
@@ -319,9 +335,7 @@ export default function CarManagement({ isDialog, onBackClick }: CarManagementPr
             </Button>
           )}
         </div>
-        <div className="px-4">
-          {content}
-        </div>
+        <div className="px-4">{content}</div>
       </div>
     );
   }
@@ -334,9 +348,7 @@ export default function CarManagement({ isDialog, onBackClick }: CarManagementPr
           Mașina Mea
         </CardTitle>
       </CardHeader>
-      <CardContent className="p-6">
-        {content}
-      </CardContent>
+      <CardContent className="p-6">{content}</CardContent>
     </Card>
   );
 }

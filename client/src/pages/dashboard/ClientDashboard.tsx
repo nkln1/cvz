@@ -99,6 +99,15 @@ interface UserProfile {
   city?: string;
 }
 
+interface RequestFormData {
+  title: string;
+  description: string;
+  carId: string;
+  preferredDate: string;
+  county: string;
+  city: string;
+}
+
 const renderRequestsTable = (requests: typeof mockRequests) => (
   <Table>
     <TableHeader>
@@ -145,6 +154,7 @@ export default function ClientDashboard() {
   const [isResendingVerification, setIsResendingVerification] = useState(false);
   const [isRequestDialogOpen, setIsRequestDialogOpen] = useState(false);
   const [isCarDialogOpen, setIsCarDialogOpen] = useState(false);
+  const [requestFormData, setRequestFormData] = useState<Partial<RequestFormData>>({});
 
   useEffect(() => {
     if (user) {
@@ -500,7 +510,7 @@ export default function ClientDashboard() {
     }
   };
 
-  const handleRequestSubmit = async (data: any) => {
+  const handleRequestSubmit = async (data: RequestFormData) => {
     if (!user) return;
 
     try {
@@ -518,6 +528,7 @@ export default function ClientDashboard() {
         description: "Cererea ta a fost adăugată cu succes!",
       });
 
+      setRequestFormData({});
       setIsRequestDialogOpen(false);
     } catch (error) {
       console.error("Error submitting request:", error);
@@ -637,11 +648,17 @@ export default function ClientDashboard() {
             </DialogHeader>
             <RequestForm
               onSubmit={handleRequestSubmit}
-              onCancel={() => setIsRequestDialogOpen(false)}
+              onCancel={() => {
+                setRequestFormData({});
+                setIsRequestDialogOpen(false);
+              }}
               onAddCar={() => {
+                // Store current form data before switching to car dialog
+                setRequestFormData(form.getValues());
                 setIsRequestDialogOpen(false);
                 setIsCarDialogOpen(true);
               }}
+              initialData={requestFormData}
             />
           </DialogContent>
         </Dialog>

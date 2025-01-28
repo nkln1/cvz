@@ -53,22 +53,23 @@ interface RequestFormProps {
   onSubmit: (data: z.infer<typeof formSchema>) => void;
   onCancel: () => void;
   onAddCar: () => void;
+  initialData?: Partial<z.infer<typeof formSchema>>;
 }
 
-export function RequestForm({ onSubmit, onCancel, onAddCar }: RequestFormProps) {
+export function RequestForm({ onSubmit, onCancel, onAddCar, initialData }: RequestFormProps) {
   const [cars, setCars] = useState<CarType[]>([]);
   const { user } = useAuth();
-  const [selectedCounty, setSelectedCounty] = useState<string>("");
+  const [selectedCounty, setSelectedCounty] = useState<string>(initialData?.county || "");
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      title: "",
-      description: "",
-      carId: "",
-      preferredDate: "",
-      county: "",
-      city: "",
+      title: initialData?.title || "",
+      description: initialData?.description || "",
+      carId: initialData?.carId || "",
+      preferredDate: initialData?.preferredDate || "",
+      county: initialData?.county || "",
+      city: initialData?.city || "",
     },
   });
 
