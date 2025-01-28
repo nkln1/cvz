@@ -13,7 +13,7 @@ export default function LoginDropdown() {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const { user } = useAuth();
+  const { user, loading, error } = useAuth();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
 
@@ -28,8 +28,24 @@ export default function LoginDropdown() {
     };
 
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      // Reset state on unmount
+      setIsOpen(false);
+      setIsLoading(false);
+    };
   }, []);
+
+  // Show error toast if auth error occurs
+  useEffect(() => {
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Eroare de autentificare",
+        description: "Te rugăm să reîncarci pagina și să încerci din nou.",
+      });
+    }
+  }, [error, toast]);
 
   const handleSignOut = async () => {
     try {
@@ -77,13 +93,14 @@ export default function LoginDropdown() {
     }
   };
 
-  const handleMenuClick = (action: 'navigate' | 'signout') => {
-    if (action === 'navigate') {
-      void navigateToDashboard();
-    } else {
-      void handleSignOut();
-    }
-  };
+  // Show loading state while auth is initializing
+  if (loading) {
+    return (
+      <Button variant="ghost" className="opacity-50 cursor-not-allowed">
+        <span className="animate-pulse">Se încarcă...</span>
+      </Button>
+    );
+  }
 
   if (!user) {
     return (
@@ -127,14 +144,14 @@ export default function LoginDropdown() {
       {isOpen && (
         <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
           <button 
-            onClick={() => handleMenuClick('navigate')}
+            onClick={() => void navigateToDashboard()}
             className="w-full text-left px-4 py-2 text-sm text-gray-700 border-b border-gray-100 hover:bg-gray-100"
             disabled={isLoading}
           >
             {isLoading ? "Se încarcă..." : user.displayName || user.email}
           </button>
           <button
-            onClick={() => handleMenuClick('signout')}
+            onClick={() => void handleSignOut()}
             className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
             disabled={isLoading}
           >
