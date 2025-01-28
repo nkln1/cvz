@@ -37,7 +37,7 @@ export default function LoginDropdown() {
         title: "Success",
         description: "Te-ai deconectat cu succes!",
       });
-      setLocation("/"); // Redirect to home page after logout
+      setLocation("/");
     } catch (error) {
       toast({
         variant: "destructive",
@@ -70,6 +70,8 @@ export default function LoginDropdown() {
         title: "Error",
         description: "Nu s-a putut accesa dashboard-ul.",
       });
+    } finally {
+      setIsOpen(false);
     }
   };
 
@@ -94,14 +96,17 @@ export default function LoginDropdown() {
         </Button>
         {isOpen && (
           <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
-            <div 
-              onClick={navigateToDashboard}
-              className="px-4 py-2 text-sm text-gray-700 border-b border-gray-100 cursor-pointer hover:bg-gray-100"
+            <button 
+              onClick={() => {
+                // Using a regular function to avoid the onClick event warning
+                void navigateToDashboard();
+              }}
+              className="w-full text-left px-4 py-2 text-sm text-gray-700 border-b border-gray-100 hover:bg-gray-100"
             >
               {user.displayName || user.email}
-            </div>
+            </button>
             <button
-              onClick={handleSignOut}
+              onClick={() => void handleSignOut()}
               className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
             >
               Deconectare
