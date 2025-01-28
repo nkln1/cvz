@@ -81,49 +81,49 @@ export default function ServiceDashboard() {
             <TabsList className="grid grid-cols-2 lg:grid-cols-7 gap-2 bg-white">
               <TabsTrigger 
                 value="requests" 
-                className="flex items-center gap-2 data-[state=active]:text-[#00aff5] data-[state=active]:border-[#00aff5]"
+                className="flex items-center gap-2 data-[state=active]:text-[#00aff5] data-[state=active]:border-[#00aff5] transition-colors duration-200 hover:text-[#00aff5]"
               >
                 <Clock className="h-4 w-4" />
                 <span className="hidden sm:inline">Cereri Clienți</span>
               </TabsTrigger>
               <TabsTrigger 
                 value="offers" 
-                className="flex items-center gap-2 data-[state=active]:text-[#00aff5] data-[state=active]:border-[#00aff5]"
+                className="flex items-center gap-2 data-[state=active]:text-[#00aff5] data-[state=active]:border-[#00aff5] transition-colors duration-200 hover:text-[#00aff5]"
               >
                 <SendHorizontal className="h-4 w-4" />
                 <span className="hidden sm:inline">Oferte Trimise</span>
               </TabsTrigger>
               <TabsTrigger 
                 value="messages" 
-                className="flex items-center gap-2 data-[state=active]:text-[#00aff5] data-[state=active]:border-[#00aff5]"
+                className="flex items-center gap-2 data-[state=active]:text-[#00aff5] data-[state=active]:border-[#00aff5] transition-colors duration-200 hover:text-[#00aff5]"
               >
                 <MessageSquare className="h-4 w-4" />
                 <span className="hidden sm:inline">Mesaje</span>
               </TabsTrigger>
               <TabsTrigger 
                 value="appointments" 
-                className="flex items-center gap-2 data-[state=active]:text-[#00aff5] data-[state=active]:border-[#00aff5]"
+                className="flex items-center gap-2 data-[state=active]:text-[#00aff5] data-[state=active]:border-[#00aff5] transition-colors duration-200 hover:text-[#00aff5]"
               >
                 <Calendar className="h-4 w-4" />
                 <span className="hidden sm:inline">Programări</span>
               </TabsTrigger>
               <TabsTrigger 
                 value="reviews" 
-                className="flex items-center gap-2 data-[state=active]:text-[#00aff5] data-[state=active]:border-[#00aff5]"
+                className="flex items-center gap-2 data-[state=active]:text-[#00aff5] data-[state=active]:border-[#00aff5] transition-colors duration-200 hover:text-[#00aff5]"
               >
                 <Star className="h-4 w-4" />
                 <span className="hidden sm:inline">Recenzii</span>
               </TabsTrigger>
               <TabsTrigger 
                 value="account" 
-                className="flex items-center gap-2 data-[state=active]:text-[#00aff5] data-[state=active]:border-[#00aff5]"
+                className="flex items-center gap-2 data-[state=active]:text-[#00aff5] data-[state=active]:border-[#00aff5] transition-colors duration-200 hover:text-[#00aff5]"
               >
                 <UserCog className="h-4 w-4" />
                 <span className="hidden sm:inline">Cont</span>
               </TabsTrigger>
               <TabsTrigger 
                 value="public-profile" 
-                className="flex items-center gap-2 data-[state=active]:text-[#00aff5] data-[state=active]:border-[#00aff5]"
+                className="flex items-center gap-2 data-[state=active]:text-[#00aff5] data-[state=active]:border-[#00aff5] transition-colors duration-200 hover:text-[#00aff5]"
               >
                 <Store className="h-4 w-4" />
                 <span className="hidden sm:inline">Profil Public</span>
