@@ -35,11 +35,21 @@ export default function CarManagement() {
 
   // Load cars from Firestore when component mounts
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      console.log("No user found, skipping car load");
+      setIsLoading(false);
+      return;
+    }
 
     const loadCars = async () => {
       try {
         console.log("Loading cars for user:", user.uid);
+        console.log("User auth state:", {
+          isAuthenticated: !!user,
+          uid: user.uid,
+          email: user.email
+        });
+
         const carsQuery = query(
           collection(db, "cars"),
           where("userId", "==", user.uid)
@@ -67,11 +77,23 @@ export default function CarManagement() {
   }, [user, toast]);
 
   const handleAddCar = async (car: Omit<Car, "id">) => {
-    if (!user) return;
+    if (!user) {
+      console.error("No authenticated user found");
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Trebuie să fiți autentificat pentru a adăuga o mașină.",
+      });
+      return;
+    }
 
     try {
       console.log("Attempting to add car:", car);
-      console.log("Current user:", user.uid);
+      console.log("Current user:", {
+        uid: user.uid,
+        email: user.email,
+        isAuthenticated: !!user
+      });
 
       const carData = {
         ...car,
@@ -101,6 +123,7 @@ export default function CarManagement() {
         code: error.code,
         message: error.message,
         details: error.details,
+        stack: error.stack
       });
 
       let errorMessage = "Nu s-a putut adăuga mașina. ";
