@@ -71,7 +71,7 @@ interface Request {
   carId: string;
   preferredDate: string;
   county: string;
-  cities: string[]; // Changed from city to cities array
+  cities: string[];
   status: "Active" | "Rezolvat" | "Anulat";
   createdAt: string;
   userId: string;
@@ -93,7 +93,7 @@ interface RequestFormData {
   carId: string;
   preferredDate: string;
   county: string;
-  city: string;
+  cities: string[]; // Changed from city string to cities array
 }
 
 const renderRequestsTable = (
@@ -766,7 +766,7 @@ export default function ClientDashboard() {
         userId: user.uid,
         status: "Active",
         createdAt: new Date().toISOString(),
-        cities: [data.city] //Added cities array with the single city
+        // Removed cities array conversion since we're already getting an array
       };
 
       await addDoc(collection(db, "requests"), requestData);
