@@ -651,7 +651,13 @@ export default function ClientDashboard() {
             <DialogHeader>
               <DialogTitle>Adaugă o mașină nouă</DialogTitle>
             </DialogHeader>
-            <CarManagement />
+            <CarManagement
+              isDialog={true}
+              onBackClick={() => {
+                setIsCarDialogOpen(false);
+                setIsRequestDialogOpen(true);
+              }}
+            />
           </DialogContent>
         </Dialog>
       </div>

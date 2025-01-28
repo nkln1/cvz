@@ -7,7 +7,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Plus, Car, Trash2 } from "lucide-react";
+import { Plus, Car, Trash2, ArrowLeft } from "lucide-react";
 import { CarForm } from "@/components/dashboard/CarForm";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/context/AuthContext";
@@ -25,7 +25,12 @@ export interface Car {
   mileage: number;
 }
 
-export default function CarManagement() {
+interface CarManagementProps {
+  isDialog?: boolean;
+  onBackClick?: () => void;
+}
+
+export default function CarManagement({ isDialog, onBackClick }: CarManagementProps) {
   const [cars, setCars] = useState<Car[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [editingCar, setEditingCar] = useState<Car | undefined>();
@@ -33,7 +38,6 @@ export default function CarManagement() {
   const { user } = useAuth();
   const { toast } = useToast();
 
-  // Load cars from Firestore when component mounts
   useEffect(() => {
     if (!user) {
       console.log("No user found, skipping car load");
@@ -216,59 +220,53 @@ export default function CarManagement() {
     );
   }
 
-  return (
-    <Card className="shadow-lg">
-      <CardHeader className="border-b bg-gray-50">
-        <CardTitle className="text-[#00aff5] flex items-center gap-2">
-          <Car className="h-5 w-5" />
-          Mașina Mea
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="p-6">
-        <Dialog 
-          open={isOpen} 
-          onOpenChange={(open) => {
-            setIsOpen(open);
-            if (!open) {
+  const content = (
+    <div className="space-y-4">
+      <Dialog 
+        open={isOpen} 
+        onOpenChange={(open) => {
+          setIsOpen(open);
+          if (!open) {
+            setEditingCar(undefined);
+          }
+        }}
+      >
+        <DialogTrigger asChild>
+          <Button className="mb-4">
+            <Plus className="mr-2 h-4 w-4" />
+            Adaugă mașină
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>
+              {editingCar ? "Editează mașina" : "Adaugă o mașină nouă"}
+            </DialogTitle>
+          </DialogHeader>
+          <CarForm 
+            onSubmit={editingCar ? handleEditCar : handleAddCar} 
+            onCancel={() => {
+              setIsOpen(false);
               setEditingCar(undefined);
-            }
-          }}
-        >
-          <DialogTrigger asChild>
-            <Button className="mb-4">
-              <Plus className="mr-2 h-4 w-4" />
-              Adaugă mașină
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>
-                {editingCar ? "Editează mașina" : "Adaugă o mașină nouă"}
-              </DialogTitle>
-            </DialogHeader>
-            <CarForm 
-              onSubmit={editingCar ? handleEditCar : handleAddCar} 
-              onCancel={() => {
-                setIsOpen(false);
-                setEditingCar(undefined);
-              }}
-              initialData={editingCar}
-            />
-          </DialogContent>
-        </Dialog>
+            }}
+            initialData={editingCar}
+          />
+        </DialogContent>
+      </Dialog>
 
-        <div className="grid gap-4 md:grid-cols-2">
-          {cars.map((car) => (
-            <Card key={car.id}>
-              <CardContent className="pt-6">
-                <div className="space-y-2">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="font-semibold">{car.brand} {car.model}</h3>
-                      <p className="text-sm text-muted-foreground">
-                        An fabricație: {car.year}
-                      </p>
-                    </div>
+      <div className="grid gap-4 md:grid-cols-2">
+        {cars.map((car) => (
+          <Card key={car.id}>
+            <CardContent className="pt-6">
+              <div className="space-y-2">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="font-semibold">{car.brand} {car.model}</h3>
+                    <p className="text-sm text-muted-foreground">
+                      An fabricație: {car.year}
+                    </p>
+                  </div>
+                  {!isDialog && (
                     <div className="space-y-2">
                       <Button 
                         variant="outline" 
@@ -288,17 +286,49 @@ export default function CarManagement() {
                         Șterge
                       </Button>
                     </div>
-                  </div>
-                  <div className="text-sm">
-                    <p>Tip carburant: {car.fuelType}</p>
-                    <p>Kilometraj: {car.mileage} km</p>
-                    {car.vin && <p>Serie șasiu: {car.vin}</p>}
-                  </div>
+                  )}
                 </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                <div className="text-sm">
+                  <p>Tip carburant: {car.fuelType}</p>
+                  <p>Kilometraj: {car.mileage} km</p>
+                  {car.vin && <p>Serie șasiu: {car.vin}</p>}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+
+  if (isDialog) {
+    return (
+      <div className="space-y-4">
+        {onBackClick && (
+          <Button
+            variant="ghost"
+            onClick={onBackClick}
+            className="mb-4"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Înapoi
+          </Button>
+        )}
+        {content}
+      </div>
+    );
+  }
+
+  return (
+    <Card className="shadow-lg">
+      <CardHeader className="border-b bg-gray-50">
+        <CardTitle className="text-[#00aff5] flex items-center gap-2">
+          <Car className="h-5 w-5" />
+          Mașina Mea
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="p-6">
+        {content}
       </CardContent>
     </Card>
   );
