@@ -24,6 +24,7 @@ export interface Car {
 export default function CarManagement() {
   const [cars, setCars] = useState<Car[]>([]);
   const [isOpen, setIsOpen] = useState(false);
+  const [editingCar, setEditingCar] = useState<Car | undefined>();
 
   const handleAddCar = (car: Omit<Car, "id">) => {
     const newCar = {
@@ -34,9 +35,34 @@ export default function CarManagement() {
     setIsOpen(false);
   };
 
+  const handleEditCar = (car: Omit<Car, "id">) => {
+    if (editingCar) {
+      setCars((prev) =>
+        prev.map((c) =>
+          c.id === editingCar.id ? { ...car, id: editingCar.id } : c
+        )
+      );
+      setEditingCar(undefined);
+    }
+    setIsOpen(false);
+  };
+
+  const startEditing = (car: Car) => {
+    setEditingCar(car);
+    setIsOpen(true);
+  };
+
   return (
     <div className="space-y-4">
-      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <Dialog 
+        open={isOpen} 
+        onOpenChange={(open) => {
+          setIsOpen(open);
+          if (!open) {
+            setEditingCar(undefined);
+          }
+        }}
+      >
         <DialogTrigger asChild>
           <Button className="mb-4">
             <Plus className="mr-2 h-4 w-4" />
@@ -45,9 +71,18 @@ export default function CarManagement() {
         </DialogTrigger>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Adaugă o mașină nouă</DialogTitle>
+            <DialogTitle>
+              {editingCar ? "Editează mașina" : "Adaugă o mașină nouă"}
+            </DialogTitle>
           </DialogHeader>
-          <CarForm onSubmit={handleAddCar} onCancel={() => setIsOpen(false)} />
+          <CarForm 
+            onSubmit={editingCar ? handleEditCar : handleAddCar} 
+            onCancel={() => {
+              setIsOpen(false);
+              setEditingCar(undefined);
+            }}
+            initialData={editingCar}
+          />
         </DialogContent>
       </Dialog>
 
@@ -63,7 +98,11 @@ export default function CarManagement() {
                       An fabricație: {car.year}
                     </p>
                   </div>
-                  <Button variant="outline" size="sm">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => startEditing(car)}
+                  >
                     Editează
                   </Button>
                 </div>
