@@ -36,7 +36,7 @@ interface Request {
   carId: string;
   preferredDate: string;
   county: string;
-  cities: string[]; // Updated to array of cities
+  cities?: string[]; 
   status: "Active" | "Rezolvat" | "Anulat";
 }
 
@@ -77,6 +77,11 @@ export function RequestsTable({
     setShowDeleteDialog(false);
   };
 
+  const getLocationDisplay = (request: Request) => {
+    const citiesDisplay = request.cities?.length ? request.cities.join(", ") : "";
+    return citiesDisplay ? `${citiesDisplay}, ${request.county}` : request.county;
+  };
+
   return (
     <>
       <Table>
@@ -101,10 +106,7 @@ export function RequestsTable({
               <TableCell>
                 {format(new Date(request.preferredDate), "dd.MM.yyyy")}
               </TableCell>
-              <TableCell>
-                {/* Display all selected cities */}
-                {request.cities.join(", ")}, {request.county}
-              </TableCell>
+              <TableCell>{getLocationDisplay(request)}</TableCell>
               <TableCell>
                 <span
                   className={`px-2 py-1 rounded-full text-sm ${
@@ -224,7 +226,7 @@ export function RequestsTable({
                 <h3 className="font-medium text-sm text-muted-foreground">
                   Locație
                 </h3>
-                <p>{selectedRequest.cities.join(", ")}, {selectedRequest.county}</p>
+                <p>{getLocationDisplay(selectedRequest)}</p>
               </div>
               <div>
                 <h3 className="font-medium text-sm text-muted-foreground">
