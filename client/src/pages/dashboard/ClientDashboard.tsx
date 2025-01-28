@@ -820,72 +820,75 @@ export default function ClientDashboard() {
 
   return (
     <MainLayout>
-      <div className="container mx-auto p-6 space-y-6">
-        <nav className="flex gap-2 border-b pb-4">
-          <Button
-            variant={activeTab === "requests" ? "default" : "ghost"}
-            onClick={() => setActiveTab("requests")}
-            className={`${
-              activeTab === "requests"
-                ? "bg-[#00aff5] hover:bg-[#0099d6] text-white"
-                : "hover:text-[#00aff5]"
-            }`}
-          >
-            <FileText className="w-4 h-4 mr-2" />
-            Cererile mele
-          </Button>
-          <Button
-            variant={activeTab === "offers" ? "default" : "ghost"}
-            onClick={() => setActiveTab("offers")}
-            className={`${
-              activeTab === "offers"
-                ? "bg-[#00aff5] hover:bg-[#0099d6] text-white"
-                : "hover:text-[#00aff5]"
-            }`}
-          >
-            <MailOpen className="w-4 h-4 mr-2" />
-            Oferte Primite
-          </Button>
-          <Button
-            variant={activeTab === "messages" ? "default" : "ghost"}
-            onClick={() => setActiveTab("messages")}
-            className={`${
-              activeTab === "messages"
-                ? "bg-[#00aff5] hover:bg-[#0099d6] text-white"
-                : "hover:text-[#00aff5]"
-            }`}
-          >
-            <MessageSquare className="w-4 h-4 mr-2" />
-            Mesaje
-          </Button>
-          <Button
-            variant={activeTab === "car" ? "default" : "ghost"}
-            onClick={() => setActiveTab("car")}
-            className={`${
-              activeTab === "car"
-                ? "bg-[#00aff5] hover:bg-[#0099d6] text-white"
-                : "hover:text-[#00aff5]"
-            }`}
-          >
-            <CarIcon className="w-4 h-4 mr-2" />
-            Mașina Mea
-          </Button>
-          <Button
-            variant={activeTab === "profile" ? "default" : "ghost"}
-            onClick={() => setActiveTab("profile")}
-            className={`${
-              activeTab === "profile"
-                ? "bg-[#00aff5] hover:bg-[#0099d6] text-white"
-                : "hover:text-[#00aff5]"
-            }`}
-          >
-            <User className="w-4 h-4 mr-2" />
-            Cont
-          </Button>
-          <div className="ml-auto">
+      <div className="container mx-auto p-4 md:p-6 space-y-4 md:space-y-6">
+        {/* Mobile-optimized navigation */}
+        <nav className="flex flex-col sm:flex-row gap-2 border-b pb-4 overflow-x-auto">
+          <div className="flex flex-col sm:flex-row gap-2 w-full">
+            <Button
+              variant={activeTab === "requests" ? "default" : "ghost"}
+              onClick={() => setActiveTab("requests")}
+              className={`flex items-center justify-start w-full sm:w-auto ${
+                activeTab === "requests"
+                  ? "bg-[#00aff5] hover:bg-[#0099d6] text-white"
+                  : "hover:text-[#00aff5]"
+              }`}
+            >
+              <FileText className="w-4 h-4 mr-2" />
+              Cererile mele
+            </Button>
+            <Button
+              variant={activeTab === "offers" ? "default" : "ghost"}
+              onClick={() => setActiveTab("offers")}
+              className={`flex items-center justify-start w-full sm:w-auto ${
+                activeTab === "offers"
+                  ? "bg-[#00aff5] hover:bg-[#0099d6] text-white"
+                  : "hover:text-[#00aff5]"
+              }`}
+            >
+              <MailOpen className="w-4 h-4 mr-2" />
+              Oferte Primite
+            </Button>
+            <Button
+              variant={activeTab === "messages" ? "default" : "ghost"}
+              onClick={() => setActiveTab("messages")}
+              className={`flex items-center justify-start w-full sm:w-auto ${
+                activeTab === "messages"
+                  ? "bg-[#00aff5] hover:bg-[#0099d6] text-white"
+                  : "hover:text-[#00aff5]"
+              }`}
+            >
+              <MessageSquare className="w-4 h-4 mr-2" />
+              Mesaje
+            </Button>
+            <Button
+              variant={activeTab === "car" ? "default" : "ghost"}
+              onClick={() => setActiveTab("car")}
+              className={`flex items-center justify-start w-full sm:w-auto ${
+                activeTab === "car"
+                  ? "bg-[#00aff5] hover:bg-[#0099d6] text-white"
+                  : "hover:text-[#00aff5]"
+              }`}
+            >
+              <CarIcon className="w-4 h-4 mr-2" />
+              Mașina Mea
+            </Button>
+            <Button
+              variant={activeTab === "profile" ? "default" : "ghost"}
+              onClick={() => setActiveTab("profile")}
+              className={`flex items-center justify-start w-full sm:w-auto ${
+                activeTab === "profile"
+                  ? "bg-[#00aff5] hover:bg-[#0099d6] text-white"
+                  : "hover:text-[#00aff5]"
+              }`}
+            >
+              <User className="w-4 h-4 mr-2" />
+              Cont
+            </Button>
+          </div>
+          <div className="mt-4 sm:mt-0 sm:ml-auto">
             <Button
               onClick={() => setIsRequestDialogOpen(true)}
-              className="bg-[#00aff5] hover:bg-[#0099d6] text-white"
+              className="w-full sm:w-auto bg-[#00aff5] hover:bg-[#0099d6] text-white"
             >
               <Plus className="w-5 h-5 mr-2" />
               <span className="font-semibold">Adaugă cerere</span>
@@ -893,8 +896,236 @@ export default function ClientDashboard() {
           </div>
         </nav>
 
-        {renderContent()}
+        {/* Profile section mobile optimization */}
+        {activeTab === "profile" && (
+          <Card className="shadow-lg">
+            <CardHeader className="border-b bg-gray-50">
+              <CardTitle className="text-[#00aff5] flex items-center gap-2">
+                <User className="h-5 w-5" />
+                Profilul Meu
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-4 md:p-6">
+              <div className="space-y-4 md:space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-[#00aff5]">Nume</label>
+                    <div className="flex items-center gap-2">
+                      {isEditing ? (
+                        <Input
+                          value={editedProfile.name || ""}
+                          onChange={(e) =>
+                            handleInputChange("name", e.target.value)
+                          }
+                          placeholder="Nume complet"
+                          className="border-gray-300 focus:border-[#00aff5] focus:ring-[#00aff5]"
+                        />
+                      ) : (
+                        <p className="text-gray-900">
+                          {userProfile.name || "Nespecificat"}
+                        </p>
+                      )}
+                      {!isEditing && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={handleEditClick}
+                          className="h-8 w-8 hover:text-[#00aff5]"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
 
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-[#00aff5]">Email</label>
+                    <p className="text-gray-900">{userProfile.email}</p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-[#00aff5]">Telefon</label>                    <div className="flex items-center gap-2">
+                      {isEditing ? (
+                        <Input
+                          value={editedProfile.phone || ""}
+                          onChange={(e) =>
+                            handleInputChange("phone", e.target.value)
+                          }
+                          placeholder="Număr de telefon"
+                          className="border-gray-300 focus:border-[#00aff5] focus:ring-[#00aff5]"
+                        />
+                      ) : (
+                        <p className="text-gray-900">
+                          {userProfile.phone || "Nespecificat"}
+                        </p>
+                      )}
+                      {!isEditing && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={handleEditClick}
+                          className="h-8 w-8 hover:text-[#00aff5]"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-[#00aff5]">Județ</label>
+                    <div className="flex items-center gap-2">
+                      {isEditing ? (
+                        <Select
+                          value={editedProfile.county || ""}
+                          onValueChange={(value) =>
+                            handleInputChange("county", value)
+                          }
+                        >
+                          <SelectTrigger className="border-gray-300 focus:border-[#00aff5] focus:ring-[#00aff5]">
+                            <SelectValue placeholder="Selectează județul" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {romanianCounties.map((county) => (
+                              <SelectItem key={county} value={county}>
+                                {county}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <p className="text-gray-900">
+                          {userProfile.county || "Nespecificat"}
+                        </p>
+                      )}
+                      {!isEditing && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={handleEditClick}
+                          className="h-8 w-8 hover:text-[#00aff5]"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-[#00aff5]">Localitate</label>
+                    <div className="flex items-center gap-2">
+                      {isEditing ? (
+                        <Select
+                          value={editedProfile.city || ""}
+                          onValueChange={(value) =>
+                            handleInputChange("city", value)
+                          }
+                          disabled={!selectedCounty}
+                        >
+                          <SelectTrigger className="border-gray-300 focus:border-[#00aff5] focus:ring-[#00aff5]">
+                            <SelectValue placeholder="Selectează localitatea" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {selectedCounty &&
+                              getCitiesForCounty(selectedCounty).map((city) => (
+                                <SelectItem key={city} value={city}>
+                                  {city}
+                                </SelectItem>
+                              ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <p className="text-gray-900">
+                          {userProfile.city || "Nespecificat"}
+                        </p>
+                      )}
+                      {!isEditing && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={handleEditClick}
+                          className="h-8 w-8 hover:text-[#00aff5]"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {isEditing && (
+                  <div className="flex justify-end gap-2 mt-6">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setIsEditing(false);
+                        setEditedProfile(userProfile);
+                      }}
+                      className="hover:bg-gray-100"
+                    >
+                      Anulează
+                    </Button>
+                    <Button onClick={handleSave} className="bg-[#00aff5] hover:bg-[#0099d6]">
+                      Salvează
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Requests section mobile optimization */}
+        {activeTab === "requests" && (
+          <Card className="shadow-lg overflow-hidden">
+            <CardHeader className="border-b bg-gray-50">
+              <CardTitle className="text-[#00aff5] flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                Cererile mele
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-4 md:p-6">
+              <Tabs defaultValue="active" className="w-full">
+                <TabsList className="w-full grid grid-cols-3 mb-4">
+                  <TabsTrigger value="active">Active</TabsTrigger>
+                  <TabsTrigger value="solved">Rezolvate</TabsTrigger>
+                  <TabsTrigger value="canceled">Anulate</TabsTrigger>
+                </TabsList>
+                <div className="overflow-x-auto">
+                  <TabsContent value="active">
+                    <RequestsTable
+                      requests={requests.filter((req) => req.status === "Active")}
+                      cars={cars}
+                      onDelete={handleDeleteRequest}
+                      refreshRequests={fetchRequests}
+                    />
+                  </TabsContent>
+                  <TabsContent value="solved">
+                    <RequestsTable
+                      requests={requests.filter((req) => req.status === "Rezolvat")}
+                      cars={cars}
+                      onDelete={handleDeleteRequest}
+                      refreshRequests={fetchRequests}
+                    />
+                  </TabsContent>
+                  <TabsContent value="canceled">
+                    <RequestsTable
+                      requests={requests.filter((req) => req.status === "Anulat")}
+                      cars={cars}
+                      onDelete={handleDeleteRequest}
+                      refreshRequests={fetchRequests}
+                    />
+                  </TabsContent>
+                </div>
+              </Tabs>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Rest of the component remains unchanged */}
+        {activeTab === "offers" && renderOffers()}
+        {activeTab === "messages" && renderMessages()}
+        {activeTab === "car" && <CarManagement />}
         <Dialog open={isRequestDialogOpen} onOpenChange={setIsRequestDialogOpen}>
           <DialogContent className="sm:max-w-[600px]">
             <DialogHeader>

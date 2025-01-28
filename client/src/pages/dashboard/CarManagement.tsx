@@ -247,12 +247,12 @@ export default function CarManagement({
         }}
       >
         <DialogTrigger asChild>
-          <Button className="mb-4">
+          <Button className="w-full sm:w-auto mb-4">
             <Plus className="mr-2 h-4 w-4" />
             Adaugă mașină
           </Button>
         </DialogTrigger>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[425px] mx-4 sm:mx-auto">
           <DialogHeader>
             <DialogTitle>
               {editingCar ? "Editează mașina" : "Adaugă o mașină nouă"}
@@ -269,13 +269,13 @@ export default function CarManagement({
         </DialogContent>
       </Dialog>
 
-      <ScrollArea className="h-[400px] pr-4">
-        <div className="grid gap-4 md:grid-cols-2">
+      <ScrollArea className="h-[calc(100vh-300px)] sm:h-[400px] pr-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {cars.map((car) => (
             <Card key={car.id}>
-              <CardContent className="pt-6">
+              <CardContent className="p-4 sm:pt-6">
                 <div className="space-y-2">
-                  <div className="flex justify-between items-start">
+                  <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
                     <div>
                       <h3 className="font-semibold">
                         {car.brand} {car.model}
@@ -285,12 +285,12 @@ export default function CarManagement({
                       </p>
                     </div>
                     {!isDialog && (
-                      <div className="space-y-2">
+                      <div className="flex flex-row sm:flex-col gap-2 sm:space-y-2 w-full sm:w-auto">
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => startEditing(car)}
-                          className="w-full"
+                          className="flex-1 sm:w-full"
                         >
                           Editează
                         </Button>
@@ -298,7 +298,7 @@ export default function CarManagement({
                           variant="outline"
                           size="sm"
                           onClick={() => handleDeleteCar(car.id)}
-                          className="w-full text-red-500 hover:text-red-700 hover:bg-red-50"
+                          className="flex-1 sm:w-full text-red-500 hover:text-red-700 hover:bg-red-50"
                         >
                           <Trash2 className="h-4 w-4 mr-2" />
                           Șterge
@@ -328,7 +328,7 @@ export default function CarManagement({
             <Button
               variant="ghost"
               onClick={onBackClick}
-              className="flex items-center text-[#00aff5] hover:text-[#0099d6] hover:bg-[#e6f7ff]"
+              className="flex items-center text-[#00aff5] hover:text-[#0099d6] hover:bg-[#e6f7ff] w-full sm:w-auto"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
               Înapoi la cerere
@@ -348,7 +348,7 @@ export default function CarManagement({
           Mașina Mea
         </CardTitle>
       </CardHeader>
-      <CardContent className="p-6">{content}</CardContent>
+      <CardContent className="p-4 sm:p-6">{content}</CardContent>
     </Card>
   );
 }
