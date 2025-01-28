@@ -5,7 +5,7 @@
         "Blaj",
         "Cugir",
         "Ocna Mureș",
-        "Zlatna",
+        "Zlatina",
         "Sebeș",
         "Abrud",
         "Teiuș"
@@ -48,19 +48,8 @@
         "Valea lui Mihai",
         "Vadu Crișului"
     ],
-    "Bistrița-Năsăud": [
-        "Bistrița",
-        "Năsăud",
-        "Beclean",
-        "Sângeorz-Băi"
-    ],
-    "Botoșani": [
-        "Botoșani",
-        "Dorohoi",
-        "Darabani",
-        "Săveni",
-        "Ștefănești"
-    ],
+    "Bistrița-Năsăud": ["Bistrița", "Năsăud", "Beclean", "Sângeorz-Băi"],
+    "Botoșani": ["Botoșani", "Dorohoi", "Darabani", "Săveni", "Ștefănești"],
     "Brașov": [
         "Brașov",
         "Făgăraș",
@@ -70,12 +59,7 @@
         "Zărnești",
         "Victoria"
     ],
-    "Brăila": [
-        "Brăila",
-        "Ianca",
-        "Însurăței",
-        "Făurei"
-    ],
+    "Brăila": ["Brăila", "Ianca", "Însurăței", "Făurei"],
     "București": [
         "Sector 1",
         "Sector 2",
@@ -84,13 +68,7 @@
         "Sector 5",
         "Sector 6"
     ],
-    "Buzău": [
-        "Buzău",
-        "Râmnicu Sărat",
-        "Nehoiu",
-        "Pătârlagele",
-        "Pogoanele"
-    ],
+    "Buzău": ["Buzău", "Râmnicu Sărat", "Nehoiu", "Pătârlagele", "Pogoanele"],
     "Caraș-Severin": [
         "Reșița",
         "Caransebeș",
@@ -99,12 +77,7 @@
         "Moldova Nouă",
         "Oțelu Roșu"
     ],
-    "Călărași": [
-        "Călărași",
-        "Oltenița",
-        "Budești",
-        "Fundulea"
-    ],
+    "Călărași": ["Călărași", "Oltenița", "Budești", "Fundulea"],
     "Cluj": [
         "Cluj-Napoca",
         "Turda",
@@ -122,12 +95,7 @@
         "Eforie",
         "Hârșova"
     ],
-    "Covasna": [
-        "Sfântu Gheorghe",
-        "Târgu Secuiesc",
-        "Baraolt",
-        "Covasna"
-    ],
+    "Covasna": ["Sfântu Gheorghe", "Târgu Secuiesc", "Baraolt", "Covasna"],
     "Dâmbovița": [
         "Târgoviște",
         "Moreni",
@@ -144,17 +112,8 @@
         "Segarcea",
         "Dăbuleni"
     ],
-    "Galați": [
-        "Galați",
-        "Tecuci",
-        "Târgu Bujor",
-        "Berești"
-    ],
-    "Giurgiu": [
-        "Giurgiu",
-        "Bolintin-Vale",
-        "Mihăilești"
-    ],
+    "Galați": ["Galați", "Tecuci", "Târgu Bujor", "Berești"],
+    "Giurgiu": ["Giurgiu", "Bolintin-Vale", "Mihăilești"],
     "Gorj": [
         "Târgu Jiu",
         "Motru",
@@ -179,20 +138,8 @@
         "Lupeni",
         "Simeria"
     ],
-    "Ialomița": [
-        "Slobozia",
-        "Fetești",
-        "Urziceni",
-        "Amara",
-        "Fierbinți-Târg"
-    ],
-    "Iași": [
-        "Iași",
-        "Pașcani",
-        "Târgu Frumos",
-        "Hârlău",
-        "Podu Iloaiei"
-    ],
+    "Ialomița": ["Slobozia", "Fetești", "Urziceni", "Amara", "Fierbinți-Târg"],
+    "Iași": ["Iași", "Pașcani", "Târgu Frumos", "Hârlău", "Podu Iloaiei"],
     "Ilfov": [
         "Buftea",
         "Voluntari",
@@ -215,26 +162,9 @@
         "Orșova",
         "Baia de Aramă"
     ],
-    "Mureș": [
-        "Târgu Mureș",
-        "Reghin",
-        "Sighișoara",
-        "Târnăveni",
-        "Luduș"
-    ],
-    "Neamț": [
-        "Piatra Neamț",
-        "Roman",
-        "Târgu Neamț",
-        "Bicaz"
-    ],
-    "Olt": [
-        "Slatina",
-        "Caracal",
-        "Balș",
-        "Corabia",
-        "Drăgănești-Olt"
-    ],
+    "Mureș": ["Târgu Mureș", "Reghin", "Sighișoara", "Târnăveni", "Luduș"],
+    "Neamț": ["Piatra Neamț", "Roman", "Târgu Neamț", "Bicaz"],
+    "Olt": ["Slatina", "Caracal", "Balș", "Corabia", "Drăgănești-Olt"],
     "Prahova": [
         "Ploiești",
         "Câmpina",
@@ -243,27 +173,9 @@
         "Slănic",
         "Boldești-Scăeni"
     ],
-    "Sălaj": [
-        "Zalău",
-        "Șimleu Silvaniei",
-        "Jibou",
-        "Cehu Silvaniei"
-    ],
-    "Satu Mare": [
-        "Satu Mare",
-        "Carei",
-        "Negrești-Oaș",
-        "Tășnad",
-        "Livada"
-    ],
-    "Sibiu": [
-        "Sibiu",
-        "Mediaș",
-        "Cisnădie",
-        "Avrig",
-        "Agnita",
-        "Dumbrăveni"
-    ],
+    "Sălaj": ["Zalău", "Șimleu Silvaniei", "Jibou", "Cehu Silvaniei"],
+    "Satu Mare": ["Satu Mare", "Carei", "Negrești-Oaș", "Tășnad", "Livada"],
+    "Sibiu": ["Sibiu", "Mediaș", "Cisnădie", "Avrig", "Agnita", "Dumbrăveni"],
     "Suceava": [
         "Suceava",
         "Rădăuți",
@@ -287,13 +199,7 @@
         "Recaș",
         "Buziaș"
     ],
-    "Tulcea": [
-        "Tulcea",
-        "Măcin",
-        "Babadag",
-        "Isaccea",
-        "Sulina"
-    ],
+    "Tulcea": ["Tulcea", "Măcin", "Babadag", "Isaccea", "Sulina"],
     "Vâlcea": [
         "Râmnicu Vâlcea",
         "Drăgășani",
@@ -301,17 +207,6 @@
         "Brezoi",
         "Horezu"
     ],
-    "Vaslui": [
-        "Vaslui",
-        "Bârlad",
-        "Huși",
-        "Murgeni"
-    ],
-    "Vrancea": [
-        "Focșani",
-        "Adjud",
-        "Mărășești",
-        "Panciu",
-        "Odobești"
-    ]
+    "Vaslui": ["Vaslui", "Bârlad", "Huși", "Murgeni"],
+    "Vrancea": ["Focșani", "Adjud", "Mărășești", "Panciu", "Odobești"]
 }
