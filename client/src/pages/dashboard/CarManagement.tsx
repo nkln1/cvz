@@ -7,12 +7,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Plus, Car } from "lucide-react";
+import { Plus, Car, Trash2 } from "lucide-react";
 import { CarForm } from "@/components/dashboard/CarForm";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/context/AuthContext";
 import { db } from "@/lib/firebase";
-import { collection, addDoc, getDocs, doc, updateDoc, query, where } from "firebase/firestore";
+import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, where } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 
 export interface Car {
@@ -178,6 +178,31 @@ export default function CarManagement() {
     }
   };
 
+  const handleDeleteCar = async (carId: string) => {
+    if (!user) return;
+
+    try {
+      console.log("Attempting to delete car:", carId);
+      const carRef = doc(db, "cars", carId);
+      await deleteDoc(carRef);
+      console.log("Successfully deleted car");
+
+      setCars((prev) => prev.filter((c) => c.id !== carId));
+
+      toast({
+        title: "Success",
+        description: "Mașina a fost ștearsă cu succes!",
+      });
+    } catch (error) {
+      console.error("Error deleting car:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Nu s-a putut șterge mașina. Te rugăm să încerci din nou.",
+      });
+    }
+  };
+
   const startEditing = (car: Car) => {
     setEditingCar(car);
     setIsOpen(true);
@@ -244,13 +269,25 @@ export default function CarManagement() {
                         An fabricație: {car.year}
                       </p>
                     </div>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => startEditing(car)}
-                    >
-                      Editează
-                    </Button>
+                    <div className="space-y-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => startEditing(car)}
+                        className="w-full"
+                      >
+                        Editează
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleDeleteCar(car.id)}
+                        className="w-full text-red-500 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Șterge
+                      </Button>
+                    </div>
                   </div>
                   <div className="text-sm">
                     <p>Tip carburant: {car.fuelType}</p>
