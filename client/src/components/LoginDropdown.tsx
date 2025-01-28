@@ -74,63 +74,62 @@ export default function LoginDropdown() {
     }
   };
 
-  if (user) {
+  if (!user) {
     return (
-      <div className="relative" ref={dropdownRef}>
-        <Button
-          variant="ghost"
-          className="flex items-center gap-2"
-          onClick={() => setIsOpen(!isOpen)}
-        >
-          <img
-            src={user.photoURL || "https://i.ibb.co/NnnNWbN/Signlogin.png"}
-            alt={user.displayName || "User"}
-            className="h-8 w-8 rounded-full"
-          />
-          <ChevronDown
-            className={`h-4 w-4 transition-transform ${
-              isOpen ? "rotate-180" : ""
-            }`}
-          />
-        </Button>
-        {isOpen && (
-          <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
-            <button 
-              onClick={() => {
-                // Using a regular function to avoid the onClick event warning
-                void navigateToDashboard();
-              }}
-              className="w-full text-left px-4 py-2 text-sm text-gray-700 border-b border-gray-100 hover:bg-gray-100"
-            >
-              {user.displayName || user.email}
-            </button>
-            <button
-              onClick={() => void handleSignOut()}
-              className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-            >
-              Deconectare
-            </button>
-          </div>
-        )}
-      </div>
+      <AuthDialog
+        trigger={
+          <Button
+            variant="ghost"
+            className="flex items-center gap-2 text-gray-600 hover:text-[#00aff5]"
+          >
+            <img
+              src="https://i.ibb.co/NnnNWbN/Signlogin.png"
+              alt="Login Icon"
+              className="h-8 w-8"
+            />
+            <ChevronDown className="h-4 w-4" />
+          </Button>
+        }
+      />
     );
   }
 
   return (
-    <AuthDialog
-      trigger={
-        <Button
-          variant="ghost"
-          className="flex items-center gap-2 text-gray-600 hover:text-[#00aff5]"
-        >
-          <img
-            src="https://i.ibb.co/NnnNWbN/Signlogin.png"
-            alt="Login Icon"
-            className="h-8 w-8"
-          />
-          <ChevronDown className="h-4 w-4" />
-        </Button>
-      }
-    />
+    <div className="relative" ref={dropdownRef}>
+      <Button
+        variant="ghost"
+        className="flex items-center gap-2"
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        <img
+          src={user.photoURL || "https://i.ibb.co/NnnNWbN/Signlogin.png"}
+          alt={user.displayName || "User"}
+          className="h-8 w-8 rounded-full"
+        />
+        <ChevronDown
+          className={`h-4 w-4 transition-transform ${
+            isOpen ? "rotate-180" : ""
+          }`}
+        />
+      </Button>
+      {isOpen && (
+        <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
+          <button 
+            onClick={() => {
+              void navigateToDashboard();
+            }}
+            className="w-full text-left px-4 py-2 text-sm text-gray-700 border-b border-gray-100 hover:bg-gray-100"
+          >
+            {user.displayName || user.email}
+          </button>
+          <button
+            onClick={() => void handleSignOut()}
+            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+          >
+            Deconectare
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
