@@ -29,6 +29,11 @@ import { useAuth } from "@/context/AuthContext";
 import type { Car as CarType } from "@/pages/dashboard/CarManagement";
 import { Checkbox } from "@/components/ui/checkbox";
 
+// Get today's date in YYYY-MM-DD format
+const today = new Date();
+today.setHours(0, 0, 0, 0);
+const formattedToday = today.toISOString().split('T')[0];
+
 const formSchema = z.object({
   title: z.string().min(3, {
     message: "Titlul trebuie să conțină cel puțin 3 caractere.",
@@ -41,6 +46,12 @@ const formSchema = z.object({
   }),
   preferredDate: z.string().min(1, {
     message: "Te rugăm să selectezi o dată preferată.",
+  }).refine((date) => {
+    const selectedDate = new Date(date);
+    selectedDate.setHours(0, 0, 0, 0);
+    return selectedDate >= today;
+  }, {
+    message: "Data preferată nu poate fi anterioară datei curente.",
   }),
   county: z.string().min(1, {
     message: "Te rugăm să selectezi județul.",
@@ -71,7 +82,7 @@ export function RequestForm({ onSubmit, onCancel, onAddCar, initialData }: Reque
       title: initialData?.title || "",
       description: initialData?.description || "",
       carId: initialData?.carId || "",
-      preferredDate: initialData?.preferredDate || "",
+      preferredDate: initialData?.preferredDate || formattedToday,
       county: initialData?.county || "",
       cities: initialData?.cities || [],
     },
@@ -190,7 +201,7 @@ export function RequestForm({ onSubmit, onCancel, onAddCar, initialData }: Reque
                 <FormItem>
                   <FormLabel>Data preferată</FormLabel>
                   <FormControl>
-                    <Input type="date" {...field} />
+                    <Input type="date" min={formattedToday} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
