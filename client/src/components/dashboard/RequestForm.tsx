@@ -20,14 +20,14 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Car, Plus } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Plus } from "lucide-react";
 import { romanianCounties, getCitiesForCounty } from "@/lib/romaniaData";
 import { useEffect, useState } from "react";
 import { db } from "@/lib/firebase";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { useAuth } from "@/context/AuthContext";
-import type { Car as CarType } from "@/pages/dashboard/CarManagement";
-import { Checkbox } from "@/components/ui/checkbox";
+import type { Car } from "@/pages/dashboard/CarManagement";
 
 const formSchema = z.object({
   title: z.string().min(3, {
@@ -60,7 +60,7 @@ interface RequestFormProps {
 }
 
 export function RequestForm({ onSubmit, onCancel, onAddCar, initialData }: RequestFormProps) {
-  const [cars, setCars] = useState<CarType[]>([]);
+  const [cars, setCars] = useState<Car[]>([]);
   const { user } = useAuth();
   const [selectedCounty, setSelectedCounty] = useState<string>(initialData?.county || "");
   const [availableCities, setAvailableCities] = useState<string[]>([]);
@@ -97,9 +97,9 @@ export function RequestForm({ onSubmit, onCancel, onAddCar, initialData }: Reque
           where("userId", "==", user.uid)
         );
         const querySnapshot = await getDocs(carsQuery);
-        const loadedCars: CarType[] = [];
+        const loadedCars: Car[] = [];
         querySnapshot.forEach((doc) => {
-          loadedCars.push({ id: doc.id, ...doc.data() } as CarType);
+          loadedCars.push({ id: doc.id, ...doc.data() } as Car);
         });
         setCars(loadedCars);
       } catch (error) {
