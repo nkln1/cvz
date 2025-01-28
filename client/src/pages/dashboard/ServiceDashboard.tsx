@@ -365,7 +365,7 @@ export default function ServiceDashboard() {
                             variant="ghost"
                             size="sm"
                             onClick={() => handleEdit(key)}
-                            className="h-6 w-6 p-0 absolute right-2 top-7"
+                            className="h-6 w-6 p-0 absolute right-2 top-0"
                           >
                             <Pen className="h-3.5 w-3.5 text-gray-400 hover:text-gray-600" />
                           </Button>
@@ -376,7 +376,7 @@ export default function ServiceDashboard() {
                         onChange={(e) => handleChange(key, e.target.value)}
                         disabled={!editable || !editingFields[key]}
                         className={`${
-                          !editable ? "bg-gray-50" : ""
+                          !editable || !editingFields[key] ? "bg-gray-50" : "bg-white"
                         } pr-8`}
                       />
                     </div>
