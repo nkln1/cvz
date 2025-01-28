@@ -536,7 +536,7 @@ export default function ClientDashboard() {
             }`}
           >
             <Car className="w-4 h-4 mr-2" />
-            Mașina
+            Mașina Mea
           </Button>
           <Button
             variant={activeTab === "profile" ? "default" : "ghost"}

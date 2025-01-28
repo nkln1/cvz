@@ -7,9 +7,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Plus } from "lucide-react";
+import { Plus, Car } from "lucide-react";
 import { CarForm } from "@/components/dashboard/CarForm";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/context/AuthContext";
 import { db } from "@/lib/firebase";
 import { collection, addDoc, getDocs, doc, updateDoc, query, where } from "firebase/firestore";
@@ -192,69 +192,77 @@ export default function CarManagement() {
   }
 
   return (
-    <div className="space-y-4">
-      <Dialog 
-        open={isOpen} 
-        onOpenChange={(open) => {
-          setIsOpen(open);
-          if (!open) {
-            setEditingCar(undefined);
-          }
-        }}
-      >
-        <DialogTrigger asChild>
-          <Button className="mb-4">
-            <Plus className="mr-2 h-4 w-4" />
-            Adaugă mașină
-          </Button>
-        </DialogTrigger>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>
-              {editingCar ? "Editează mașina" : "Adaugă o mașină nouă"}
-            </DialogTitle>
-          </DialogHeader>
-          <CarForm 
-            onSubmit={editingCar ? handleEditCar : handleAddCar} 
-            onCancel={() => {
-              setIsOpen(false);
+    <Card className="shadow-lg">
+      <CardHeader className="border-b bg-gray-50">
+        <CardTitle className="text-[#00aff5] flex items-center gap-2">
+          <Car className="h-5 w-5" />
+          Mașina Mea
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="p-6">
+        <Dialog 
+          open={isOpen} 
+          onOpenChange={(open) => {
+            setIsOpen(open);
+            if (!open) {
               setEditingCar(undefined);
-            }}
-            initialData={editingCar}
-          />
-        </DialogContent>
-      </Dialog>
+            }
+          }}
+        >
+          <DialogTrigger asChild>
+            <Button className="mb-4">
+              <Plus className="mr-2 h-4 w-4" />
+              Adaugă mașină
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>
+                {editingCar ? "Editează mașina" : "Adaugă o mașină nouă"}
+              </DialogTitle>
+            </DialogHeader>
+            <CarForm 
+              onSubmit={editingCar ? handleEditCar : handleAddCar} 
+              onCancel={() => {
+                setIsOpen(false);
+                setEditingCar(undefined);
+              }}
+              initialData={editingCar}
+            />
+          </DialogContent>
+        </Dialog>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        {cars.map((car) => (
-          <Card key={car.id}>
-            <CardContent className="pt-6">
-              <div className="space-y-2">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h3 className="font-semibold">{car.brand} {car.model}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      An fabricație: {car.year}
-                    </p>
+        <div className="grid gap-4 md:grid-cols-2">
+          {cars.map((car) => (
+            <Card key={car.id}>
+              <CardContent className="pt-6">
+                <div className="space-y-2">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h3 className="font-semibold">{car.brand} {car.model}</h3>
+                      <p className="text-sm text-muted-foreground">
+                        An fabricație: {car.year}
+                      </p>
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => startEditing(car)}
+                    >
+                      Editează
+                    </Button>
                   </div>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => startEditing(car)}
-                  >
-                    Editează
-                  </Button>
+                  <div className="text-sm">
+                    <p>Tip carburant: {car.fuelType}</p>
+                    <p>Kilometraj: {car.mileage} km</p>
+                    {car.vin && <p>Serie șasiu: {car.vin}</p>}
+                  </div>
                 </div>
-                <div className="text-sm">
-                  <p>Tip carburant: {car.fuelType}</p>
-                  <p>Kilometraj: {car.mileage} km</p>
-                  {car.vin && <p>Serie șasiu: {car.vin}</p>}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
