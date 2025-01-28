@@ -7,13 +7,20 @@ import Home from "@/pages/Home";
 import Contact from "@/pages/Contact";
 import { AuthProvider } from "@/context/AuthContext";
 import ClientDashboard from "@/pages/dashboard/ClientDashboard";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/contact" component={Contact} />
-      <Route path="/dashboard" component={ClientDashboard} />
+      <Route path="/dashboard">
+        {() => (
+          <ProtectedRoute allowedRoles={["client"]}>
+            <ClientDashboard />
+          </ProtectedRoute>
+        )}
+      </Route>
       <Route component={NotFound} />
     </Switch>
   );
