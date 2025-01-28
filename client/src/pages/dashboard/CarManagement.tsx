@@ -28,9 +28,10 @@ export interface Car {
 interface CarManagementProps {
   isDialog?: boolean;
   onBackClick?: () => void;
+  onCarAdded?: (carId: string) => void;
 }
 
-export default function CarManagement({ isDialog, onBackClick }: CarManagementProps) {
+export default function CarManagement({ isDialog, onBackClick, onCarAdded }: CarManagementProps) {
   const [cars, setCars] = useState<Car[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [editingCar, setEditingCar] = useState<Car | undefined>();
@@ -121,6 +122,17 @@ export default function CarManagement({ isDialog, onBackClick }: CarManagementPr
         title: "Success",
         description: "Mașina a fost adăugată cu succes!",
       });
+
+      // If onCarAdded callback exists, call it with the new car ID
+      if (onCarAdded) {
+        onCarAdded(docRef.id);
+      }
+
+      // If in dialog mode and onBackClick exists, call it to return to the request form
+      if (isDialog && onBackClick) {
+        onBackClick();
+      }
+
     } catch (error: any) {
       console.error("Detailed error adding car:", {
         error,

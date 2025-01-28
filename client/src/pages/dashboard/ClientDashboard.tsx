@@ -404,6 +404,35 @@ export default function ClientDashboard() {
     </Card>
   );
 
+  const handleRequestSubmit = async (data: any) => {
+    if (!user) return;
+
+    try {
+      const requestData = {
+        ...data,
+        userId: user.uid,
+        status: "Active",
+        createdAt: new Date().toISOString(),
+      };
+
+      await addDoc(collection(db, "requests"), requestData);
+
+      toast({
+        title: "Succes",
+        description: "Cererea ta a fost adăugată cu succes!",
+      });
+
+      setIsRequestDialogOpen(false);
+    } catch (error) {
+      console.error("Error submitting request:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Nu s-a putut adăuga cererea. Te rugăm să încerci din nou.",
+      });
+    }
+  };
+
   const renderRequests = () => (
     <Card className="shadow-lg">
       <CardHeader className="border-b bg-gray-50">
@@ -500,34 +529,6 @@ export default function ClientDashboard() {
     }
   };
 
-  const handleRequestSubmit = async (data: any) => {
-    if (!user) return;
-
-    try {
-      const requestData = {
-        ...data,
-        userId: user.uid,
-        status: "Active",
-        createdAt: new Date().toISOString(),
-      };
-
-      await addDoc(collection(db, "requests"), requestData);
-
-      toast({
-        title: "Succes",
-        description: "Cererea ta a fost adăugată cu succes!",
-      });
-
-      setIsRequestDialogOpen(false);
-    } catch (error) {
-      console.error("Error submitting request:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Nu s-a putut adăuga cererea. Te rugăm să încerci din nou.",
-      });
-    }
-  };
 
   if (!user?.emailVerified) {
     return (
@@ -642,6 +643,7 @@ export default function ClientDashboard() {
                 setIsRequestDialogOpen(false);
                 setIsCarDialogOpen(true);
               }}
+              isVisible={isRequestDialogOpen}
             />
           </DialogContent>
         </Dialog>
