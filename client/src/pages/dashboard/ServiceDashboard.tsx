@@ -102,19 +102,19 @@ export default function ServiceDashboard() {
     { label: "CUI", key: "cui", editable: false },
     { label: "Nr. Înregistrare", key: "tradeRegNumber", editable: false },
     { label: "Adresă", key: "address", editable: true },
-    {
-      label: "Județ",
-      key: "county",
+    { 
+      label: "Județ", 
+      key: "county", 
       editable: true,
       type: "select",
-      options: romanianCounties,
+      options: romanianCounties 
     },
-    {
-      label: "Oraș",
-      key: "city",
+    { 
+      label: "Oraș", 
+      key: "city", 
       editable: true,
       type: "select",
-      options: availableCities,
+      options: availableCities 
     },
   ];
 
@@ -174,7 +174,7 @@ export default function ServiceDashboard() {
   const handleEdit = (field: keyof ServiceData) => {
     setEditingFields(prev => ({
       ...prev,
-      [field]: !prev[field],
+      [field]: !prev[field]
     }));
     if (validationErrors[field]) {
       setValidationErrors(prev => {
@@ -273,316 +273,299 @@ export default function ServiceDashboard() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-gray-50">
       <Navigation />
-      <div className="flex-1 bg-gray-50">
-        <div className="container mx-auto py-6 px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 gap-6">
-            {/* Navigation Tabs */}
-            <Card className="border-none shadow-lg">
-              <CardContent className="p-0">
-                <nav className="flex flex-col sm:flex-row gap-2 p-2">
-                  <Button
-                    variant={activeTab === "requests" ? "default" : "ghost"}
-                    onClick={() => setActiveTab("requests")}
-                    className={`flex items-center justify-start ${
-                      activeTab === "requests"
-                        ? "bg-[#00aff5] text-white hover:bg-[#0099d6]"
-                        : "hover:text-[#00aff5]"
-                    }`}
-                  >
-                    <Clock className="w-4 h-4 mr-2" />
-                    Cereri Clienți
-                  </Button>
-                  <Button
-                    variant={activeTab === "offers" ? "default" : "ghost"}
-                    onClick={() => setActiveTab("offers")}
-                    className={`flex items-center justify-start ${
-                      activeTab === "offers"
-                        ? "bg-[#00aff5] text-white hover:bg-[#0099d6]"
-                        : "hover:text-[#00aff5]"
-                    }`}
-                  >
-                    <SendHorizontal className="w-4 h-4 mr-2" />
-                    Oferte Trimise
-                  </Button>
-                  <Button
-                    variant={activeTab === "messages" ? "default" : "ghost"}
-                    onClick={() => setActiveTab("messages")}
-                    className={`flex items-center justify-start ${
-                      activeTab === "messages"
-                        ? "bg-[#00aff5] text-white hover:bg-[#0099d6]"
-                        : "hover:text-[#00aff5]"
-                    }`}
-                  >
-                    <MessageSquare className="w-4 h-4 mr-2" />
-                    Mesaje
-                  </Button>
-                  <Button
-                    variant={activeTab === "appointments" ? "default" : "ghost"}
-                    onClick={() => setActiveTab("appointments")}
-                    className={`flex items-center justify-start ${
-                      activeTab === "appointments"
-                        ? "bg-[#00aff5] text-white hover:bg-[#0099d6]"
-                        : "hover:text-[#00aff5]"
-                    }`}
-                  >
-                    <Calendar className="w-4 h-4 mr-2" />
-                    Programări
-                  </Button>
-                  <Button
-                    variant={activeTab === "reviews" ? "default" : "ghost"}
-                    onClick={() => setActiveTab("reviews")}
-                    className={`flex items-center justify-start ${
-                      activeTab === "reviews"
-                        ? "bg-[#00aff5] text-white hover:bg-[#0099d6]"
-                        : "hover:text-[#00aff5]"
-                    }`}
-                  >
-                    <Star className="w-4 h-4 mr-2" />
-                    Recenzii
-                  </Button>
-                  <Button
-                    variant={activeTab === "account" ? "default" : "ghost"}
-                    onClick={() => setActiveTab("account")}
-                    className={`flex items-center justify-start ${
-                      activeTab === "account"
-                        ? "bg-[#00aff5] text-white hover:bg-[#0099d6]"
-                        : "hover:text-[#00aff5]"
-                    }`}
-                  >
-                    <UserCog className="w-4 h-4 mr-2" />
-                    Cont
-                  </Button>
-                  <Button
-                    variant={activeTab === "public-profile" ? "default" : "ghost"}
-                    onClick={() => setActiveTab("public-profile")}
-                    className={`flex items-center justify-start ${
-                      activeTab === "public-profile"
-                        ? "bg-[#00aff5] text-white hover:bg-[#0099d6]"
-                        : "hover:text-[#00aff5]"
-                    }`}
-                  >
-                    <Store className="w-4 h-4 mr-2" />
-                    Profil Public
-                  </Button>
-                </nav>
+      <div className="container mx-auto p-4 md:p-6 space-y-4 md:space-y-6">
+        <nav className="flex flex-col sm:flex-row gap-2 border-b pb-4 overflow-x-auto">
+          <Button
+            variant={activeTab === "requests" ? "default" : "ghost"}
+            onClick={() => setActiveTab("requests")}
+            className={`flex items-center justify-start ${
+              activeTab === "requests"
+                ? "bg-[#00aff5] text-white hover:bg-[#0099d6]"
+                : "hover:text-[#00aff5]"
+            }`}
+          >
+            <Clock className="w-4 h-4 mr-2" />
+            Cereri Clienți
+          </Button>
+          <Button
+            variant={activeTab === "offers" ? "default" : "ghost"}
+            onClick={() => setActiveTab("offers")}
+            className={`flex items-center justify-start ${
+              activeTab === "offers"
+                ? "bg-[#00aff5] text-white hover:bg-[#0099d6]"
+                : "hover:text-[#00aff5]"
+            }`}
+          >
+            <SendHorizontal className="w-4 h-4 mr-2" />
+            Oferte Trimise
+          </Button>
+          <Button
+            variant={activeTab === "messages" ? "default" : "ghost"}
+            onClick={() => setActiveTab("messages")}
+            className={`flex items-center justify-start ${
+              activeTab === "messages"
+                ? "bg-[#00aff5] text-white hover:bg-[#0099d6]"
+                : "hover:text-[#00aff5]"
+            }`}
+          >
+            <MessageSquare className="w-4 h-4 mr-2" />
+            Mesaje
+          </Button>
+          <Button
+            variant={activeTab === "appointments" ? "default" : "ghost"}
+            onClick={() => setActiveTab("appointments")}
+            className={`flex items-center justify-start ${
+              activeTab === "appointments"
+                ? "bg-[#00aff5] text-white hover:bg-[#0099d6]"
+                : "hover:text-[#00aff5]"
+            }`}
+          >
+            <Calendar className="w-4 h-4 mr-2" />
+            Programări
+          </Button>
+          <Button
+            variant={activeTab === "reviews" ? "default" : "ghost"}
+            onClick={() => setActiveTab("reviews")}
+            className={`flex items-center justify-start ${
+              activeTab === "reviews"
+                ? "bg-[#00aff5] text-white hover:bg-[#0099d6]"
+                : "hover:text-[#00aff5]"
+            }`}
+          >
+            <Star className="w-4 h-4 mr-2" />
+            Recenzii
+          </Button>
+          <Button
+            variant={activeTab === "account" ? "default" : "ghost"}
+            onClick={() => setActiveTab("account")}
+            className={`flex items-center justify-start ${
+              activeTab === "account"
+                ? "bg-[#00aff5] text-white hover:bg-[#0099d6]"
+                : "hover:text-[#00aff5]"
+            }`}
+          >
+            <UserCog className="w-4 h-4 mr-2" />
+            Cont
+          </Button>
+          <Button
+            variant={activeTab === "public-profile" ? "default" : "ghost"}
+            onClick={() => setActiveTab("public-profile")}
+            className={`flex items-center justify-start ${
+              activeTab === "public-profile"
+                ? "bg-[#00aff5] text-white hover:bg-[#0099d6]"
+                : "hover:text-[#00aff5]"
+            }`}
+          >
+            <Store className="w-4 h-4 mr-2" />
+            Profil Public
+          </Button>
+        </nav>
+
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+          <TabsContent value="requests">
+            <Card className="border-[#00aff5]/20">
+              <CardHeader>
+                <CardTitle className="text-[#00aff5] flex items-center gap-2">
+                  <Clock className="h-5 w-5" />
+                  Cererile Clienților
+                </CardTitle>
+                <CardDescription>
+                  Vezi și gestionează toate cererile primite de la clienți
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  Lista cererilor va apărea aici
+                </p>
               </CardContent>
             </Card>
+          </TabsContent>
 
-            {/* Content Tabs */}
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-              <TabsContent value="requests">
-                <Card className="border-none shadow-lg">
-                  <CardHeader className="bg-gray-50 border-b">
-                    <CardTitle className="text-[#00aff5] flex items-center gap-2">
-                      <Clock className="h-5 w-5" />
-                      Cererile Clienților
-                    </CardTitle>
-                    <CardDescription>
-                      Vezi și gestionează toate cererile primite de la clienți
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-6">
-                    <p className="text-muted-foreground">
-                      Lista cererilor va apărea aici
-                    </p>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              <TabsContent value="offers">
-                <Card className="border-none shadow-lg">
-                  <CardHeader className="bg-gray-50 border-b">
-                    <CardTitle className="text-[#00aff5] flex items-center gap-2">
-                      <SendHorizontal className="h-5 w-5" />
-                      Oferte Trimise
-                    </CardTitle>
-                    <CardDescription>
-                      Urmărește și gestionează ofertele trimise către clienți
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-6">
-                    <p className="text-muted-foreground">
-                      Lista ofertelor va apărea aici
-                    </p>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              <TabsContent value="messages">
-                <Card className="border-none shadow-lg">
-                  <CardHeader className="bg-gray-50 border-b">
-                    <CardTitle className="text-[#00aff5] flex items-center gap-2">
-                      <MessageSquare className="h-5 w-5" />
-                      Mesaje
-                    </CardTitle>
-                    <CardDescription>
-                      Comunicare directă cu clienții și gestionarea conversațiilor
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-6">
-                    <p className="text-muted-foreground">
-                      Nu există mesaje noi.
-                    </p>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              <TabsContent value="appointments">
-                <Card className="border-none shadow-lg">
-                  <CardHeader className="bg-gray-50 border-b">
-                    <CardTitle className="text-[#00aff5] flex items-center gap-2">
-                      <Calendar className="h-5 w-5" />
-                      Programări
-                    </CardTitle>
-                    <CardDescription>
-                      Gestionează programările și disponibilitatea serviciului
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-6">
-                    <p className="text-muted-foreground">
-                      Calendar și programări vor apărea aici
-                    </p>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              <TabsContent value="reviews">
-                <Card className="border-none shadow-lg">
-                  <CardHeader className="bg-gray-50 border-b">
-                    <CardTitle className="text-[#00aff5] flex items-center gap-2">
-                      <Star className="h-5 w-5" />
-                      Recenzii
-                    </CardTitle>
-                    <CardDescription>
-                      Vezi și răspunde la recenziile primite de la clienți
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-6">
-                    <p className="text-muted-foreground">
-                      Lista recenziilor va apărea aici
-                    </p>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              <TabsContent value="account">
-                <Card className="border-none shadow-lg">
-                  <CardHeader className="bg-gray-50 border-b">
-                    <CardTitle className="text-[#00aff5] flex items-center gap-2">
-                      <UserCog className="h-5 w-5" />
-                      Cont
-                    </CardTitle>
-                    <CardDescription>
-                      Gestionează informațiile contului și setările
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {fields.map(({ label, key, editable, type, options }) => (
-                        <div key={key} className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <label className="text-sm font-medium text-gray-700">
-                              {label}
-                            </label>
-                            {editable && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleEdit(key)}
-                                className="h-6 w-6 p-0"
-                              >
-                                <Pen className="h-3.5 w-3.5 text-[#00aff5] hover:text-[#0099d6]" />
-                              </Button>
-                            )}
-                          </div>
-                          <div className="space-y-1">
-                            {type === 'select' && options ? (
-                              <Select
-                                value={editedData?.[key]}
-                                onValueChange={(value) => handleChange(key, value)}
-                                disabled={!editable || !editingFields[key]}
-                              >
-                                <SelectTrigger
-                                  className={`${
-                                    !editable || !editingFields[key] ? "bg-gray-50" : "bg-white"
-                                  } ${validationErrors[key] ? "border-red-500" : "border-gray-200 focus:border-[#00aff5] focus:ring-[#00aff5]"}`}
-                                >
-                                  <SelectValue placeholder={`Selectează ${label.toLowerCase()}`} />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {options.map((option) => (
-                                    <SelectItem
-                                      key={option}
-                                      value={option}
-                                      className="hover:bg-[#00aff5]/10"
-                                    >
-                                      {option}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            ) : (
-                              <Input
-                                value={editedData?.[key] || ""}
-                                onChange={(e) => handleChange(key, e.target.value)}
-                                disabled={!editable || !editingFields[key]}
-                                className={`${
-                                  !editable || !editingFields[key] ? "bg-gray-50" : "bg-white"
-                                } ${validationErrors[key] ? "border-red-500" : "border-gray-200 focus:border-[#00aff5] focus:ring-[#00aff5]"}`}
-                              />
-                            )}
-                            {validationErrors[key] && (
-                              <p className="text-xs text-red-500 mt-1">
-                                {validationErrors[key]}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+          <TabsContent value="offers">
+            <Card className="border-[#00aff5]/20">
+              <CardHeader>
+                <CardTitle className="text-[#00aff5] flex items-center gap-2">
+                  <SendHorizontal className="h-5 w-5" />
+                  Oferte Trimise
+                </CardTitle>
+                <CardDescription>
+                  Urmărește și gestionează ofertele trimise către clienți
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  Lista ofertelor va apărea aici
+                </p>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-                    {hasChanges && (
-                      <div className="flex justify-end mt-6">
-                        <Button
-                          onClick={handleSave}
-                          disabled={saving || Object.keys(validationErrors).length > 0}
-                          className="bg-[#00aff5] hover:bg-[#0099d6] text-white transition-colors"
-                        >
-                          {saving ? (
-                            <>
-                              <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                              Se salvează...
-                            </>
-                          ) : (
-                            <>
-                              <Save className="h-4 w-4 mr-2" />
-                              Salvează
-                            </>
-                          )}
-                        </Button>
+          <TabsContent value="messages">
+            <Card className="border-[#00aff5]/20">
+              <CardHeader>
+                <CardTitle className="text-[#00aff5] flex items-center gap-2">
+                  <MessageSquare className="h-5 w-5" />
+                  Mesaje
+                </CardTitle>
+                <CardDescription>
+                  Comunicare directă cu clienții și gestionarea conversațiilor
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  Nu există mesaje noi.
+                </p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="appointments">
+            <Card className="border-[#00aff5]/20">
+              <CardHeader>
+                <CardTitle className="text-[#00aff5] flex items-center gap-2">
+                  <Calendar className="h-5 w-5" />
+                  Programări
+                </CardTitle>
+                <CardDescription>
+                  Gestionează programările și disponibilitatea serviciului
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  Calendar și programări vor apărea aici
+                </p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="reviews">
+            <Card className="border-[#00aff5]/20">
+              <CardHeader>
+                <CardTitle className="text-[#00aff5] flex items-center gap-2">
+                  <Star className="h-5 w-5" />
+                  Recenzii
+                </CardTitle>
+                <CardDescription>
+                  Vezi și răspunde la recenziile primite de la clienți
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  Lista recenziilor va apărea aici
+                </p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="account">
+            <Card className="border-[#00aff5]/20">
+              <CardHeader>
+                <CardTitle className="text-[#00aff5] flex items-center gap-2">
+                  <UserCog className="h-5 w-5" />
+                  Cont
+                </CardTitle>
+                <CardDescription>
+                  Gestionează informațiile contului și setările
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {fields.map(({ label, key, editable, type, options }) => (
+                    <div key={key} className="relative">
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="text-sm font-medium text-gray-700">{label}</label>
+                        {editable && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEdit(key)}
+                            className="h-6 w-6 p-0 absolute right-2 top-0"
+                          >
+                            <Pen className="h-3.5 w-3.5 text-gray-400 hover:text-gray-600" />
+                          </Button>
+                        )}
                       </div>
+                      <div className="space-y-1">
+                        {type === 'select' && options ? (
+                          <Select
+                            value={editedData?.[key]}
+                            onValueChange={(value) => handleChange(key, value)}
+                            disabled={!editable || !editingFields[key]}
+                          >
+                            <SelectTrigger
+                              className={`${
+                                !editable || !editingFields[key] ? "bg-gray-50" : "bg-white"
+                              } ${validationErrors[key] ? "border-red-500" : ""}`}
+                            >
+                              <SelectValue placeholder={`Selectează ${label.toLowerCase()}`} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {options.map((option) => (
+                                <SelectItem key={option} value={option}>
+                                  {option}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <Input
+                            value={editedData?.[key] || ""}
+                            onChange={(e) => handleChange(key, e.target.value)}
+                            disabled={!editable || !editingFields[key]}
+                            className={`${
+                              !editable || !editingFields[key] ? "bg-gray-50" : "bg-white"
+                            } ${validationErrors[key] ? "border-red-500" : ""} pr-8`}
+                          />
+                        )}
+                        {validationErrors[key] && (
+                          <p className="text-xs text-red-500 mt-1">
+                            {validationErrors[key]}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {hasChanges && (
+                  <Button
+                    onClick={handleSave}
+                    disabled={saving || Object.keys(validationErrors).length > 0}
+                    className="mt-6 bg-[#00aff5] hover:bg-[#0099d6] float-right"
+                  >
+                    {saving ? (
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    ) : (
+                      <Save className="h-4 w-4 mr-2" />
                     )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              <TabsContent value="public-profile">
-                <Card className="border-none shadow-lg">
-                  <CardHeader className="bg-gray-50 border-b">
-                    <CardTitle className="text-[#00aff5] flex items-center gap-2">
-                      <Store className="h-5 w-5" />
-                      Profil Public
-                    </CardTitle>
-                    <CardDescription>
-                      Gestionează informațiile afișate public despre serviciul tău
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-6">
-                    <p className="text-muted-foreground">
-                      Informațiile profilului public vor apărea aici
-                    </p>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            </Tabs>
-          </div>
-        </div>
+                    Salvează
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="public-profile">
+            <Card className="border-[#00aff5]/20">
+              <CardHeader>
+                <CardTitle className="text-[#00aff5] flex items-center gap-2">
+                  <Store className="h-5 w-5" />
+                  Profil Public
+                </CardTitle>
+                <CardDescription>
+                  Gestionează informațiile afișate public despre serviciul tău
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  Informațiile profilului public vor apărea aici
+                </p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
       <Footer />
     </div>
