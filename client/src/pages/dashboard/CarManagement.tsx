@@ -39,6 +39,7 @@ export default function CarManagement() {
 
     const loadCars = async () => {
       try {
+        console.log("Loading cars for user:", user.uid);
         const carsQuery = query(
           collection(db, "cars"),
           where("userId", "==", user.uid)
@@ -48,6 +49,7 @@ export default function CarManagement() {
         querySnapshot.forEach((doc) => {
           loadedCars.push({ id: doc.id, ...doc.data() } as Car);
         });
+        console.log("Successfully loaded cars:", loadedCars);
         setCars(loadedCars);
       } catch (error) {
         console.error("Error loading cars:", error);
@@ -68,11 +70,18 @@ export default function CarManagement() {
     if (!user) return;
 
     try {
-      const docRef = await addDoc(collection(db, "cars"), {
+      console.log("Attempting to add car:", car);
+      console.log("Current user:", user.uid);
+
+      const carData = {
         ...car,
         userId: user.uid,
         createdAt: new Date().toISOString(),
-      });
+      };
+
+      console.log("Preparing to add car with data:", carData);
+      const docRef = await addDoc(collection(db, "cars"), carData);
+      console.log("Successfully added car with ID:", docRef.id);
 
       const newCar = {
         ...car,
@@ -86,12 +95,27 @@ export default function CarManagement() {
         title: "Success",
         description: "Mașina a fost adăugată cu succes!",
       });
-    } catch (error) {
-      console.error("Error adding car:", error);
+    } catch (error: any) {
+      console.error("Detailed error adding car:", {
+        error,
+        code: error.code,
+        message: error.message,
+        details: error.details,
+      });
+
+      let errorMessage = "Nu s-a putut adăuga mașina. ";
+      if (error.code === "permission-denied") {
+        errorMessage += "Nu aveți permisiunea necesară.";
+      } else if (error.code === "unavailable") {
+        errorMessage += "Serviciul este momentan indisponibil.";
+      } else {
+        errorMessage += "Te rugăm să încerci din nou.";
+      }
+
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Nu s-a putut adăuga mașina. Te rugăm să încerci din nou.",
+        description: errorMessage,
       });
     }
   };
@@ -100,11 +124,13 @@ export default function CarManagement() {
     if (!user || !editingCar) return;
 
     try {
+      console.log("Attempting to update car:", editingCar.id);
       const carRef = doc(db, "cars", editingCar.id);
       await updateDoc(carRef, {
         ...car,
         updatedAt: new Date().toISOString(),
       });
+      console.log("Successfully updated car");
 
       setCars((prev) =>
         prev.map((c) =>
