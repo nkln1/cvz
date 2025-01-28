@@ -46,7 +46,7 @@ export default function LoginDropdown() {
   };
 
   const navigateToDashboard = () => {
-    // Just toggle the dropdown without navigation, since we're already on the dashboard
+    setLocation("/dashboard/service");
     setIsOpen(false);
   };
 
@@ -72,7 +72,8 @@ export default function LoginDropdown() {
         {isOpen && (
           <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
             <div 
-              className="px-4 py-2 text-sm text-gray-700 border-b border-gray-100"
+              onClick={navigateToDashboard}
+              className="px-4 py-2 text-sm text-gray-700 border-b border-gray-100 cursor-pointer hover:bg-gray-100"
             >
               {user.displayName || user.email}
             </div>
