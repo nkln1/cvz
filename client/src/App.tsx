@@ -7,8 +7,6 @@ import Home from "@/pages/Home";
 import Contact from "@/pages/Contact";
 import { AuthProvider } from "@/context/AuthContext";
 import ClientDashboard from "@/pages/dashboard/ClientDashboard";
-import { ServiceRouteGuard } from "@/components/auth/ServiceRouteGuard";
-import ServiceRequests from "@/pages/dashboard/services/ServiceRequests";
 
 function Router() {
   return (
@@ -16,14 +14,6 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/contact" component={Contact} />
       <Route path="/dashboard" component={ClientDashboard} />
-
-      {/* Service Dashboard Routes */}
-      <Route path="/dashboard/service/requests">
-        <ServiceRouteGuard>
-          <ServiceRequests />
-        </ServiceRouteGuard>
-      </Route>
-
       <Route component={NotFound} />
     </Switch>
   );
