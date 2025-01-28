@@ -11,6 +11,7 @@ import { db } from "@/lib/firebase";
 
 export default function LoginDropdown() {
   const [isOpen, setIsOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
   const { toast } = useToast();
@@ -50,6 +51,7 @@ export default function LoginDropdown() {
   const navigateToDashboard = async () => {
     if (!user?.uid) return;
 
+    setIsLoading(true);
     try {
       // Try to get user data from clients collection first
       const clientDoc = await getDoc(doc(db, "clients", user.uid));
@@ -70,7 +72,16 @@ export default function LoginDropdown() {
         description: "Nu s-a putut accesa dashboard-ul.",
       });
     } finally {
+      setIsLoading(false);
       setIsOpen(false);
+    }
+  };
+
+  const handleMenuClick = (action: 'navigate' | 'signout') => {
+    if (action === 'navigate') {
+      void navigateToDashboard();
+    } else {
+      void handleSignOut();
     }
   };
 
@@ -100,6 +111,7 @@ export default function LoginDropdown() {
         variant="ghost"
         className="flex items-center gap-2"
         onClick={() => setIsOpen(!isOpen)}
+        disabled={isLoading}
       >
         <img
           src={user.photoURL || "https://i.ibb.co/NnnNWbN/Signlogin.png"}
@@ -115,16 +127,16 @@ export default function LoginDropdown() {
       {isOpen && (
         <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
           <button 
-            onClick={() => {
-              void navigateToDashboard();
-            }}
+            onClick={() => handleMenuClick('navigate')}
             className="w-full text-left px-4 py-2 text-sm text-gray-700 border-b border-gray-100 hover:bg-gray-100"
+            disabled={isLoading}
           >
-            {user.displayName || user.email}
+            {isLoading ? "Se încarcă..." : user.displayName || user.email}
           </button>
           <button
-            onClick={() => void handleSignOut()}
+            onClick={() => handleMenuClick('signout')}
             className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+            disabled={isLoading}
           >
             Deconectare
           </button>
