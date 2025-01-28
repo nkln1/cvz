@@ -352,19 +352,19 @@ export default function ServiceDashboard() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {fields.map(({ label, key, editable }) => (
-                    <div key={key} className="flex flex-col space-y-2">
-                      <div className="flex items-center justify-between">
-                        <label className="text-sm font-medium">{label}</label>
+                    <div key={key} className="relative">
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="text-sm font-medium text-gray-700">{label}</label>
                         {editable && (
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => handleEdit(key)}
-                            className="h-8 w-8 p-0"
+                            className="h-6 w-6 p-0 absolute right-2 top-7 hover:bg-transparent"
                           >
-                            <Pen className="h-4 w-4" />
+                            <Pen className="h-3.5 w-3.5 text-gray-400 hover:text-gray-600" />
                           </Button>
                         )}
                       </div>
@@ -373,27 +373,27 @@ export default function ServiceDashboard() {
                         onChange={(e) => handleChange(key, e.target.value)}
                         disabled={!editable || !editingFields[key]}
                         className={`${
-                          !editable ? "bg-gray-100" : ""
-                        }`}
+                          !editable ? "bg-gray-50" : ""
+                        } pr-8`}
                       />
                     </div>
                   ))}
-
-                  {hasChanges && (
-                    <Button
-                      onClick={handleSave}
-                      disabled={saving}
-                      className="mt-4 w-full bg-[#00aff5] hover:bg-[#0099d6]"
-                    >
-                      {saving ? (
-                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                      ) : (
-                        <Save className="h-4 w-4 mr-2" />
-                      )}
-                      Salvează Modificările
-                    </Button>
-                  )}
                 </div>
+
+                {hasChanges && (
+                  <Button
+                    onClick={handleSave}
+                    disabled={saving}
+                    className="mt-6 bg-[#00aff5] hover:bg-[#0099d6] float-right"
+                  >
+                    {saving ? (
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    ) : (
+                      <Save className="h-4 w-4 mr-2" />
+                    )}
+                    Salvează
+                  </Button>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
