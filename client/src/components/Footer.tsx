@@ -46,8 +46,7 @@ export default function Footer() {
               className="h-6 sm:h-8 w-auto"
             />
             <span 
-              className="text-lg sm:text-xl font-bold text-white"
-              style={{ fontFamily: '"Gugi", sans-serif' }}
+              className="text-lg sm:text-xl font-bold text-white font-gugi"
             >
               CARVIZIO
             </span>

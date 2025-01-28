@@ -32,7 +32,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 // Get today's date in YYYY-MM-DD format
 const today = new Date();
 today.setHours(0, 0, 0, 0);
-const formattedToday = today.toISOString().split('T')[0];
+const formattedToday = today.toISOString().split("T")[0];
 
 const formSchema = z.object({
   title: z.string().min(3, {
@@ -44,23 +44,32 @@ const formSchema = z.object({
   carId: z.string({
     required_error: "Te rugăm să selectezi o mașină.",
   }),
-  preferredDate: z.string().min(1, {
-    message: "Te rugăm să selectezi o dată preferată.",
-  }).refine((date) => {
-    const selectedDate = new Date(date);
-    selectedDate.setHours(0, 0, 0, 0);
-    return selectedDate >= today;
-  }, {
-    message: "Data preferată nu poate fi anterioară datei curente.",
-  }),
+  preferredDate: z
+    .string()
+    .min(1, {
+      message: "Te rugăm să selectezi o dată preferată.",
+    })
+    .refine(
+      (date) => {
+        const selectedDate = new Date(date);
+        selectedDate.setHours(0, 0, 0, 0);
+        return selectedDate >= today;
+      },
+      {
+        message: "Data preferată nu poate fi anterioară datei curente.",
+      },
+    ),
   county: z.string().min(1, {
     message: "Te rugăm să selectezi județul.",
   }),
-  cities: z.array(z.string()).min(1, {
-    message: "Te rugăm să selectezi cel puțin o localitate.",
-  }).max(3, {
-    message: "Poți selecta maxim 3 localități.",
-  }),
+  cities: z
+    .array(z.string())
+    .min(1, {
+      message: "Te rugăm să selectezi cel puțin o localitate.",
+    })
+    .max(3, {
+      message: "Poți selecta maxim 3 localități.",
+    }),
 });
 
 interface RequestFormProps {
@@ -70,10 +79,17 @@ interface RequestFormProps {
   initialData?: Partial<z.infer<typeof formSchema>>;
 }
 
-export function RequestForm({ onSubmit, onCancel, onAddCar, initialData }: RequestFormProps) {
+export function RequestForm({
+  onSubmit,
+  onCancel,
+  onAddCar,
+  initialData,
+}: RequestFormProps) {
   const [cars, setCars] = useState<CarType[]>([]);
   const { user } = useAuth();
-  const [selectedCounty, setSelectedCounty] = useState<string>(initialData?.county || "");
+  const [selectedCounty, setSelectedCounty] = useState<string>(
+    initialData?.county || "",
+  );
   const [availableCities, setAvailableCities] = useState<string[]>([]);
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -105,7 +121,7 @@ export function RequestForm({ onSubmit, onCancel, onAddCar, initialData }: Reque
       try {
         const carsQuery = query(
           collection(db, "cars"),
-          where("userId", "==", user.uid)
+          where("userId", "==", user.uid),
         );
         const querySnapshot = await getDocs(carsQuery);
         const loadedCars: CarType[] = [];
@@ -133,7 +149,10 @@ export function RequestForm({ onSubmit, onCancel, onAddCar, initialData }: Reque
                 <FormItem>
                   <FormLabel>Titlu cerere</FormLabel>
                   <FormControl>
-                    <Input placeholder="ex: Revizie anuală" {...field} />
+                    <Input
+                      placeholder="ex: Revizie anuală la 30.000 km"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -148,7 +167,7 @@ export function RequestForm({ onSubmit, onCancel, onAddCar, initialData }: Reque
                   <FormLabel>Descriere cerere</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="ex: Doresc oferta de preț revizie anuală pentru o MAZDA CX5 din 2020."
+                      placeholder="ex: Doresc oferta de preț revizie anuală la 30.000 km pentru o MAZDA CX5 din 2020."
                       className="min-h-[100px]"
                       {...field}
                     />
@@ -166,7 +185,10 @@ export function RequestForm({ onSubmit, onCancel, onAddCar, initialData }: Reque
                   <FormLabel>Selectare mașină</FormLabel>
                   <div className="flex gap-2">
                     <FormControl>
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
                         <SelectTrigger className="w-full">
                           <SelectValue placeholder="Selectează mașina" />
                         </SelectTrigger>
@@ -252,15 +274,19 @@ export function RequestForm({ onSubmit, onCancel, onAddCar, initialData }: Reque
                         <Checkbox
                           checked={form.watch("cities")?.includes(city)}
                           onCheckedChange={(checked) => {
-                            const currentCities = form.getValues("cities") || [];
+                            const currentCities =
+                              form.getValues("cities") || [];
                             if (checked) {
                               if (currentCities.length < 3) {
-                                form.setValue("cities", [...currentCities, city]);
+                                form.setValue("cities", [
+                                  ...currentCities,
+                                  city,
+                                ]);
                               }
                             } else {
                               form.setValue(
                                 "cities",
-                                currentCities.filter((c) => c !== city)
+                                currentCities.filter((c) => c !== city),
                               );
                             }
                           }}
