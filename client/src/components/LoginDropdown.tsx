@@ -62,7 +62,6 @@ export default function LoginDropdown() {
           setLocation("/service-dashboard");
         }
       }
-      setIsOpen(false);
     } catch (error) {
       console.error("Error navigating to dashboard:", error);
       toast({
