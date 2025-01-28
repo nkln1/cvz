@@ -9,6 +9,7 @@ import {
   Phone,
   MapPin,
   AlertTriangle,
+  Car,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -36,6 +37,7 @@ import { romanianCounties, getCitiesForCounty } from "@/lib/romaniaData";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { auth } from "@/lib/firebase";
 import { sendEmailVerification } from "firebase/auth";
+import CarManagement from "./CarManagement";
 
 // Mock data for requests and offers
 const mockRequests = [
@@ -72,7 +74,7 @@ const mockOffers = [
   },
 ];
 
-type TabType = "requests" | "offers" | "messages" | "profile";
+type TabType = "requests" | "offers" | "messages" | "profile" | "car";
 
 interface UserProfile {
   name?: string;
@@ -449,10 +451,12 @@ export default function ClientDashboard() {
         return renderRequests();
       case "offers":
         return renderOffers();
-      case "profile":
-        return renderProfile();
       case "messages":
         return renderMessages();
+      case "car":
+        return <CarManagement />;
+      case "profile":
+        return renderProfile();
       default:
         return null;
     }
@@ -521,6 +525,18 @@ export default function ClientDashboard() {
           >
             <MessageSquare className="w-4 h-4 mr-2" />
             Mesaje
+          </Button>
+          <Button
+            variant={activeTab === "car" ? "default" : "ghost"}
+            onClick={() => setActiveTab("car")}
+            className={`${
+              activeTab === "car"
+                ? "bg-[#00aff5] hover:bg-[#0099d6] text-white"
+                : "hover:text-[#00aff5]"
+            }`}
+          >
+            <Car className="w-4 h-4 mr-2" />
+            Mașina
           </Button>
           <Button
             variant={activeTab === "profile" ? "default" : "ghost"}
