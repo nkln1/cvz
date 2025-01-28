@@ -6,6 +6,8 @@ import { useAuth } from "@/context/AuthContext";
 import { signOut } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 export default function LoginDropdown() {
   const [isOpen, setIsOpen] = useState(false);
@@ -45,15 +47,30 @@ export default function LoginDropdown() {
     }
   };
 
-  const navigateToDashboard = () => {
-    // Check if the user is a client or service provider and navigate accordingly
-    const userRole = user?.role || "client";
-    if (userRole === "client") {
-      setLocation("/dashboard");
-    } else {
-      setLocation("/service-dashboard");
+  const navigateToDashboard = async () => {
+    if (!user?.uid) return;
+
+    try {
+      // Try to get user data from clients collection first
+      const clientDoc = await getDoc(doc(db, "clients", user.uid));
+      if (clientDoc.exists()) {
+        setLocation("/dashboard");
+      } else {
+        // If not found in clients, check services collection
+        const serviceDoc = await getDoc(doc(db, "services", user.uid));
+        if (serviceDoc.exists()) {
+          setLocation("/service-dashboard");
+        }
+      }
+      setIsOpen(false);
+    } catch (error) {
+      console.error("Error navigating to dashboard:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Nu s-a putut accesa dashboard-ul.",
+      });
     }
-    setIsOpen(false);
   };
 
   if (user) {
