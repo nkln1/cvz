@@ -146,7 +146,13 @@ export default function ServiceDashboard() {
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState("requests"); // Changed default to "requests"
+  const [activeTab, setActiveTab] = useState(() => {
+    const savedTab = localStorage.getItem('activeTab');
+    if (!savedTab && window.location.pathname.endsWith('/service-dashboard')) {
+      return "requests";
+    }
+    return savedTab || "requests";
+  });
   const [availableCities, setAvailableCities] = useState<string[]>([]);
   const [clientRequests, setClientRequests] = useState<Request[]>([]);
   const [selectedRequest, setSelectedRequest] = useState<Request | null>(null);
@@ -160,20 +166,16 @@ export default function ServiceDashboard() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [messageGroups, setMessageGroups] = useState<MessageGroup[]>([]);
   const [isViewingConversation, setIsViewingConversation] = useState(false);
-  const [viewedRequests, setViewedRequests] = useState<Set<string>>(() => {
-    const saved = localStorage.getItem('viewedRequests');
-    return new Set(saved ? JSON.parse(saved) : []);
-  });
+  const [viewedRequests, setViewedRequests] = useState<Set<string>>(new Set(() => {
+    const savedViewedRequests = localStorage.getItem('viewedRequests');
+    return savedViewedRequests ? new Set(JSON.parse(savedViewedRequests)) : new Set();
+  }));
   const [sortField, setSortField] = useState<keyof Request>("createdAt");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
-  // Add useEffect to persist viewedRequests
-  useEffect(() => {
-    localStorage.setItem('viewedRequests', JSON.stringify([...viewedRequests]));
-  }, [viewedRequests]);
 
   const romanianCounties = Object.keys(romanianCitiesData);
 
@@ -200,6 +202,22 @@ export default function ServiceDashboard() {
       options: availableCities,
     },
   ];
+
+  useEffect(() => {
+    localStorage.setItem('activeTab', activeTab);
+  }, [activeTab]);
+
+  useEffect(() => {
+    const savedViewedRequests = localStorage.getItem('viewedRequests');
+    if (savedViewedRequests) {
+      setViewedRequests(new Set(JSON.parse(savedViewedRequests)));
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('viewedRequests', JSON.stringify([...viewedRequests]));
+  }, [viewedRequests]);
+
 
   useEffect(() => {
     async function fetchServiceData() {
@@ -340,7 +358,6 @@ export default function ServiceDashboard() {
     if (!user || !serviceData) return;
 
     try {
-      // Create base query
       let requestsQuery = query(
         collection(db, "requests"),
         where("status", "==", "Active"),
@@ -348,7 +365,6 @@ export default function ServiceDashboard() {
         where("cities", "array-contains", serviceData.city)
       );
 
-      // Get all documents
       const querySnapshot = await getDocs(requestsQuery);
       const allRequests: Request[] = [];
 
@@ -364,7 +380,6 @@ export default function ServiceDashboard() {
         } as Request);
       }
 
-      // Sort the requests in memory instead of in the query
       allRequests.sort((a, b) => {
         if (sortField === 'createdAt') {
           return sortDirection === 'desc'
@@ -403,12 +418,17 @@ export default function ServiceDashboard() {
     }
   };
 
-  const handleViewDetails = async (request: Request) => {
+  const markRequestAsViewed = (requestId: string) => {
     setViewedRequests(prev => {
       const newSet = new Set(prev);
-      newSet.add(request.id);
+      newSet.add(requestId);
       return newSet;
     });
+    localStorage.setItem('viewedRequests', JSON.stringify([...viewedRequests, requestId]));
+  };
+
+  const handleViewDetails = async (request: Request) => {
+    markRequestAsViewed(request.id);
     if (selectedRequest?.id === request.id) {
       setSelectedRequest(null);
       setRequestClient(null);
@@ -447,7 +467,7 @@ export default function ServiceDashboard() {
   };
 
   const handleRejectRequest = async (requestId: string) => {
-    setViewedRequests(prev => new Set([...prev, requestId]));
+    markRequestAsViewed(requestId);
     try {
       const requestRef = doc(db, "requests", requestId);
       await updateDoc(requestRef, {
@@ -469,14 +489,14 @@ export default function ServiceDashboard() {
   };
 
   const handleMessage = (request: Request) => {
-    setViewedRequests(prev => new Set([...prev, request.id]));
+    markRequestAsViewed(request.id);
     setSelectedMessageRequest(request);
     localStorage.setItem('selectedMessageRequestId', request.id);
     setActiveTab("messages");
   };
 
   const handleSendOffer = async (request: Request) => {
-    setViewedRequests(prev => new Set([...prev, request.id]));
+    markRequestAsViewed(request.id);
     toast({
       description: "Funcționalitatea de trimitere oferte va fi disponibilă în curând.",
     });
@@ -522,15 +542,11 @@ export default function ServiceDashboard() {
     if (!user?.uid) return;
 
     try {
-      console.log("Fetching messages for user:", user.uid);
-
-      // First query for messages where user is sender
       const sentMessagesQuery = query(
         collection(db, "messages"),
         where("fromId", "==", user.uid)
       );
 
-      // Second query for messages where user is receiver
       const receivedMessagesQuery = query(
         collection(db, "messages"),
         where("toId", "==", user.uid)
@@ -541,15 +557,10 @@ export default function ServiceDashboard() {
         getDocs(receivedMessagesQuery)
       ]);
 
-      console.log("Got messages snapshots:", {
-        sent: sentSnapshot.size,
-        received: receivedSnapshot.size
-      });
 
       const loadedMessages: Message[] = [];
       const groupedMessages: { [key: string]: Message[] } = {};
 
-      // Process both sent and received messages
       [sentSnapshot, receivedSnapshot].forEach(snapshot => {
         snapshot.forEach((doc) => {
           const message = { id: doc.id, ...doc.data() } as Message;
@@ -561,8 +572,6 @@ export default function ServiceDashboard() {
           groupedMessages[message.requestId].push(message);
         });
       });
-
-      console.log("Grouped messages by request:", Object.keys(groupedMessages).length);
 
       const groups: MessageGroup[] = [];
       for (const [requestId, messages] of Object.entries(groupedMessages)) {
@@ -587,8 +596,6 @@ export default function ServiceDashboard() {
       groups.sort((a, b) =>
         new Date(b.lastMessage.createdAt).getTime() - new Date(a.lastMessage.createdAt).getTime()
       );
-
-      console.log("Final message groups:", groups.length);
 
       setMessageGroups(groups);
       setMessages(loadedMessages);
@@ -631,7 +638,6 @@ export default function ServiceDashboard() {
   }, [activeTab, selectedMessageRequest]);
 
   const renderRequestsContent = () => {
-    // Filter requests based on search query
     const filteredRequests = clientRequests.filter((request) => {
       if (!searchQuery) return true;
 
@@ -648,7 +654,6 @@ export default function ServiceDashboard() {
       );
     });
 
-    // Sort requests
     const sortedRequests = [...filteredRequests].sort((a, b) => {
       const aValue = a[sortField];
       const bValue = b[sortField];
@@ -663,7 +668,6 @@ export default function ServiceDashboard() {
       return 0;
     });
 
-    // Paginate requests
     const totalPages = Math.ceil(sortedRequests.length / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
     const paginatedRequests = sortedRequests.slice(startIndex, startIndex + itemsPerPage);
@@ -672,10 +676,19 @@ export default function ServiceDashboard() {
       <TabsContent value="requests">
         <Card className="border-[#00aff5]/20">
           <CardHeader>
-            <CardTitle className="text-[#00aff5] flex items-center gap-2">
-              <Clock className="h-5 w-5" />
-              Cererile Clienților
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-[#00aff5] flex items-center gap-2">
+                <Clock className="h-5 w-5" />
+                Cererile Clienților
+              </CardTitle>
+              <Input
+                placeholder="Caută cereri..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="max-w-[300px]"
+                icon={<Search className="h-4 w-4" />}
+              />
+            </div>
             <CardDescription>
               Vezi și gestionează toate cererile primite de la clienți
             </CardDescription>
@@ -685,18 +698,7 @@ export default function ServiceDashboard() {
               <Table>
                 <TableHeader>
                   <TableRow className="hover:bg-transparent">
-                    <TableHead>
-                      <button
-                        onClick={() => {
-                          setSortField("title");
-                          setSortDirection(prev => prev === "asc" ? "desc" : "asc");
-                        }}
-                        className="flex items-center hover:text-[#00aff5]"
-                      >
-                        Titlu
-                        <ArrowUpDown className="ml-2 h-4 w-4" />
-                      </button>
-                    </TableHead>
+                    <TableHead>Titlu</TableHead>
                     <TableHead>
                       <button
                         onClick={() => {
@@ -725,14 +727,6 @@ export default function ServiceDashboard() {
                     <TableHead>Localități</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Acțiuni</TableHead>
-                    <TableHead>
-                      <Input
-                        placeholder="Caută cereri..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="max-w-[200px]"
-                      />
-                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody className="[&_tr:not(:last-child)]:mb-2">
@@ -827,7 +821,7 @@ export default function ServiceDashboard() {
                                     Client
                                   </h3>
                                   <p className="text-sm mt-1">
-                                    {request.clientName} {/* Updated client display */}
+                                    {request.clientName}
                                   </p>
                                   <p className="text-xs text-muted-foreground">{requestClient?.email}</p>
                                 </div>
@@ -894,7 +888,6 @@ export default function ServiceDashboard() {
                 </TableBody>
               </Table>
             </div>
-            {/* Pagination controls */}
             {totalPages > 1 && (
               <div className="flex items-center justify-between space-x-2 py-4">
                 <div className="flex w-[100px] items-center justify-center text-sm font-medium">
@@ -911,7 +904,8 @@ export default function ServiceDashboard() {
                   </Button>
                   <Button
                     variant="outline"
-                    size="sm"                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                     disabled={currentPage === totalPages}
                   >
                     Următor
@@ -1060,7 +1054,6 @@ export default function ServiceDashboard() {
     if (request) {
       setSelectedRequest(request);
       setActiveTab("requests");
-      // Load client details for the request
       fetchRequestClient(request.userId).then(client => {
         setRequestClient(client);
       });
