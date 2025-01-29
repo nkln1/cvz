@@ -69,6 +69,7 @@ interface Request {
   status: "Active" | "Rezolvat" | "Anulat";
   createdAt: string;
   userId: string;
+  clientName: string; // Add this field
 }
 
 interface User {
@@ -335,7 +336,7 @@ export default function ServiceDashboard() {
       const allRequests: Request[] = [];
 
       for (const doc of querySnapshot.docs) {
-        const requestData = doc.data();
+        const requestData = doc.data() as Request; // Type assertion here
         const carDoc = await getDoc(docRef(db, "cars", requestData.carId));
         const carData = carDoc.exists() ? carDoc.data() as Car : undefined;
 
@@ -652,7 +653,7 @@ export default function ServiceDashboard() {
                               : request.status === "Rezolvat"
                               ? "bg-green-100 text-green-800"
                               : "bg-red-100 text-red-800"
-                          }`}
+                            }`}
                         >
                           {request.status}
                         </span>
@@ -712,7 +713,7 @@ export default function ServiceDashboard() {
                                   Client
                                 </h3>
                                 <p className="text-sm mt-1">
-                                  {requestClient?.name || "Nume indisponibil"}
+                                  {request.clientName} {/* Updated client display */}
                                 </p>
                                 <p className="text-xs text-muted-foreground">{requestClient?.email}</p>
                               </div>
@@ -860,7 +861,7 @@ export default function ServiceDashboard() {
                 message.fromId === user?.uid
                   ? 'ml-auto bg-blue-500 text-white'
                   : 'bg-gray-100'
-              }`}
+                }`}
             >
               <p className="text-sm">{message.content}</p>
               <span className="text-xs opacity-70">
@@ -936,7 +937,6 @@ export default function ServiceDashboard() {
       localStorage.setItem('selectedMessageRequestId', requestId);
     }
   };
-
   const handleBackToList = () => {
     setIsViewingConversation(false);
     setSelectedMessageRequest(null);
