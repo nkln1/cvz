@@ -37,6 +37,7 @@ import {
   ArrowLeft,
   ArrowUpDown,
   Search,
+  Star,
 } from "lucide-react";
 import {
   Card,
