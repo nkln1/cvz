@@ -143,7 +143,10 @@ export default function ServiceDashboard() {
   const [requestClient, setRequestClient] = useState<User | null>(null);
   const [messageContent, setMessageContent] = useState("");
   const [sendingMessage, setSendingMessage] = useState(false);
-  const [selectedMessageRequest, setSelectedMessageRequest] = useState<Request | null>(null);
+  const [selectedMessageRequest, setSelectedMessageRequest] = useState<Request | null>(() => {
+    const savedRequestId = localStorage.getItem('selectedMessageRequestId');
+    return null; // Will be populated in useEffect
+  });
   const [messages, setMessages] = useState<Message[]>([]);
 
   const romanianCounties = Object.keys(romanianCitiesData);
@@ -427,6 +430,7 @@ export default function ServiceDashboard() {
 
   const handleMessage = (request: Request) => {
     setSelectedMessageRequest(request);
+    localStorage.setItem('selectedMessageRequestId', request.id);
     setActiveTab("messages");
   };
 
@@ -453,7 +457,7 @@ export default function ServiceDashboard() {
       };
 
       await addDoc(messageRef, newMessage);
-      await fetchMessages();
+      await fetchMessages(); // Refresh messages after sending
 
       toast({
         title: "Succes",
@@ -479,7 +483,7 @@ export default function ServiceDashboard() {
     try {
       const messagesQuery = query(
         collection(db, "messages"),
-        where("fromId", "==", user.uid)
+        where("fromId", "in", [user.uid, selectedMessageRequest?.userId || ''])
       );
       const querySnapshot = await getDocs(messagesQuery);
       const loadedMessages: Message[] = [];
@@ -487,6 +491,7 @@ export default function ServiceDashboard() {
         loadedMessages.push({ id: doc.id, ...doc.data() } as Message);
       });
 
+      // Sort messages by timestamp
       loadedMessages.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
       setMessages(loadedMessages);
     } catch (error) {
@@ -500,10 +505,33 @@ export default function ServiceDashboard() {
   };
 
   useEffect(() => {
-    if (activeTab === "messages") {
+    if (user) {
+      const savedRequestId = localStorage.getItem('selectedMessageRequestId');
+      if (savedRequestId) {
+        const loadSavedRequest = async () => {
+          try {
+            const requestDoc = await getDoc(doc(db, "requests", savedRequestId));
+            if (requestDoc.exists()) {
+              setSelectedMessageRequest({ id: requestDoc.id, ...requestDoc.data() } as Request);
+              setActiveTab('messages');
+            }
+          } catch (error) {
+            console.error("Error loading saved request:", error);
+          }
+        };
+        loadSavedRequest();
+      }
+      // Load messages regardless of saved request
       fetchMessages();
     }
-  }, [activeTab]);
+  }, [user]);
+
+  useEffect(() => {
+    if (activeTab === "messages" && selectedMessageRequest) {
+      const interval = setInterval(fetchMessages, 5000); // Poll every 5 seconds
+      return () => clearInterval(interval);
+    }
+  }, [activeTab, selectedMessageRequest]);
 
   const renderRequestsContent = () => (
     <TabsContent value="requests">
@@ -892,8 +920,7 @@ export default function ServiceDashboard() {
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground">
-                  Calendar și programări vor apărea aici
-                </p>
+                  Calendar și programări vor apărea aici                </p>
               </CardContent>
             </Card>
           </TabsContent>
