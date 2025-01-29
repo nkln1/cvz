@@ -75,6 +75,7 @@ interface Request {
   status: "Active" | "Rezolvat" | "Anulat";
   createdAt: string;
   userId: string;
+  clientName?: string; // Added clientName
 }
 
 interface Message {
@@ -681,6 +682,7 @@ export default function ClientDashboard() {
       const requestData = {
         ...data,
         userId: user.uid,
+        clientName: userProfile.name || "Client necunoscut", 
         status: "Active",
         createdAt: new Date().toISOString(),
       };
