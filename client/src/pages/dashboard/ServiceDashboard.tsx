@@ -1,14 +1,20 @@
 import { useAuth } from "@/context/AuthContext";
-import { doc, getDoc, updateDoc, collection, query, where, getDocs, doc as docRef, addDoc, orderBy } from "firebase/firestore";
+import {
+  doc,
+  getDoc,
+  updateDoc,
+  collection,
+  query,
+  where,
+  getDocs,
+  doc as docRef,
+  addDoc,
+  orderBy,
+} from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useEffect, useState, Fragment } from "react";
 import { z } from "zod";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
@@ -47,7 +53,14 @@ import Footer from "@/components/Footer";
 import { useToast } from "@/hooks/use-toast";
 import romanianCitiesData from "../../../../attached_assets/municipii_orase_romania.json";
 import { format } from "date-fns";
-import { Table, TableBody, TableCell, TableHeader, TableHead, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHeader,
+  TableHead,
+  TableRow,
+} from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 
 interface Car {
@@ -101,10 +114,19 @@ interface MessageGroup {
 }
 
 const serviceDataSchema = z.object({
-  companyName: z.string().min(3, "Numele companiei trebuie să aibă cel puțin 3 caractere"),
-  representativeName: z.string().min(3, "Numele reprezentantului trebuie să aibă cel puțin 3 caractere"),
+  companyName: z
+    .string()
+    .min(3, "Numele companiei trebuie să aibă cel puțin 3 caractere"),
+  representativeName: z
+    .string()
+    .min(3, "Numele reprezentantului trebuie să aibă cel puțin 3 caractere"),
   email: z.string().email("Adresa de email nu este validă"),
-  phone: z.string().regex(/^(\+4|)?(07[0-8]{1}[0-9]{1}|02[0-9]{2}|03[0-9]{2}){1}?(\s|\.|\-)?([0-9]{3}(\s|\.|\-|)){2}$/, "Numărul de telefon nu este valid"),
+  phone: z
+    .string()
+    .regex(
+      /^(\+4|)?(07[0-8]{1}[0-9]{1}|02[0-9]{2}|03[0-9]{2}){1}?(\s|\.|\-)?([0-9]{3}(\s|\.|\-|)){2}$/,
+      "Numărul de telefon nu este valid",
+    ),
   cui: z.string(),
   tradeRegNumber: z.string(),
   address: z.string().min(5, "Adresa trebuie să aibă cel puțin 5 caractere"),
@@ -142,18 +164,22 @@ export default function ServiceDashboard() {
   const { toast } = useToast();
   const [serviceData, setServiceData] = useState<ServiceData | null>(null);
   const [editedData, setEditedData] = useState<ServiceData | null>(null);
-  const [editingFields, setEditingFields] = useState<Record<string, boolean>>({});
-  const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
+  const [editingFields, setEditingFields] = useState<Record<string, boolean>>(
+    {},
+  );
+  const [validationErrors, setValidationErrors] = useState<ValidationErrors>(
+    {},
+  );
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState(() => {
     // If we're directly accessing /service-dashboard, default to "requests"
-    if (window.location.pathname.endsWith('/service-dashboard')) {
-      localStorage.setItem('activeTab', 'requests');
+    if (window.location.pathname.endsWith("/service-dashboard")) {
+      localStorage.setItem("activeTab", "requests");
       return "requests";
     }
     // Otherwise use saved tab or default to "requests"
-    return localStorage.getItem('activeTab') || "requests";
+    return localStorage.getItem("activeTab") || "requests";
   });
   const [availableCities, setAvailableCities] = useState<string[]>([]);
   const [clientRequests, setClientRequests] = useState<Request[]>([]);
@@ -161,15 +187,16 @@ export default function ServiceDashboard() {
   const [requestClient, setRequestClient] = useState<User | null>(null);
   const [messageContent, setMessageContent] = useState("");
   const [sendingMessage, setSendingMessage] = useState(false);
-  const [selectedMessageRequest, setSelectedMessageRequest] = useState<Request | null>(() => {
-    const savedRequestId = localStorage.getItem('selectedMessageRequestId');
-    return null;
-  });
+  const [selectedMessageRequest, setSelectedMessageRequest] =
+    useState<Request | null>(() => {
+      const savedRequestId = localStorage.getItem("selectedMessageRequestId");
+      return null;
+    });
   const [messages, setMessages] = useState<Message[]>([]);
   const [messageGroups, setMessageGroups] = useState<MessageGroup[]>([]);
   const [isViewingConversation, setIsViewingConversation] = useState(false);
   const [viewedRequests, setViewedRequests] = useState<Set<string>>(() => {
-    const savedViewedRequests = localStorage.getItem('viewedRequests');
+    const savedViewedRequests = localStorage.getItem("viewedRequests");
     return new Set(savedViewedRequests ? JSON.parse(savedViewedRequests) : []);
   });
   const [sortField, setSortField] = useState<keyof Request>("createdAt");
@@ -177,7 +204,6 @@ export default function ServiceDashboard() {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
-
 
   const romanianCounties = Object.keys(romanianCitiesData);
 
@@ -206,20 +232,19 @@ export default function ServiceDashboard() {
   ];
 
   useEffect(() => {
-    localStorage.setItem('activeTab', activeTab);
+    localStorage.setItem("activeTab", activeTab);
   }, [activeTab]);
 
   useEffect(() => {
-    const savedViewedRequests = localStorage.getItem('viewedRequests');
+    const savedViewedRequests = localStorage.getItem("viewedRequests");
     if (savedViewedRequests) {
       setViewedRequests(new Set(JSON.parse(savedViewedRequests)));
     }
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('viewedRequests', JSON.stringify([...viewedRequests]));
+    localStorage.setItem("viewedRequests", JSON.stringify([...viewedRequests]));
   }, [viewedRequests]);
-
 
   useEffect(() => {
     async function fetchServiceData() {
@@ -232,7 +257,11 @@ export default function ServiceDashboard() {
           setServiceData(data);
           setEditedData(data);
           if (data.county) {
-            setAvailableCities(romanianCitiesData[data.county as keyof typeof romanianCitiesData] || []);
+            setAvailableCities(
+              romanianCitiesData[
+                data.county as keyof typeof romanianCitiesData
+              ] || [],
+            );
           }
         }
       } catch (error) {
@@ -252,9 +281,14 @@ export default function ServiceDashboard() {
 
   const validateField = (field: keyof ServiceData, value: string) => {
     try {
-      const schema = z.object({ [field]: serviceDataSchema.shape[field as keyof typeof serviceDataSchema.shape] });
+      const schema = z.object({
+        [field]:
+          serviceDataSchema.shape[
+            field as keyof typeof serviceDataSchema.shape
+          ],
+      });
       schema.parse({ [field]: value });
-      setValidationErrors(prev => {
+      setValidationErrors((prev) => {
         const newErrors = { ...prev };
         delete newErrors[field];
         return newErrors;
@@ -263,7 +297,7 @@ export default function ServiceDashboard() {
     } catch (error) {
       if (error instanceof z.ZodError) {
         const fieldError = error.errors[0]?.message;
-        setValidationErrors(prev => ({
+        setValidationErrors((prev) => ({
           ...prev,
           [field]: fieldError,
         }));
@@ -274,12 +308,12 @@ export default function ServiceDashboard() {
   };
 
   const handleEdit = (field: keyof ServiceData) => {
-    setEditingFields(prev => ({
+    setEditingFields((prev) => ({
       ...prev,
-      [field]: !prev[field]
+      [field]: !prev[field],
     }));
     if (validationErrors[field]) {
-      setValidationErrors(prev => {
+      setValidationErrors((prev) => {
         const newErrors = { ...prev };
         delete newErrors[field];
         return newErrors;
@@ -291,9 +325,11 @@ export default function ServiceDashboard() {
     if (editedData) {
       const newData = { ...editedData, [field]: value };
 
-      if (field === 'county') {
-        setAvailableCities(romanianCitiesData[value as keyof typeof romanianCitiesData] || []);
-        newData.city = '';
+      if (field === "county") {
+        setAvailableCities(
+          romanianCitiesData[value as keyof typeof romanianCitiesData] || [],
+        );
+        newData.city = "";
       }
 
       setEditedData(newData);
@@ -310,7 +346,12 @@ export default function ServiceDashboard() {
     fields.forEach(({ key, editable }) => {
       if (editable && editingFields[key]) {
         try {
-          const schema = z.object({ [key]: serviceDataSchema.shape[key as keyof typeof serviceDataSchema.shape] });
+          const schema = z.object({
+            [key]:
+              serviceDataSchema.shape[
+                key as keyof typeof serviceDataSchema.shape
+              ],
+          });
           schema.parse({ [key]: editedData[key] });
         } catch (error) {
           if (error instanceof z.ZodError) {
@@ -347,7 +388,8 @@ export default function ServiceDashboard() {
       toast({
         variant: "destructive",
         title: "Eroare",
-        description: "Nu am putut actualiza datele. Vă rugăm încercați din nou.",
+        description:
+          "Nu am putut actualiza datele. Vă rugăm încercați din nou.",
       });
     } finally {
       setSaving(false);
@@ -364,7 +406,7 @@ export default function ServiceDashboard() {
         collection(db, "requests"),
         where("status", "==", "Active"),
         where("county", "==", serviceData.county),
-        where("cities", "array-contains", serviceData.city)
+        where("cities", "array-contains", serviceData.city),
       );
 
       const querySnapshot = await getDocs(requestsQuery);
@@ -373,18 +415,18 @@ export default function ServiceDashboard() {
       for (const doc of querySnapshot.docs) {
         const requestData = doc.data() as Request;
         const carDoc = await getDoc(docRef(db, "cars", requestData.carId));
-        const carData = carDoc.exists() ? carDoc.data() as Car : undefined;
+        const carData = carDoc.exists() ? (carDoc.data() as Car) : undefined;
 
         allRequests.push({
           id: doc.id,
           ...requestData,
-          car: carData
+          car: carData,
         } as Request);
       }
 
       allRequests.sort((a, b) => {
-        if (sortField === 'createdAt') {
-          return sortDirection === 'desc'
+        if (sortField === "createdAt") {
+          return sortDirection === "desc"
             ? new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
             : new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
         }
@@ -409,8 +451,8 @@ export default function ServiceDashboard() {
         const userData = userDoc.data();
         return {
           id: userDoc.id,
-          name: userData.name || '',
-          email: userData.email || '',
+          name: userData.name || "",
+          email: userData.email || "",
         } as User;
       }
       return null;
@@ -421,12 +463,15 @@ export default function ServiceDashboard() {
   };
 
   const markRequestAsViewed = (requestId: string) => {
-    setViewedRequests(prev => {
+    setViewedRequests((prev) => {
       const newSet = new Set(prev);
       newSet.add(requestId);
       return newSet;
     });
-    localStorage.setItem('viewedRequests', JSON.stringify([...viewedRequests, requestId]));
+    localStorage.setItem(
+      "viewedRequests",
+      JSON.stringify([...viewedRequests, requestId]),
+    );
   };
 
   const handleViewDetails = async (request: Request) => {
@@ -451,7 +496,7 @@ export default function ServiceDashboard() {
     try {
       const requestRef = doc(db, "requests", requestId);
       await updateDoc(requestRef, {
-        status: "Rezolvat"
+        status: "Rezolvat",
       });
       await fetchClientRequests();
       toast({
@@ -473,7 +518,7 @@ export default function ServiceDashboard() {
     try {
       const requestRef = doc(db, "requests", requestId);
       await updateDoc(requestRef, {
-        status: "Anulat"
+        status: "Anulat",
       });
       await fetchClientRequests();
       toast({
@@ -493,14 +538,15 @@ export default function ServiceDashboard() {
   const handleMessage = (request: Request) => {
     markRequestAsViewed(request.id);
     setSelectedMessageRequest(request);
-    localStorage.setItem('selectedMessageRequestId', request.id);
+    localStorage.setItem("selectedMessageRequestId", request.id);
     setActiveTab("messages");
   };
 
   const handleSendOffer = async (request: Request) => {
     markRequestAsViewed(request.id);
     toast({
-      description: "Funcționalitatea de trimitere oferte va fi disponibilă în curând.",
+      description:
+        "Funcționalitatea de trimitere oferte va fi disponibilă în curând.",
     });
   };
 
@@ -546,24 +592,23 @@ export default function ServiceDashboard() {
     try {
       const sentMessagesQuery = query(
         collection(db, "messages"),
-        where("fromId", "==", user.uid)
+        where("fromId", "==", user.uid),
       );
 
       const receivedMessagesQuery = query(
         collection(db, "messages"),
-        where("toId", "==", user.uid)
+        where("toId", "==", user.uid),
       );
 
       const [sentSnapshot, receivedSnapshot] = await Promise.all([
         getDocs(sentMessagesQuery),
-        getDocs(receivedMessagesQuery)
+        getDocs(receivedMessagesQuery),
       ]);
-
 
       const loadedMessages: Message[] = [];
       const groupedMessages: { [key: string]: Message[] } = {};
 
-      [sentSnapshot, receivedSnapshot].forEach(snapshot => {
+      [sentSnapshot, receivedSnapshot].forEach((snapshot) => {
         snapshot.forEach((doc) => {
           const message = { id: doc.id, ...doc.data() } as Message;
           loadedMessages.push(message);
@@ -581,13 +626,19 @@ export default function ServiceDashboard() {
           const requestDoc = await getDoc(doc(db, "requests", requestId));
           if (requestDoc.exists()) {
             const requestData = requestDoc.data();
-            messages.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+            messages.sort(
+              (a, b) =>
+                new Date(b.createdAt).getTime() -
+                new Date(a.createdAt).getTime(),
+            );
 
             groups.push({
               requestId,
               requestTitle: requestData.title,
               lastMessage: messages[0],
-              unreadCount: messages.filter(m => !m.read && m.toId === user.uid).length
+              unreadCount: messages.filter(
+                (m) => !m.read && m.toId === user.uid,
+              ).length,
             });
           }
         } catch (error) {
@@ -595,8 +646,10 @@ export default function ServiceDashboard() {
         }
       }
 
-      groups.sort((a, b) =>
-        new Date(b.lastMessage.createdAt).getTime() - new Date(a.lastMessage.createdAt).getTime()
+      groups.sort(
+        (a, b) =>
+          new Date(b.lastMessage.createdAt).getTime() -
+          new Date(a.lastMessage.createdAt).getTime(),
       );
 
       setMessageGroups(groups);
@@ -613,14 +666,21 @@ export default function ServiceDashboard() {
 
   useEffect(() => {
     if (user) {
-      const savedRequestId = localStorage.getItem('selectedMessageRequestId');
+      const savedRequestId = localStorage.getItem("selectedMessageRequestId");
       if (savedRequestId) {
         const loadSavedRequest = async () => {
           try {
-            const requestDoc = await getDoc(doc(db, "requests", savedRequestId));
+            const requestDoc = await getDoc(
+              doc(db, "requests", savedRequestId),
+            );
             if (requestDoc.exists()) {
-              setSelectedMessageRequest({ id: requestDoc.id, ...requestDoc.data() } as Request);
-              setActiveTab('messages');
+              setSelectedMessageRequest({
+                id: requestDoc.id,
+                ...requestDoc.data(),
+              } as Request);
+              if (!localStorage.getItem("activeTab")) {
+                setActiveTab("messages");
+              }
             }
           } catch (error) {
             console.error("Error loading saved request:", error);
@@ -645,14 +705,22 @@ export default function ServiceDashboard() {
 
       const searchLower = searchQuery.toLowerCase();
       return (
-        (request.title?.toLowerCase() || '').includes(searchLower) ||
-        (request.description?.toLowerCase() || '').includes(searchLower) ||
-        (request.county?.toLowerCase() || '').includes(searchLower) ||
-        (request.cities || []).some(city => (city?.toLowerCase() || '').includes(searchLower)) ||
-        (request.status?.toLowerCase() || '').includes(searchLower) ||
-        (request.clientName?.toLowerCase() || '').includes(searchLower) ||
-        (request.preferredDate && format(new Date(request.preferredDate), "dd.MM.yyyy").includes(searchQuery)) ||
-        (request.createdAt && format(new Date(request.createdAt), "dd.MM.yyyy").includes(searchQuery))
+        (request.title?.toLowerCase() || "").includes(searchLower) ||
+        (request.description?.toLowerCase() || "").includes(searchLower) ||
+        (request.county?.toLowerCase() || "").includes(searchLower) ||
+        (request.cities || []).some((city) =>
+          (city?.toLowerCase() || "").includes(searchLower),
+        ) ||
+        (request.status?.toLowerCase() || "").includes(searchLower) ||
+        (request.clientName?.toLowerCase() || "").includes(searchLower) ||
+        (request.preferredDate &&
+          format(new Date(request.preferredDate), "dd.MM.yyyy").includes(
+            searchQuery,
+          )) ||
+        (request.createdAt &&
+          format(new Date(request.createdAt), "dd.MM.yyyy").includes(
+            searchQuery,
+          ))
       );
     });
 
@@ -664,7 +732,7 @@ export default function ServiceDashboard() {
       if (typeof aValue === "string" && typeof bValue === "string") {
         return aValue.localeCompare(bValue) * modifier;
       }
-      if (typeof aValue === 'number' && typeof bValue === 'number') {
+      if (typeof aValue === "number" && typeof bValue === "number") {
         return (aValue - bValue) * modifier;
       }
       return 0;
@@ -672,7 +740,10 @@ export default function ServiceDashboard() {
 
     const totalPages = Math.ceil(sortedRequests.length / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
-    const paginatedRequests = sortedRequests.slice(startIndex, startIndex + itemsPerPage);
+    const paginatedRequests = sortedRequests.slice(
+      startIndex,
+      startIndex + itemsPerPage,
+    );
 
     return (
       <TabsContent value="requests">
@@ -705,7 +776,9 @@ export default function ServiceDashboard() {
                       <button
                         onClick={() => {
                           setSortField("createdAt");
-                          setSortDirection(prev => prev === "asc" ? "desc" : "asc");
+                          setSortDirection((prev) =>
+                            prev === "asc" ? "desc" : "asc",
+                          );
                         }}
                         className="flex items-center hover:text-[#00aff5]"
                       >
@@ -717,7 +790,9 @@ export default function ServiceDashboard() {
                       <button
                         onClick={() => {
                           setSortField("preferredDate");
-                          setSortDirection(prev => prev === "asc" ? "desc" : "asc");
+                          setSortDirection((prev) =>
+                            prev === "asc" ? "desc" : "asc",
+                          );
                         }}
                         className="flex items-center hover:text-[#00aff5]"
                       >
@@ -742,16 +817,28 @@ export default function ServiceDashboard() {
                                 NEW
                               </span>
                             )}
-                            <span className={!viewedRequests.has(request.id) ? "font-bold" : ""}>
+                            <span
+                              className={
+                                !viewedRequests.has(request.id)
+                                  ? "font-bold"
+                                  : ""
+                              }
+                            >
                               {request.title}
                             </span>
                           </div>
                         </TableCell>
                         <TableCell>
-                          {format(new Date(request.createdAt), "dd.MM.yyyy HH:mm")}
+                          {format(
+                            new Date(request.createdAt),
+                            "dd.MM.yyyy HH:mm",
+                          )}
                         </TableCell>
                         <TableCell>
-                          {format(new Date(request.preferredDate), "dd.MM.yyyy")}
+                          {format(
+                            new Date(request.preferredDate),
+                            "dd.MM.yyyy",
+                          )}
                         </TableCell>
                         <TableCell>{request.county}</TableCell>
                         <TableCell>{request.cities.join(", ")}</TableCell>
@@ -761,9 +848,9 @@ export default function ServiceDashboard() {
                               request.status === "Active"
                                 ? "bg-yellow-100 text-yellow-800"
                                 : request.status === "Rezolvat"
-                                ? "bg-green-100 text-green-800"
-                                : "bg-red-100 text-red-800"
-                              }`}
+                                  ? "bg-green-100 text-green-800"
+                                  : "bg-red-100 text-red-800"
+                            }`}
                           >
                             {request.status}
                           </span>
@@ -802,7 +889,9 @@ export default function ServiceDashboard() {
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => handleRejectRequest(request.id)}
+                                  onClick={() =>
+                                    handleRejectRequest(request.id)
+                                  }
                                   className="text-red-500 hover:text-red-700 hover:bg-red-50 flex items-center gap-1"
                                 >
                                   <X className="h-4 w-4" />
@@ -825,7 +914,9 @@ export default function ServiceDashboard() {
                                   <p className="text-sm mt-1">
                                     {request.clientName}
                                   </p>
-                                  <p className="text-xs text-muted-foreground">{requestClient?.email}</p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {requestClient?.email}
+                                  </p>
                                 </div>
                                 <div>
                                   <h3 className="text-xs font-medium text-muted-foreground">
@@ -834,7 +925,8 @@ export default function ServiceDashboard() {
                                   <p className="text-sm mt-1">
                                     {request.car ? (
                                       <>
-                                        {request.car.brand} {request.car.model} ({request.car.year})
+                                        {request.car.brand} {request.car.model}{" "}
+                                        ({request.car.year})
                                         {request.car.licensePlate && (
                                           <span className="text-xs text-muted-foreground ml-1">
                                             Nr. {request.car.licensePlate}
@@ -856,21 +948,27 @@ export default function ServiceDashboard() {
                                     Data preferată
                                   </h3>
                                   <p className="text-sm mt-1">
-                                    {format(new Date(request.preferredDate), "dd.MM.yyyy")}
+                                    {format(
+                                      new Date(request.preferredDate),
+                                      "dd.MM.yyyy",
+                                    )}
                                   </p>
                                 </div>
                                 <div className="col-span-2">
                                   <h3 className="text-xs font-medium text-muted-foreground">
                                     Descriere
                                   </h3>
-                                  <p className="text-sm mt-1 whitespace-pre-wrap">{request.description}</p>
+                                  <p className="text-sm mt-1 whitespace-pre-wrap">
+                                    {request.description}
+                                  </p>
                                 </div>
                                 <div>
                                   <h3 className="text-xs font-medium text-muted-foreground">
                                     Locație
                                   </h3>
                                   <p className="text-sm mt-1">
-                                    {request.cities.join(", ")} - {request.county}
+                                    {request.cities.join(", ")} -{" "}
+                                    {request.county}
                                   </p>
                                 </div>
                               </div>
@@ -882,8 +980,13 @@ export default function ServiceDashboard() {
                   ))}
                   {paginatedRequests.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center text-muted-foreground">
-                        {searchQuery ? "Nu s-au găsit cereri care să corespundă căutării" : "Nu există cereri active în zona ta"}
+                      <TableCell
+                        colSpan={7}
+                        className="text-center text-muted-foreground"
+                      >
+                        {searchQuery
+                          ? "Nu s-au găsit cereri care să corespundă căutării"
+                          : "Nu există cereri active în zona ta"}
                       </TableCell>
                     </TableRow>
                   )}
@@ -899,7 +1002,9 @@ export default function ServiceDashboard() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    onClick={() =>
+                      setCurrentPage((prev) => Math.max(1, prev - 1))
+                    }
                     disabled={currentPage === 1}
                   >
                     Anterior
@@ -907,7 +1012,9 @@ export default function ServiceDashboard() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    onClick={() =>
+                      setCurrentPage((prev) => Math.min(totalPages, prev + 1))
+                    }
                     disabled={currentPage === totalPages}
                   >
                     Următor
@@ -952,7 +1059,10 @@ export default function ServiceDashboard() {
           >
             <CardContent className="p-4">
               <div className="flex justify-between items-start">
-                <div className="flex-1" onClick={() => handleSelectConversation(group.requestId)}>
+                <div
+                  className="flex-1"
+                  onClick={() => handleSelectConversation(group.requestId)}
+                >
                   <h4 className="font-medium">{group.requestTitle}</h4>
                   <p className="text-sm text-muted-foreground truncate">
                     {group.lastMessage.content}
@@ -960,7 +1070,10 @@ export default function ServiceDashboard() {
                 </div>
                 <div className="flex flex-col items-end ml-4">
                   <span className="text-xs text-muted-foreground">
-                    {format(new Date(group.lastMessage.createdAt), "dd.MM.yyyy HH:mm")}
+                    {format(
+                      new Date(group.lastMessage.createdAt),
+                      "dd.MM.yyyy HH:mm",
+                    )}
                   </span>
                   {group.unreadCount > 0 && (
                     <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded-full mt-1">
@@ -989,14 +1102,14 @@ export default function ServiceDashboard() {
             <ArrowLeft className="h-4 w-4 mr-2" />
             Înapoi
           </Button>
-          <h3 className="font-medium">
-            {selectedMessageRequest?.title}
-          </h3>
+          <h3 className="font-medium">{selectedMessageRequest?.title}</h3>
         </div>
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => handleViewRequestDetails(selectedMessageRequest?.id || '')}
+          onClick={() =>
+            handleViewRequestDetails(selectedMessageRequest?.id || "")
+          }
           className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 flex items-center gap-1"
         >
           <Eye className="h-4 w-4" />
@@ -1005,16 +1118,19 @@ export default function ServiceDashboard() {
       </div>
       <div className="space-y-4 max-h-[400px] overflow-y-auto mb-4">
         {messages
-          .filter(msg => msg.requestId === selectedMessageRequest?.id)
-          .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+          .filter((msg) => msg.requestId === selectedMessageRequest?.id)
+          .sort(
+            (a, b) =>
+              new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+          )
           .map((message) => (
             <div
               key={message.id}
               className={`p-3 rounded-lg max-w-[80%] ${
                 message.fromId === user?.uid
-                  ? 'ml-auto bg-blue-500 text-white'
-                  : 'bg-gray-100'
-                }`}
+                  ? "ml-auto bg-blue-500 text-white"
+                  : "bg-gray-100"
+              }`}
             >
               <p className="text-sm">{message.content}</p>
               <span className="text-xs opacity-70">
@@ -1052,11 +1168,11 @@ export default function ServiceDashboard() {
   );
 
   const handleViewRequestDetails = (requestId: string) => {
-    const request = clientRequests.find(r => r.id === requestId);
+    const request = clientRequests.find((r) => r.id === requestId);
     if (request) {
       setSelectedRequest(request);
       setActiveTab("requests");
-      fetchRequestClient(request.userId).then(client => {
+      fetchRequestClient(request.userId).then((client) => {
         setRequestClient(client);
       });
     }
@@ -1082,17 +1198,17 @@ export default function ServiceDashboard() {
   );
 
   const handleSelectConversation = (requestId: string) => {
-    const request = clientRequests.find(r => r.id === requestId);
+    const request = clientRequests.find((r) => r.id === requestId);
     if (request) {
       setSelectedMessageRequest(request);
       setIsViewingConversation(true);
-      localStorage.setItem('selectedMessageRequestId', requestId);
+      localStorage.setItem("selectedMessageRequestId", requestId);
     }
   };
   const handleBackToList = () => {
     setIsViewingConversation(false);
     setSelectedMessageRequest(null);
-    localStorage.removeItem('selectedMessageRequestId');
+    localStorage.removeItem("selectedMessageRequestId");
   };
 
   if (loading) {
@@ -1202,7 +1318,11 @@ export default function ServiceDashboard() {
           </Button>
         </nav>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+        <Tabs
+          value={activeTab}
+          onValueChange={setActiveTab}
+          className="space-y-4"
+        >
           {renderRequestsContent()}
           <TabsContent value="offers">
             <Card className="border-[#00aff5]/20">
@@ -1275,7 +1395,9 @@ export default function ServiceDashboard() {
                   {fields.map(({ label, key, editable, type, options }) => (
                     <div key={key} className="relative">
                       <div className="flex items-center justify-between mb-1">
-                        <label className="text-sm font-medium text-gray-700">{label}</label>
+                        <label className="text-sm font-medium text-gray-700">
+                          {label}
+                        </label>
                         {editable && (
                           <Button
                             variant="ghost"
@@ -1288,7 +1410,7 @@ export default function ServiceDashboard() {
                         )}
                       </div>
                       <div className="space-y-1">
-                        {type === 'select' && options ? (
+                        {type === "select" && options ? (
                           <Select
                             value={editedData?.[key]}
                             onValueChange={(value) => handleChange(key, value)}
@@ -1296,10 +1418,14 @@ export default function ServiceDashboard() {
                           >
                             <SelectTrigger
                               className={`${
-                                !editable || !editingFields[key] ? "bg-gray-50" : "bg-white"
+                                !editable || !editingFields[key]
+                                  ? "bg-gray-50"
+                                  : "bg-white"
                               } ${validationErrors[key] ? "border-red-500" : ""}`}
                             >
-                              <SelectValue placeholder={`Selectează ${label.toLowerCase()}`} />
+                              <SelectValue
+                                placeholder={`Selectează ${label.toLowerCase()}`}
+                              />
                             </SelectTrigger>
                             <SelectContent>
                               {options.map((option) => (
@@ -1315,7 +1441,9 @@ export default function ServiceDashboard() {
                             onChange={(e) => handleChange(key, e.target.value)}
                             disabled={!editable || !editingFields[key]}
                             className={`${
-                              !editable || !editingFields[key] ? "bg-gray-50" : "bg-white"
+                              !editable || !editingFields[key]
+                                ? "bg-gray-50"
+                                : "bg-white"
                             } ${validationErrors[key] ? "border-red-500" : ""} pr-8`}
                           />
                         )}
@@ -1332,7 +1460,9 @@ export default function ServiceDashboard() {
                 {hasChanges && (
                   <Button
                     onClick={handleSave}
-                    disabled={saving || Object.keys(validationErrors).length > 0}
+                    disabled={
+                      saving || Object.keys(validationErrors).length > 0
+                    }
                     className="mt-6 bg-[#00aff5] hover:bg-[#0099d6] float-right"
                   >
                     {saving ? (
