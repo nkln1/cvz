@@ -645,6 +645,15 @@ export default function ServiceDashboard() {
                         <Button
                           variant="ghost"
                           size="sm"
+                          onClick={() => handleViewDetails(request)}
+                          className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 flex items-center gap-1"
+                        >
+                          <Eye className="h-4 w-4" />
+                          Detalii
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
                           onClick={() => handleMessage(request)}
                           className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 flex items-center gap-1"
                         >
