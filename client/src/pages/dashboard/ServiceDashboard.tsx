@@ -333,19 +333,20 @@ export default function ServiceDashboard() {
     if (!user || !serviceData) return;
 
     try {
-      const requestsQuery = query(
+      // Create base query
+      let requestsQuery = query(
         collection(db, "requests"),
         where("status", "==", "Active"),
         where("county", "==", serviceData.county),
-        where("cities", "array-contains", serviceData.city),
-        orderBy(sortField, sortDirection)
+        where("cities", "array-contains", serviceData.city)
       );
 
+      // Get all documents
       const querySnapshot = await getDocs(requestsQuery);
       const allRequests: Request[] = [];
 
       for (const doc of querySnapshot.docs) {
-        const requestData = doc.data() as Request; // Type assertion here
+        const requestData = doc.data() as Request;
         const carDoc = await getDoc(docRef(db, "cars", requestData.carId));
         const carData = carDoc.exists() ? carDoc.data() as Car : undefined;
 
@@ -355,6 +356,16 @@ export default function ServiceDashboard() {
           car: carData
         } as Request);
       }
+
+      // Sort the requests in memory instead of in the query
+      allRequests.sort((a, b) => {
+        if (sortField === 'createdAt') {
+          return sortDirection === 'desc' 
+            ? new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+            : new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+        }
+        return 0;
+      });
 
       setClientRequests(allRequests);
     } catch (error) {
@@ -912,8 +923,7 @@ export default function ServiceDashboard() {
                     <SelectItem value="50">50 pe pagină</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
-            )}
+              </div>            )}
           </CardContent>
         </Card>
       </TabsContent>
