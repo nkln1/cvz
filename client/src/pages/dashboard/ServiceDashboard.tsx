@@ -1,5 +1,5 @@
 import { useAuth } from "@/context/AuthContext";
-import { doc, getDoc, updateDoc, collection, query, where, getDocs, doc as docRef, addDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc, collection, query, where, getDocs, doc as docRef, addDoc, orderBy } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useEffect, useState, Fragment } from "react";
 import { z } from "zod";
@@ -29,6 +29,7 @@ import {
   Save,
   Eye,
   X,
+  ArrowLeft,
 } from "lucide-react";
 import {
   Card,
@@ -89,6 +90,12 @@ interface Message {
   read: boolean;
 }
 
+interface MessageGroup {
+  requestId: string;
+  requestTitle: string;
+  lastMessage: Message;
+  unreadCount: number;
+}
 
 const serviceDataSchema = z.object({
   companyName: z.string().min(3, "Numele companiei trebuie să aibă cel puțin 3 caractere"),
@@ -145,9 +152,11 @@ export default function ServiceDashboard() {
   const [sendingMessage, setSendingMessage] = useState(false);
   const [selectedMessageRequest, setSelectedMessageRequest] = useState<Request | null>(() => {
     const savedRequestId = localStorage.getItem('selectedMessageRequestId');
-    return null; // Will be populated in useEffect
+    return null;
   });
   const [messages, setMessages] = useState<Message[]>([]);
+  const [messageGroups, setMessageGroups] = useState<MessageGroup[]>([]);
+  const [isViewingConversation, setIsViewingConversation] = useState(false);
 
   const romanianCounties = Object.keys(romanianCitiesData);
 
@@ -185,7 +194,6 @@ export default function ServiceDashboard() {
           const data = serviceDoc.data() as ServiceData;
           setServiceData(data);
           setEditedData(data);
-          // Set available cities based on the current county
           if (data.county) {
             setAvailableCities(romanianCitiesData[data.county as keyof typeof romanianCitiesData] || []);
           }
@@ -246,10 +254,9 @@ export default function ServiceDashboard() {
     if (editedData) {
       const newData = { ...editedData, [field]: value };
 
-      // Handle county change to update city options
       if (field === 'county') {
         setAvailableCities(romanianCitiesData[value as keyof typeof romanianCitiesData] || []);
-        newData.city = ''; // Reset city when county changes
+        newData.city = '';
       }
 
       setEditedData(newData);
@@ -260,7 +267,6 @@ export default function ServiceDashboard() {
   const handleSave = async () => {
     if (!user || !editedData) return;
 
-    // Validate all editable fields before saving
     let isValid = true;
     const newErrors: ValidationErrors = {};
 
@@ -329,7 +335,6 @@ export default function ServiceDashboard() {
 
       for (const doc of querySnapshot.docs) {
         const requestData = doc.data();
-        // Fetch car details
         const carDoc = await getDoc(docRef(db, "cars", requestData.carId));
         const carData = carDoc.exists() ? carDoc.data() as Car : undefined;
 
@@ -435,7 +440,6 @@ export default function ServiceDashboard() {
   };
 
   const handleSendOffer = async (request: Request) => {
-    // To be implemented when offer functionality is ready
     toast({
       description: "Funcționalitatea de trimitere oferte va fi disponibilă în curând.",
     });
@@ -457,7 +461,7 @@ export default function ServiceDashboard() {
       };
 
       await addDoc(messageRef, newMessage);
-      await fetchMessages(); // Refresh messages after sending
+      await fetchMessages();
 
       toast({
         title: "Succes",
@@ -483,16 +487,39 @@ export default function ServiceDashboard() {
     try {
       const messagesQuery = query(
         collection(db, "messages"),
-        where("fromId", "in", [user.uid, selectedMessageRequest?.userId || ''])
+        where("fromId", "in", [user.uid, selectedMessageRequest?.userId || '']),
+        orderBy("createdAt", "desc")
       );
+
       const querySnapshot = await getDocs(messagesQuery);
       const loadedMessages: Message[] = [];
+      const groupedMessages: { [key: string]: Message[] } = {};
+
       querySnapshot.forEach((doc) => {
-        loadedMessages.push({ id: doc.id, ...doc.data() } as Message);
+        const message = { id: doc.id, ...doc.data() } as Message;
+        loadedMessages.push(message);
+
+        if (!groupedMessages[message.requestId]) {
+          groupedMessages[message.requestId] = [];
+        }
+        groupedMessages[message.requestId].push(message);
       });
 
-      // Sort messages by timestamp
-      loadedMessages.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      const groups: MessageGroup[] = [];
+      for (const [requestId, messages] of Object.entries(groupedMessages)) {
+        const request = await getDoc(doc(db, "requests", requestId));
+        if (request.exists()) {
+          const requestData = request.data();
+          groups.push({
+            requestId,
+            requestTitle: requestData.title,
+            lastMessage: messages[0],
+            unreadCount: messages.filter(m => !m.read && m.toId === user.uid).length
+          });
+        }
+      }
+
+      setMessageGroups(groups);
       setMessages(loadedMessages);
     } catch (error) {
       console.error("Error loading messages:", error);
@@ -521,14 +548,13 @@ export default function ServiceDashboard() {
         };
         loadSavedRequest();
       }
-      // Load messages regardless of saved request
       fetchMessages();
     }
   }, [user]);
 
   useEffect(() => {
     if (activeTab === "messages" && selectedMessageRequest) {
-      const interval = setInterval(fetchMessages, 5000); // Poll every 5 seconds
+      const interval = setInterval(fetchMessages, 5000);
       return () => clearInterval(interval);
     }
   }, [activeTab, selectedMessageRequest]);
@@ -706,6 +732,124 @@ export default function ServiceDashboard() {
     </TabsContent>
   );
 
+  const renderMessagesList = () => (
+    <div className="space-y-4">
+      {messageGroups.length === 0 ? (
+        <p className="text-center text-muted-foreground py-4">
+          Nu există conversații active
+        </p>
+      ) : (
+        messageGroups.map((group) => (
+          <Card
+            key={group.requestId}
+            className="cursor-pointer hover:bg-gray-50 transition-colors"
+            onClick={() => handleSelectConversation(group.requestId)}
+          >
+            <CardContent className="p-4">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h4 className="font-medium">{group.requestTitle}</h4>
+                  <p className="text-sm text-muted-foreground truncate">
+                    {group.lastMessage.content}
+                  </p>
+                </div>
+                <div className="flex flex-col items-end">
+                  <span className="text-xs text-muted-foreground">
+                    {format(new Date(group.lastMessage.createdAt), "dd.MM.yyyy HH:mm")}
+                  </span>
+                  {group.unreadCount > 0 && (
+                    <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded-full mt-1">
+                      {group.unreadCount}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))
+      )}
+    </div>
+  );
+
+  const renderConversation = () => (
+    <div className="space-y-4">
+      <div className="flex items-center gap-2 border-b pb-4">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleBackToList}
+          className="hover:bg-gray-100"
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Înapoi
+        </Button>
+        <h3 className="font-medium">
+          {selectedMessageRequest?.title}
+        </h3>
+      </div>
+      <div className="space-y-4 max-h-[400px] overflow-y-auto mb-4">
+        {messages
+          .filter(msg => msg.requestId === selectedMessageRequest?.id)
+          .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+          .map((message) => (
+            <div
+              key={message.id}
+              className={`p-3 rounded-lg max-w-[80%] ${
+                message.fromId === user?.uid
+                  ? 'ml-auto bg-blue-500 text-white'
+                  : 'bg-gray-100'
+              }`}
+            >
+              <p className="text-sm">{message.content}</p>
+              <span className="text-xs opacity-70">
+                {format(new Date(message.createdAt), "dd.MM.yyyy HH:mm")}
+              </span>
+            </div>
+          ))}
+      </div>
+      <div className="flex gap-2">
+        <Textarea
+          value={messageContent}
+          onChange={(e) => setMessageContent(e.target.value)}
+          placeholder="Scrie un mesaj..."
+          className="flex-1"
+        />
+        <Button
+          onClick={sendMessage}
+          disabled={!messageContent.trim() || sendingMessage}
+          className="bg-[#00aff5] hover:bg-[#0099d6]"
+        >
+          {sendingMessage ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Se trimite...
+            </>
+          ) : (
+            <>
+              <SendHorizontal className="mr-2 h-4 w-4" />
+              Trimite
+            </>
+          )}
+        </Button>
+      </div>
+    </div>
+  );
+
+  const handleSelectConversation = (requestId: string) => {
+    const request = clientRequests.find(r => r.id === requestId);
+    if (request) {
+      setSelectedMessageRequest(request);
+      setIsViewingConversation(true);
+      localStorage.setItem('selectedMessageRequestId', requestId);
+    }
+  };
+
+  const handleBackToList = () => {
+    setIsViewingConversation(false);
+    setSelectedMessageRequest(null);
+    localStorage.removeItem('selectedMessageRequestId');
+  };
+
   const renderMessages = () => (
     <TabsContent value="messages">
       <Card className="border-[#00aff5]/20">
@@ -719,61 +863,7 @@ export default function ServiceDashboard() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {selectedMessageRequest ? (
-            <div className="space-y-4">
-              <div className="border-b pb-4">
-                <h3 className="font-medium">Conversație pentru cererea: {selectedMessageRequest.title}</h3>
-              </div>
-              <div className="space-y-4 max-h-[400px] overflow-y-auto mb-4">
-                {messages
-                  .filter(msg => msg.requestId === selectedMessageRequest.id)
-                  .map((message) => (
-                    <div
-                      key={message.id}
-                      className={`p-3 rounded-lg max-w-[80%] ${
-                        message.fromId === user?.uid
-                          ? 'ml-auto bg-blue-500 text-white'
-                          : 'bg-gray-100'
-                      }`}
-                    >
-                      <p className="text-sm">{message.content}</p>
-                      <span className="text-xs opacity-70">
-                        {format(new Date(message.createdAt), "dd.MM.yyyy HH:mm")}
-                      </span>
-                    </div>
-                  ))}
-              </div>
-              <div className="flex gap-2">
-                <Textarea
-                  value={messageContent}
-                  onChange={(e) => setMessageContent(e.target.value)}
-                  placeholder="Scrie un mesaj..."
-                  className="flex-1"
-                />
-                <Button
-                  onClick={sendMessage}
-                  disabled={!messageContent.trim() || sendingMessage}
-                  className="bg-[#00aff5] hover:bg-[#0099d6]"
-                >
-                  {sendingMessage ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Se trimite...
-                    </>
-                  ) : (
-                    <>
-                      <SendHorizontal className="mr-2 h-4 w-4" />
-                      Trimite
-                    </>
-                  )}
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <p className="text-muted-foreground text-center py-4">
-              Selectează o cerere pentru a începe o conversație
-            </p>
-          )}
+          {isViewingConversation ? renderConversation() : renderMessagesList()}
         </CardContent>
       </Card>
     </TabsContent>
