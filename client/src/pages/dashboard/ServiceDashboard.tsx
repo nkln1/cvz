@@ -147,11 +147,13 @@ export default function ServiceDashboard() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState(() => {
-    const savedTab = localStorage.getItem('activeTab');
-    if (!savedTab && window.location.pathname.endsWith('/service-dashboard')) {
+    // If we're directly accessing /service-dashboard, default to "requests"
+    if (window.location.pathname.endsWith('/service-dashboard')) {
+      localStorage.setItem('activeTab', 'requests');
       return "requests";
     }
-    return savedTab || "requests";
+    // Otherwise use saved tab or default to "requests"
+    return localStorage.getItem('activeTab') || "requests";
   });
   const [availableCities, setAvailableCities] = useState<string[]>([]);
   const [clientRequests, setClientRequests] = useState<Request[]>([]);
