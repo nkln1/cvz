@@ -338,14 +338,10 @@ export default function ServiceDashboard() {
       const userDoc = await getDoc(doc(db, "users", userId));
       if (userDoc.exists()) {
         const userData = userDoc.data();
-        console.log("Fetched user data:", userData); // Added debug log
         return {
           id: userDoc.id,
-          name: userData.name,
-          email: userData.email,
-          numeComplet: userData.numeComplet,
-          nume: userData.nume,
-          prenume: userData.prenume
+          name: userData.name || '',
+          email: userData.email || '',
         } as User;
       }
       return null;
@@ -357,14 +353,11 @@ export default function ServiceDashboard() {
 
   const handleViewDetails = async (request: Request) => {
     if (selectedRequest?.id === request.id) {
-      // If clicking the same request, close the details
       setSelectedRequest(null);
       setRequestClient(null);
     } else {
-      // If clicking a different request, show its details
       setSelectedRequest(request);
       const client = await fetchRequestClient(request.userId);
-      console.log("Fetched client:", client); // Added debug log
       setRequestClient(client);
     }
   };
@@ -443,10 +436,7 @@ export default function ServiceDashboard() {
                                 Client
                               </h3>
                               <p className="text-sm mt-1">
-                                {requestClient?.numeComplet ||
-                                  (requestClient?.nume && requestClient?.prenume &&
-                                    `${requestClient.nume} ${requestClient.prenume}`) ||
-                                  requestClient?.name || "Nume indisponibil"}
+                                {requestClient?.name || "Nume indisponibil"}
                               </p>
                               <p className="text-xs text-muted-foreground">{requestClient?.email}</p>
                             </div>
