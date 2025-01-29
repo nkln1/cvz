@@ -38,6 +38,7 @@ import {
   ArrowUpDown,
   Search,
   Star,
+  Switch,
 } from "lucide-react";
 import {
   Card,
@@ -203,6 +204,7 @@ export default function ServiceDashboard() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [cars, setCars] = useState<Record<string, Car>>({});
+  const [showOnlyNew, setShowOnlyNew] = useState(false);
 
 
   const romanianCounties = Object.keys(romanianCitiesData);
@@ -762,7 +764,7 @@ export default function ServiceDashboard() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="max-w-[300px]"
-                icon={<Search className="h-4 w-4" />}
+                startIcon={<Search className="h-4 w-4" />}
               />
             </div>
             <CardDescription>
@@ -770,6 +772,16 @@ export default function ServiceDashboard() {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            <div className="mb-4 flex items-center space-x-2">
+              <Switch
+                id="show-new"
+                checked={showOnlyNew}
+                onCheckedChange={setShowOnlyNew}
+              />
+              <label htmlFor="show-new" className="text-sm text-muted-foreground">
+                Doar oferte noi
+              </label>
+            </div>
             <div className="max-h-[600px] overflow-y-auto pr-2">
               <Table>
                 <TableHeader>
@@ -975,8 +987,7 @@ export default function ServiceDashboard() {
                                   </p>
                                 </div>
                               </div>
-                            </div>
-                          </TableCell>
+                            </div                          </TableCell>
                         </TableRow>
                       )}
                     </Fragment>

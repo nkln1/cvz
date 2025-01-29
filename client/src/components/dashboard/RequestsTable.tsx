@@ -28,7 +28,6 @@ import {
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { type Car } from "@/pages/dashboard/CarManagement";
-import { Switch } from "@/components/ui/switch";
 
 interface Request {
   id: string;
@@ -59,9 +58,7 @@ export function RequestsTable({
   const [selectedRequest, setSelectedRequest] = useState<Request | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showViewDialog, setShowViewDialog] = useState(false);
-  const [showOnlyNew, setShowOnlyNew] = useState(false);
   const { toast } = useToast();
-  const viewedRequests = new Set<string>(); // Assuming this is managed elsewhere
 
   const handleDelete = async (requestId: string) => {
     if (!onDelete) return;
@@ -88,23 +85,8 @@ export function RequestsTable({
     return citiesDisplay ? `${citiesDisplay}, ${request.county}` : request.county;
   };
 
-  const filteredRequests = showOnlyNew
-    ? requests.filter(request => !viewedRequests.has(request.id))
-    : requests;
-
   return (
     <>
-      <div className="mb-4 flex items-center space-x-2">
-        <Switch
-          id="show-new"
-          checked={showOnlyNew}
-          onCheckedChange={setShowOnlyNew}
-        />
-        <label htmlFor="show-new" className="text-sm text-muted-foreground">
-          Doar oferte noi
-        </label>
-      </div>
-
       <Table>
         <TableHeader>
           <TableRow>
@@ -117,25 +99,12 @@ export function RequestsTable({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {filteredRequests.map((request) => (
+          {requests.map((request) => (
             <TableRow
               key={request.id}
               className="hover:bg-gray-50 transition-colors"
             >
-              <TableCell className="font-medium">
-                <div className="flex items-center gap-2">
-                  {!viewedRequests.has(request.id) && (
-                    <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full font-bold">
-                      NEW
-                    </span>
-                  )}
-                  <span
-                    className={!viewedRequests.has(request.id) ? "font-bold" : ""}
-                  >
-                    {request.title}
-                  </span>
-                </div>
-              </TableCell>
+              <TableCell className="font-medium">{request.title}</TableCell>
               <TableCell>
                 {cars.find((car) => car.id === request.carId)?.brand}{" "}
                 {cars.find((car) => car.id === request.carId)?.model}
@@ -189,7 +158,7 @@ export function RequestsTable({
               </TableCell>
             </TableRow>
           ))}
-          {filteredRequests.length === 0 && (
+          {requests.length === 0 && (
             <TableRow>
               <TableCell colSpan={6} className="text-center text-muted-foreground">
                 Nu există cereri în această categorie.
