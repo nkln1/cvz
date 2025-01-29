@@ -287,11 +287,11 @@ export default function ServiceDashboard() {
     if (!user || !serviceData) return;
 
     try {
+      // First get all active requests for the county
       const requestsQuery = query(
         collection(db, "requests"),
         where("status", "==", "Active"),
-        where("county", "==", serviceData.county),
-        where("cities", "array-contains", serviceData.city)
+        where("county", "==", serviceData.county)
       );
 
       const querySnapshot = await getDocs(requestsQuery);
@@ -299,17 +299,23 @@ export default function ServiceDashboard() {
 
       for (const doc of querySnapshot.docs) {
         const requestData = doc.data();
-        // Fetch client name
-        const userDoc = await getDoc(doc(db, "users", requestData.userId));
-        const clientName = userDoc.exists() ? userDoc.data().name : "Client necunoscut";
 
-        allRequests.push({ 
-          id: doc.id, 
-          ...requestData,
-          clientName 
-        } as Request);
+        // Check if the service's city is included in the request's cities array
+        if (requestData.cities && requestData.cities.includes(serviceData.city)) {
+          // Fetch client name
+          const userDoc = await getDoc(doc(db, "users", requestData.userId));
+          const userData = userDoc.data();
+          const clientName = userData ? userData.name : "Client necunoscut";
+
+          allRequests.push({ 
+            id: doc.id, 
+            ...requestData,
+            clientName 
+          } as Request);
+        }
       }
 
+      console.log("Fetched requests:", allRequests); // Debug log
       setClientRequests(allRequests);
     } catch (error) {
       console.error("Error fetching client requests:", error);
