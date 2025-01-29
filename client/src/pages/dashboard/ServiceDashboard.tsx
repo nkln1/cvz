@@ -618,155 +618,131 @@ export default function ServiceDashboard() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {clientRequests
-                .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-                .map((request, index) => (
-                  <Fragment key={request.id}>
-                    <TableRow className={`
-                      transition-all
-                      ${index % 2 === 0 ? 'bg-gray-50/50' : 'bg-white'}
-                      hover:bg-blue-50/30
-                      border-l-4
-                      ${request.status === "Active" ? 'border-l-yellow-400' : 
-                        request.status === "Rezolvat" ? 'border-l-green-400' : 'border-l-red-400'}
-                    `}>
-                      <TableCell className="font-medium">
-                        <div className="flex items-center gap-2">
-                          {request.title}
-                          {/* Add badge for new requests (less than 24 hours old) */}
-                          {new Date().getTime() - new Date(request.createdAt).getTime() < 86400000 && (
-                            <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 text-xs font-medium">
-                              Nou
-                            </span>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {format(new Date(request.preferredDate), "dd.MM.yyyy")}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">{request.county}</TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {request.cities.join(", ")}
-                      </TableCell>
-                      <TableCell>
-                        <span
-                          className={`
-                            px-3 py-1 rounded-full text-sm font-medium
-                            ${request.status === "Active"
-                              ? "bg-yellow-100 text-yellow-800 border border-yellow-200"
-                              : request.status === "Rezolvat"
-                              ? "bg-green-100 text-green-800 border border-green-200"
-                              : "bg-red-100 text-red-800 border border-red-200"}
-                          `}
+              {clientRequests.map((request) => (
+                <Fragment key={request.id}>
+                  <TableRow className="hover:bg-gray-50">
+                    <TableCell className="font-medium">{request.title}</TableCell>
+                    <TableCell>
+                      {format(new Date(request.preferredDate), "dd.MM.yyyy")}
+                    </TableCell>
+                    <TableCell>{request.county}</TableCell>
+                    <TableCell>{request.cities.join(", ")}</TableCell>
+                    <TableCell>
+                      <span
+                        className={`px-2 py-1 rounded-full text-sm ${
+                          request.status === "Active"
+                            ? "bg-yellow-100 text-yellow-800"
+                            : request.status === "Rezolvat"
+                            ? "bg-green-100 text-green-800"
+                            : "bg-red-100 text-red-800"
+                        }`}
+                      >
+                        {request.status}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleMessage(request)}
+                          className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 flex items-center gap-1"
                         >
-                          {request.status}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleMessage(request)}
-                            className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 flex items-center gap-1 transition-colors"
-                          >
-                            <MessageSquare className="h-4 w-4" />
-                            Mesaj
-                          </Button>
-                          {request.status === "Active" && (
-                            <>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleSendOffer(request)}
-                                className="text-green-500 hover:text-green-700 hover:bg-green-50 flex items-center gap-1 transition-colors"
-                              >
-                                <SendHorizontal className="h-4 w-4" />
-                                Trimite ofertă
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleRejectRequest(request.id)}
-                                className="text-red-500 hover:text-red-700 hover:bg-red-50 flex items-center gap-1 transition-colors"
-                              >
-                                <X className="h-4 w-4" />
-                                Respinge
-                              </Button>
-                            </>
-                          )}
+                          <MessageSquare className="h-4 w-4" />
+                          Mesaj
+                        </Button>
+                        {request.status === "Active" && (
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleSendOffer(request)}
+                              className="text-green-500 hover:text-green-700 hover:bg-green-50 flex items-center gap-1"
+                            >
+                              <SendHorizontal className="h-4 w-4" />
+                              Trimite ofertă
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleRejectRequest(request.id)}
+                              className="text-red-500 hover:text-red-700 hover:bg-red-50 flex items-center gap-1"
+                            >
+                              <X className="h-4 w-4" />
+                              Respinge
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                  {selectedRequest?.id === request.id && (
+                    <TableRow>
+                      <TableCell colSpan={6} className="p-0">
+                        <div className="bg-gray-50 p-4 border-t border-b">
+                          <div className="grid grid-cols-3 gap-4">
+                            <div>
+                              <h3 className="text-xs font-medium text-muted-foreground">
+                                Client
+                              </h3>
+                              <p className="text-sm mt-1">
+                                {requestClient?.name || "Nume indisponibil"}
+                              </p>
+                              <p className="text-xs text-muted-foreground">{requestClient?.email}</p>
+                            </div>
+                            <div>
+                              <h3 className="text-xs font-medium text-muted-foreground">
+                                Mașină
+                              </h3>
+                              <p className="text-sm mt-1">
+                                {request.car ? (
+                                  <>
+                                    {request.car.brand} {request.car.model} ({request.car.year})
+                                    {request.car.licensePlate && (
+                                      <span className="text-xs text-muted-foreground ml-1">
+                                        Nr. {request.car.licensePlate}
+                                      </span>
+                                    )}
+                                    {request.car.vin && (
+                                      <span className="block text-xs text-muted-foreground">
+                                        VIN: {request.car.vin}
+                                      </span>
+                                    )}
+                                  </>
+                                ) : (
+                                  "Detalii indisponibile"
+                                )}
+                              </p>
+                            </div>
+                            <div>
+                              <h3 className="text-xs font-medium text-muted-foreground">
+                                Data preferată
+                              </h3>
+                              <p className="text-sm mt-1">
+                                {format(new Date(request.preferredDate), "dd.MM.yyyy")}
+                              </p>
+                            </div>
+                            <div className="col-span-2">
+                              <h3 className="text-xs font-medium text-muted-foreground">
+                                Descriere
+                              </h3>
+                              <p className="text-sm mt-1 whitespace-pre-wrap">{request.description}</p>
+                            </div>
+                            <div>
+                              <h3 className="text-xs font-medium text-muted-foreground">
+                                Locație
+                              </h3>
+                              <p className="text-sm mt-1">
+                                {request.cities.join(", ")} - {request.county}
+                              </p>
+                            </div>
+                          </div>
                         </div>
                       </TableCell>
                     </TableRow>
-                    {selectedRequest?.id === request.id && (
-                      <TableRow>
-                        <TableCell colSpan={6} className="p-0">
-                          <div className="bg-blue-50/50 p-4 border-y border-blue-100">
-                            <div className="grid grid-cols-3 gap-4">
-                              <div className="space-y-1">
-                                <h3 className="text-xs font-medium text-blue-600">
-                                  Client
-                                </h3>
-                                <p className="text-sm mt-1 font-medium">
-                                  {requestClient?.name || "Nume indisponibil"}
-                                </p>
-                                <p className="text-xs text-muted-foreground">{requestClient?.email}</p>
-                              </div>
-                              <div className="space-y-1">
-                                <h3 className="text-xs font-medium text-blue-600">
-                                  Mașină
-                                </h3>
-                                <p className="text-sm mt-1">
-                                  {request.car ? (
-                                    <>
-                                      <span className="font-medium">
-                                        {request.car.brand} {request.car.model} ({request.car.year})
-                                      </span>
-                                      {request.car.licensePlate && (
-                                        <span className="text-xs text-muted-foreground ml-1">
-                                          Nr. {request.car.licensePlate}
-                                        </span>
-                                      )}
-                                      {request.car.vin && (
-                                        <span className="block text-xs text-muted-foreground">
-                                          VIN: {request.car.vin}
-                                        </span>
-                                      )}
-                                    </>
-                                  ) : (
-                                    "Detalii indisponibile"
-                                  )}
-                                </p>
-                              </div>
-                              <div className="space-y-1">
-                                <h3 className="text-xs font-medium text-blue-600">
-                                  Data preferată
-                                </h3>
-                                <p className="text-sm mt-1 font-medium">
-                                  {format(new Date(request.preferredDate), "dd.MM.yyyy")}
-                                </p>
-                              </div>
-                              <div className="col-span-2 space-y-1">
-                                <h3 className="text-xs font-medium text-blue-600">
-                                  Descriere
-                                </h3>
-                                <p className="text-sm mt-1 whitespace-pre-wrap">{request.description}</p>
-                              </div>
-                              <div className="space-y-1">
-                                <h3 className="text-xs font-medium text-blue-600">
-                                  Locație
-                                </h3>
-                                <p className="text-sm mt-1 font-medium">
-                                  {request.cities.join(", ")} - {request.county}
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </Fragment>
-                ))}
+                  )}
+                </Fragment>
+              ))}
               {clientRequests.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center text-muted-foreground">
