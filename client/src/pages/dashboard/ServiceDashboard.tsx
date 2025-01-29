@@ -1,5 +1,5 @@
 import { useAuth } from "@/context/AuthContext";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc, collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useEffect, useState } from "react";
 import { z } from "zod";
@@ -41,8 +41,25 @@ import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { useToast } from "@/hooks/use-toast";
 import romanianCitiesData from "../../../../attached_assets/municipii_orase_romania.json";
+import { format } from "date-fns";
+import { Table, TableBody, TableCell, TableHeader, TableHead, TableRow } from "@/components/ui/table";
 
-// Validation schema
+// Add Request interface
+interface Request {
+  id: string;
+  title: string;
+  description: string;
+  carId: string;
+  preferredDate: string;
+  county: string;
+  cities: string[];
+  status: "Active" | "Rezolvat" | "Anulat";
+  createdAt: string;
+  userId: string;
+}
+
+// Previous interfaces remain unchanged
+
 const serviceDataSchema = z.object({
   companyName: z.string().min(3, "Numele companiei trebuie să aibă cel puțin 3 caractere"),
   representativeName: z.string().min(3, "Numele reprezentantului trebuie să aibă cel puțin 3 caractere"),
@@ -89,8 +106,9 @@ export default function ServiceDashboard() {
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState("account");
+  const [activeTab, setActiveTab] = useState("requests");
   const [availableCities, setAvailableCities] = useState<string[]>([]);
+  const [clientRequests, setClientRequests] = useState<Request[]>([]);
 
   const romanianCounties = Object.keys(romanianCitiesData);
 
@@ -102,19 +120,19 @@ export default function ServiceDashboard() {
     { label: "CUI", key: "cui", editable: false },
     { label: "Nr. Înregistrare", key: "tradeRegNumber", editable: false },
     { label: "Adresă", key: "address", editable: true },
-    { 
-      label: "Județ", 
-      key: "county", 
+    {
+      label: "Județ",
+      key: "county",
       editable: true,
       type: "select",
-      options: romanianCounties 
+      options: romanianCounties,
     },
-    { 
-      label: "Oraș", 
-      key: "city", 
+    {
+      label: "Oraș",
+      key: "city",
       editable: true,
       type: "select",
-      options: availableCities 
+      options: availableCities,
     },
   ];
 
@@ -256,6 +274,116 @@ export default function ServiceDashboard() {
 
   const hasChanges = JSON.stringify(serviceData) !== JSON.stringify(editedData);
 
+  // Add new function to fetch client requests
+  const fetchClientRequests = async () => {
+    if (!user || !serviceData) return;
+
+    try {
+      const requestsQuery = query(
+        collection(db, "requests"),
+        where("status", "==", "Active"),
+        where("county", "==", serviceData.county),
+        where("cities", "array-contains", serviceData.city)
+      );
+
+      const querySnapshot = await getDocs(requestsQuery);
+      const allRequests: Request[] = [];
+
+      querySnapshot.forEach((doc) => {
+        allRequests.push({ id: doc.id, ...doc.data() } as Request);
+      });
+
+
+      setClientRequests(allRequests);
+    } catch (error) {
+      console.error("Error fetching client requests:", error);
+      toast({
+        variant: "destructive",
+        title: "Eroare",
+        description: "Nu s-au putut încărca cererile clienților.",
+      });
+    }
+  };
+
+  // Add useEffect for fetching client requests
+  useEffect(() => {
+    if (serviceData) {
+      fetchClientRequests();
+    }
+  }, [serviceData]);
+
+  // Modify the TabsContent for requests
+  const renderRequestsContent = () => (
+    <TabsContent value="requests">
+      <Card className="border-[#00aff5]/20">
+        <CardHeader>
+          <CardTitle className="text-[#00aff5] flex items-center gap-2">
+            <Clock className="h-5 w-5" />
+            Cererile Clienților
+          </CardTitle>
+          <CardDescription>
+            Vezi și gestionează toate cererile primite de la clienți
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Titlu</TableHead>
+                <TableHead>Data preferată</TableHead>
+                <TableHead>Județ</TableHead>
+                <TableHead>Localități</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Acțiuni</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {clientRequests.map((request) => (
+                <TableRow key={request.id}>
+                  <TableCell className="font-medium">{request.title}</TableCell>
+                  <TableCell>
+                    {format(new Date(request.preferredDate), "dd.MM.yyyy")}
+                  </TableCell>
+                  <TableCell>{request.county}</TableCell>
+                  <TableCell>{request.cities.join(", ")}</TableCell>
+                  <TableCell>
+                    <span
+                      className={`px-2 py-1 rounded-full text-sm ${
+                        request.status === "Active"
+                          ? "bg-yellow-100 text-yellow-800"
+                          : request.status === "Rezolvat"
+                          ? "bg-green-100 text-green-800"
+                          : "bg-red-100 text-red-800"
+                      }`}
+                    >
+                      {request.status}
+                    </span>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-[#00aff5] hover:text-[#0099d6] hover:bg-[#00aff5]/10"
+                    >
+                      Vizualizează detalii
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+              {clientRequests.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center text-muted-foreground">
+                    Nu există cereri active în zona ta
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </TabsContent>
+  );
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -364,25 +492,7 @@ export default function ServiceDashboard() {
         </nav>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsContent value="requests">
-            <Card className="border-[#00aff5]/20">
-              <CardHeader>
-                <CardTitle className="text-[#00aff5] flex items-center gap-2">
-                  <Clock className="h-5 w-5" />
-                  Cererile Clienților
-                </CardTitle>
-                <CardDescription>
-                  Vezi și gestionează toate cererile primite de la clienți
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">
-                  Lista cererilor va apărea aici
-                </p>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
+          {renderRequestsContent()}
           <TabsContent value="offers">
             <Card className="border-[#00aff5]/20">
               <CardHeader>
@@ -401,7 +511,6 @@ export default function ServiceDashboard() {
               </CardContent>
             </Card>
           </TabsContent>
-
           <TabsContent value="messages">
             <Card className="border-[#00aff5]/20">
               <CardHeader>
@@ -420,7 +529,6 @@ export default function ServiceDashboard() {
               </CardContent>
             </Card>
           </TabsContent>
-
           <TabsContent value="appointments">
             <Card className="border-[#00aff5]/20">
               <CardHeader>
@@ -439,7 +547,6 @@ export default function ServiceDashboard() {
               </CardContent>
             </Card>
           </TabsContent>
-
           <TabsContent value="reviews">
             <Card className="border-[#00aff5]/20">
               <CardHeader>
@@ -458,7 +565,6 @@ export default function ServiceDashboard() {
               </CardContent>
             </Card>
           </TabsContent>
-
           <TabsContent value="account">
             <Card className="border-[#00aff5]/20">
               <CardHeader>
@@ -546,7 +652,6 @@ export default function ServiceDashboard() {
               </CardContent>
             </Card>
           </TabsContent>
-
           <TabsContent value="public-profile">
             <Card className="border-[#00aff5]/20">
               <CardHeader>
