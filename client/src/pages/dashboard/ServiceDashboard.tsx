@@ -157,6 +157,7 @@ export default function ServiceDashboard() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [messageGroups, setMessageGroups] = useState<MessageGroup[]>([]);
   const [isViewingConversation, setIsViewingConversation] = useState(false);
+  const [viewedRequests, setViewedRequests] = useState<Set<string>>(new Set());
 
   const romanianCounties = Object.keys(romanianCitiesData);
 
@@ -375,6 +376,7 @@ export default function ServiceDashboard() {
   };
 
   const handleViewDetails = async (request: Request) => {
+    setViewedRequests(prev => new Set([...prev, request.id]));
     if (selectedRequest?.id === request.id) {
       setSelectedRequest(null);
       setRequestClient(null);
@@ -413,6 +415,7 @@ export default function ServiceDashboard() {
   };
 
   const handleRejectRequest = async (requestId: string) => {
+    setViewedRequests(prev => new Set([...prev, requestId]));
     try {
       const requestRef = doc(db, "requests", requestId);
       await updateDoc(requestRef, {
@@ -434,12 +437,14 @@ export default function ServiceDashboard() {
   };
 
   const handleMessage = (request: Request) => {
+    setViewedRequests(prev => new Set([...prev, request.id]));
     setSelectedMessageRequest(request);
     localStorage.setItem('selectedMessageRequestId', request.id);
     setActiveTab("messages");
   };
 
   const handleSendOffer = async (request: Request) => {
+    setViewedRequests(prev => new Set([...prev, request.id]));
     toast({
       description: "Funcționalitatea de trimitere oferte va fi disponibilă în curând.",
     });
@@ -606,161 +611,174 @@ export default function ServiceDashboard() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Titlu</TableHead>
-                <TableHead>Data preferată</TableHead>
-                <TableHead>Județ</TableHead>
-                <TableHead>Localități</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Acțiuni</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {clientRequests.map((request) => (
-                <Fragment key={request.id}>
-                  <TableRow className="hover:bg-gray-50">
-                    <TableCell className="font-medium">{request.title}</TableCell>
-                    <TableCell>
-                      {format(new Date(request.preferredDate), "dd.MM.yyyy")}
-                    </TableCell>
-                    <TableCell>{request.county}</TableCell>
-                    <TableCell>{request.cities.join(", ")}</TableCell>
-                    <TableCell>
-                      <span
-                        className={`px-2 py-1 rounded-full text-sm ${
-                          request.status === "Active"
-                            ? "bg-yellow-100 text-yellow-800"
-                            : request.status === "Rezolvat"
-                            ? "bg-green-100 text-green-800"
-                            : "bg-red-100 text-red-800"
-                        }`}
-                      >
-                        {request.status}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleViewDetails(request)}
-                          className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 flex items-center gap-1"
+          <div className="max-h-[600px] overflow-y-auto pr-2">
+            <Table>
+              <TableHeader>
+                <TableRow className="hover:bg-transparent">
+                  <TableHead>Titlu</TableHead>
+                  <TableHead>Data preferată</TableHead>
+                  <TableHead>Județ</TableHead>
+                  <TableHead>Localități</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Acțiuni</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody className="[&_tr:not(:last-child)]:mb-2">
+                {clientRequests.map((request) => (
+                  <Fragment key={request.id}>
+                    <TableRow className="hover:bg-blue-50/80 transition-colors relative mb-2">
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-2">
+                          {!viewedRequests.has(request.id) && (
+                            <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full font-bold">
+                              NEW
+                            </span>
+                          )}
+                          <span className={!viewedRequests.has(request.id) ? "font-bold" : ""}>
+                            {request.title}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {format(new Date(request.preferredDate), "dd.MM.yyyy")}
+                      </TableCell>
+                      <TableCell>{request.county}</TableCell>
+                      <TableCell>{request.cities.join(", ")}</TableCell>
+                      <TableCell>
+                        <span
+                          className={`px-2 py-1 rounded-full text-sm ${
+                            request.status === "Active"
+                              ? "bg-yellow-100 text-yellow-800"
+                              : request.status === "Rezolvat"
+                              ? "bg-green-100 text-green-800"
+                              : "bg-red-100 text-red-800"
+                          }`}
                         >
-                          <Eye className="h-4 w-4" />
-                          Detalii
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleMessage(request)}
-                          className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 flex items-center gap-1"
-                        >
-                          <MessageSquare className="h-4 w-4" />
-                          Mesaj
-                        </Button>
-                        {request.status === "Active" && (
-                          <>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleSendOffer(request)}
-                              className="text-green-500 hover:text-green-700 hover:bg-green-50 flex items-center gap-1"
-                            >
-                              <SendHorizontal className="h-4 w-4" />
-                              Trimite ofertă
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleRejectRequest(request.id)}
-                              className="text-red-500 hover:text-red-700 hover:bg-red-50 flex items-center gap-1"
-                            >
-                              <X className="h-4 w-4" />
-                              Respinge
-                            </Button>
-                          </>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                  {selectedRequest?.id === request.id && (
-                    <TableRow>
-                      <TableCell colSpan={6} className="p-0">
-                        <div className="bg-gray-50 p-4 border-t border-b">
-                          <div className="grid grid-cols-3 gap-4">
-                            <div>
-                              <h3 className="text-xs font-medium text-muted-foreground">
-                                Client
-                              </h3>
-                              <p className="text-sm mt-1">
-                                {requestClient?.name || "Nume indisponibil"}
-                              </p>
-                              <p className="text-xs text-muted-foreground">{requestClient?.email}</p>
-                            </div>
-                            <div>
-                              <h3 className="text-xs font-medium text-muted-foreground">
-                                Mașină
-                              </h3>
-                              <p className="text-sm mt-1">
-                                {request.car ? (
-                                  <>
-                                    {request.car.brand} {request.car.model} ({request.car.year})
-                                    {request.car.licensePlate && (
-                                      <span className="text-xs text-muted-foreground ml-1">
-                                        Nr. {request.car.licensePlate}
-                                      </span>
-                                    )}
-                                    {request.car.vin && (
-                                      <span className="block text-xs text-muted-foreground">
-                                        VIN: {request.car.vin}
-                                      </span>
-                                    )}
-                                  </>
-                                ) : (
-                                  "Detalii indisponibile"
-                                )}
-                              </p>
-                            </div>
-                            <div>
-                              <h3 className="text-xs font-medium text-muted-foreground">
-                                Data preferată
-                              </h3>
-                              <p className="text-sm mt-1">
-                                {format(new Date(request.preferredDate), "dd.MM.yyyy")}
-                              </p>
-                            </div>
-                            <div className="col-span-2">
-                              <h3 className="text-xs font-medium text-muted-foreground">
-                                Descriere
-                              </h3>
-                              <p className="text-sm mt-1 whitespace-pre-wrap">{request.description}</p>
-                            </div>
-                            <div>
-                              <h3 className="text-xs font-medium text-muted-foreground">
-                                Locație
-                              </h3>
-                              <p className="text-sm mt-1">
-                                {request.cities.join(", ")} - {request.county}
-                              </p>
-                            </div>
-                          </div>
+                          {request.status}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleViewDetails(request)}
+                            className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 flex items-center gap-1"
+                          >
+                            <Eye className="h-4 w-4" />
+                            Detalii
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleMessage(request)}
+                            className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 flex items-center gap-1"
+                          >
+                            <MessageSquare className="h-4 w-4" />
+                            Mesaj
+                          </Button>
+                          {request.status === "Active" && (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleSendOffer(request)}
+                                className="text-green-500 hover:text-green-700 hover:bg-green-50 flex items-center gap-1"
+                              >
+                                <SendHorizontal className="h-4 w-4" />
+                                Trimite ofertă
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleRejectRequest(request.id)}
+                                className="text-red-500 hover:text-red-700 hover:bg-red-50 flex items-center gap-1"
+                              >
+                                <X className="h-4 w-4" />
+                                Respinge
+                              </Button>
+                            </>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
-                  )}
-                </Fragment>
-              ))}
-              {clientRequests.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center text-muted-foreground">
-                    Nu există cereri active în zona ta
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+                    {selectedRequest?.id === request.id && (
+                      <TableRow className="hover:bg-transparent">
+                        <TableCell colSpan={6} className="p-0">
+                          <div className="bg-gray-50 p-4 border-t border-b">
+                            <div className="grid grid-cols-3 gap-4">
+                              <div>
+                                <h3 className="text-xs font-medium text-muted-foreground">
+                                  Client
+                                </h3>
+                                <p className="text-sm mt-1">
+                                  {requestClient?.name || "Nume indisponibil"}
+                                </p>
+                                <p className="text-xs text-muted-foreground">{requestClient?.email}</p>
+                              </div>
+                              <div>
+                                <h3 className="text-xs font-medium text-muted-foreground">
+                                  Mașină
+                                </h3>
+                                <p className="text-sm mt-1">
+                                  {request.car ? (
+                                    <>
+                                      {request.car.brand} {request.car.model} ({request.car.year})
+                                      {request.car.licensePlate && (
+                                        <span className="text-xs text-muted-foreground ml-1">
+                                          Nr. {request.car.licensePlate}
+                                        </span>
+                                      )}
+                                      {request.car.vin && (
+                                        <span className="block text-xs text-muted-foreground">
+                                          VIN: {request.car.vin}
+                                        </span>
+                                      )}
+                                    </>
+                                  ) : (
+                                    "Detalii indisponibile"
+                                  )}
+                                </p>
+                              </div>
+                              <div>
+                                <h3 className="text-xs font-medium text-muted-foreground">
+                                  Data preferată
+                                </h3>
+                                <p className="text-sm mt-1">
+                                  {format(new Date(request.preferredDate), "dd.MM.yyyy")}
+                                </p>
+                              </div>
+                              <div className="col-span-2">
+                                <h3 className="text-xs font-medium text-muted-foreground">
+                                  Descriere
+                                </h3>
+                                <p className="text-sm mt-1 whitespace-pre-wrap">{request.description}</p>
+                              </div>
+                              <div>
+                                <h3 className="text-xs font-medium text-muted-foreground">
+                                  Locație
+                                </h3>
+                                <p className="text-sm mt-1">
+                                  {request.cities.join(", ")} - {request.county}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </Fragment>
+                ))}
+                {clientRequests.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center text-muted-foreground">
+                      Nu există cereri active în zona ta
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
     </TabsContent>
