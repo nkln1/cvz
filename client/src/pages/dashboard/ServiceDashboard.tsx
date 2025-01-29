@@ -360,7 +360,7 @@ export default function ServiceDashboard() {
       // Sort the requests in memory instead of in the query
       allRequests.sort((a, b) => {
         if (sortField === 'createdAt') {
-          return sortDirection === 'desc' 
+          return sortDirection === 'desc'
             ? new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
             : new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
         }
@@ -622,16 +622,18 @@ export default function ServiceDashboard() {
   const renderRequestsContent = () => {
     // Filter requests based on search query
     const filteredRequests = clientRequests.filter((request) => {
+      if (!searchQuery) return true;
+
       const searchLower = searchQuery.toLowerCase();
       return (
-        request.title.toLowerCase().includes(searchLower) ||
-        request.description.toLowerCase().includes(searchLower) ||
-        request.county.toLowerCase().includes(searchLower) ||
-        request.cities.some(city => city.toLowerCase().includes(searchLower)) ||
-        request.status.toLowerCase().includes(searchLower) ||
-        request.clientName.toLowerCase().includes(searchLower) ||
-        format(new Date(request.preferredDate), "dd.MM.yyyy").includes(searchQuery) ||
-        format(new Date(request.createdAt), "dd.MM.yyyy").includes(searchQuery)
+        (request.title?.toLowerCase() || '').includes(searchLower) ||
+        (request.description?.toLowerCase() || '').includes(searchLower) ||
+        (request.county?.toLowerCase() || '').includes(searchLower) ||
+        (request.cities || []).some(city => (city?.toLowerCase() || '').includes(searchLower)) ||
+        (request.status?.toLowerCase() || '').includes(searchLower) ||
+        (request.clientName?.toLowerCase() || '').includes(searchLower) ||
+        (request.preferredDate && format(new Date(request.preferredDate), "dd.MM.yyyy").includes(searchQuery)) ||
+        (request.createdAt && format(new Date(request.createdAt), "dd.MM.yyyy").includes(searchQuery))
       );
     });
 
@@ -923,7 +925,8 @@ export default function ServiceDashboard() {
                     <SelectItem value="50">50 pe pagină</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>            )}
+              </div>
+            )}
           </CardContent>
         </Card>
       </TabsContent>
@@ -1115,7 +1118,8 @@ export default function ServiceDashboard() {
             className={`flex items-center justify-start ${
               activeTab === "requests"
                 ? "bg-[#00aff5] text-white hover:bg-[#0099d6]"
-                : "hover:text-[#00aff5]"            }`}
+                : "hover:text-[#00aff5]"
+            }`}
           >
             <Clock className="w-4 h-4 mr-2" />
             Cereri Clienți
@@ -1228,7 +1232,8 @@ export default function ServiceDashboard() {
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground">
-                  Calendar și programări vor apărea aici                </p>
+                  Calendar și programări vor apărea aici
+                </p>
               </CardContent>
             </Card>
           </TabsContent>
