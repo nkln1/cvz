@@ -77,6 +77,16 @@ interface Request {
   userId: string;
 }
 
+interface Message {
+  id: string;
+  requestId: string;
+  fromId: string;
+  toId: string;
+  content: string;
+  createdAt: string;
+  read: boolean;
+}
+
 type TabType = "requests" | "offers" | "messages" | "profile" | "car";
 
 interface UserProfile {
@@ -93,7 +103,7 @@ interface RequestFormData {
   carId: string;
   preferredDate: string;
   county: string;
-  cities: string[]; // Changed from city string to cities array
+  cities: string[]; 
 }
 
 const renderRequestsTable = (
@@ -150,7 +160,7 @@ const renderRequestsTable = (
               <TableCell>
                 {format(new Date(request.preferredDate), "dd.MM.yyyy")}
               </TableCell>
-              <TableCell>{request.cities.join(", ")}</TableCell> {/* Changed location display */}
+              <TableCell>{request.cities.join(", ")}</TableCell>
               <TableCell>
                 <span
                   className={`px-2 py-1 rounded-full text-sm ${
@@ -271,7 +281,7 @@ const renderRequestsTable = (
                 <h3 className="font-medium text-sm text-muted-foreground">
                   Locație
                 </h3>
-                <p>{selectedRequest.cities.join(", ")}</p> {/* Changed location display */}
+                <p>{selectedRequest.cities.join(", ")}</p> 
               </div>
               <div>
                 <h3 className="font-medium text-sm text-muted-foreground">
@@ -311,12 +321,16 @@ export default function ClientDashboard() {
   const [requestFormData, setRequestFormData] = useState<Partial<RequestFormData>>({});
   const [requests, setRequests] = useState<Request[]>([]);
   const [cars, setCars] = useState<Car[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [messageServices, setMessageServices] = useState<{ [key: string]: any }>({});
+
 
   useEffect(() => {
     if (user) {
       fetchUserProfile();
       fetchRequests();
       fetchCars();
+      fetchMessages();
     }
   }, [user]);
 
@@ -394,6 +408,43 @@ export default function ClientDashboard() {
     }
   };
 
+  const fetchMessages = async () => {
+    if (!user?.uid) return;
+
+    try {
+      const messagesQuery = query(
+        collection(db, "messages"),
+        where("toId", "==", user.uid)
+      );
+      const querySnapshot = await getDocs(messagesQuery);
+      const loadedMessages: Message[] = [];
+      querySnapshot.forEach((doc) => {
+        loadedMessages.push({ id: doc.id, ...doc.data() } as Message);
+      });
+
+      loadedMessages.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      setMessages(loadedMessages);
+
+      const uniqueServiceIds = [...new Set(loadedMessages.map(m => m.fromId))];
+      const serviceDetails: { [key: string]: any } = {};
+
+      for (const serviceId of uniqueServiceIds) {
+        const serviceDoc = await getDoc(doc(db, "services", serviceId));
+        if (serviceDoc.exists()) {
+          serviceDetails[serviceId] = serviceDoc.data();
+        }
+      }
+
+      setMessageServices(serviceDetails);
+    } catch (error) {
+      console.error("Error loading messages:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Nu s-au putut încărca mesajele.",
+      });
+    }
+  };
 
   const handleEditClick = () => {
     setIsEditing(true);
@@ -470,7 +521,6 @@ export default function ClientDashboard() {
         updatedAt: new Date().toISOString(),
       });
 
-      // Refresh requests after updating
       await fetchRequests();
 
       toast({
@@ -726,6 +776,23 @@ export default function ClientDashboard() {
     </Card>
   );
 
+  const markMessageAsRead = async (messageId: string) => {
+    try {
+      const messageRef = doc(db, "messages", messageId);
+      await updateDoc(messageRef, {
+        read: true
+      });
+
+      setMessages(prevMessages =>
+        prevMessages.map(msg =>
+          msg.id === messageId ? { ...msg, read: true } : msg
+        )
+      );
+    } catch (error) {
+      console.error("Error marking message as read:", error);
+    }
+  };
+
   const renderMessages = () => (
     <Card className="shadow-lg">
       <CardHeader className="border-b bg-gray-50">
@@ -735,7 +802,55 @@ export default function ClientDashboard() {
         </CardTitle>
       </CardHeader>
       <CardContent className="p-6">
-        <p className="text-gray-600">Nu există mesaje noi.</p>
+        <div className="space-y-4">
+          {messages.length === 0 ? (
+            <p className="text-gray-600 text-center py-4">Nu există mesaje noi.</p>
+          ) : (
+            <div className="space-y-4">
+              {messages.map((message) => {
+                const service = messageServices[message.fromId];
+                const request = requests.find(r => r.id === message.requestId);
+
+                return (
+                  <Card
+                    key={message.id}
+                    className={`transition-colors ${
+                      !message.read ? 'bg-blue-50' : ''
+                    }`}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex flex-col space-y-2">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h4 className="font-medium">
+                              {service?.companyName || 'Service Auto'}
+                            </h4>
+                            <p className="text-sm text-muted-foreground">
+                              Pentru cererea: {request?.title || 'Cerere service'}
+                            </p>
+                          </div>
+                          <span className="text-sm text-muted-foreground">
+                            {format(new Date(message.createdAt), "dd.MM.yyyy HH:mm")}
+                          </span>
+                        </div>
+                        <p className="text-sm mt-2">{message.content}</p>
+                        {!message.read && (
+                          <Button
+                            variant="ghost"
+                            className="self-end mt-2"
+                            onClick={() => markMessageAsRead(message.id)}
+                          >
+                            Marchează ca citit
+                          </Button>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </CardContent>
     </Card>
   );
@@ -766,7 +881,6 @@ export default function ClientDashboard() {
         userId: user.uid,
         status: "Active",
         createdAt: new Date().toISOString(),
-        // Removed cities array conversion since we're already getting an array
       };
 
       await addDoc(collection(db, "requests"), requestData);
@@ -821,7 +935,6 @@ export default function ClientDashboard() {
   return (
     <MainLayout>
       <div className="container mx-auto p-4 md:p-6 space-y-4 md:space-y-6">
-        {/* Mobile-optimized navigation */}
         <nav className="flex flex-col sm:flex-row gap-2 border-b pb-4 overflow-x-auto">
           <div className="flex flex-col sm:flex-row gap-2 w-full">
             <Button
@@ -896,186 +1009,7 @@ export default function ClientDashboard() {
           </div>
         </nav>
 
-        {/* Profile section mobile optimization */}
-        {activeTab === "profile" && (
-          <Card className="shadow-lg">
-            <CardHeader className="border-b bg-gray-50">
-              <CardTitle className="text-[#00aff5] flex items-center gap-2">
-                <User className="h-5 w-5" />
-                Profilul Meu
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 md:p-6">
-              <div className="space-y-4 md:space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-[#00aff5]">Nume</label>
-                    <div className="flex items-center gap-2">
-                      {isEditing ? (
-                        <Input
-                          value={editedProfile.name || ""}
-                          onChange={(e) =>
-                            handleInputChange("name", e.target.value)
-                          }
-                          placeholder="Nume complet"
-                          className="border-gray-300 focus:border-[#00aff5] focus:ring-[#00aff5]"
-                        />
-                      ) : (
-                        <p className="text-gray-900">
-                          {userProfile.name || "Nespecificat"}
-                        </p>
-                      )}
-                      {!isEditing && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={handleEditClick}
-                          className="h-8 w-8 hover:text-[#00aff5]"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-[#00aff5]">Email</label>
-                    <p className="text-gray-900">{userProfile.email}</p>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-[#00aff5]">Telefon</label>                    <div className="flex items-center gap-2">
-                      {isEditing ? (
-                        <Input
-                          value={editedProfile.phone || ""}
-                          onChange={(e) =>
-                            handleInputChange("phone", e.target.value)
-                          }
-                          placeholder="Număr de telefon"
-                          className="border-gray-300 focus:border-[#00aff5] focus:ring-[#00aff5]"
-                        />
-                      ) : (
-                        <p className="text-gray-900">
-                          {userProfile.phone || "Nespecificat"}
-                        </p>
-                      )}
-                      {!isEditing && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={handleEditClick}
-                          className="h-8 w-8 hover:text-[#00aff5]"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-[#00aff5]">Județ</label>
-                    <div className="flex items-center gap-2">
-                      {isEditing ? (
-                        <Select
-                          value={editedProfile.county || ""}
-                          onValueChange={(value) =>
-                            handleInputChange("county", value)
-                          }
-                        >
-                          <SelectTrigger className="border-gray-300 focus:border-[#00aff5] focus:ring-[#00aff5]">
-                            <SelectValue placeholder="Selectează județul" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {romanianCounties.map((county) => (
-                              <SelectItem key={county} value={county}>
-                                {county}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      ) : (
-                        <p className="text-gray-900">
-                          {userProfile.county || "Nespecificat"}
-                        </p>
-                      )}
-                      {!isEditing && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={handleEditClick}
-                          className="h-8 w-8 hover:text-[#00aff5]"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-[#00aff5]">Localitate</label>
-                    <div className="flex items-center gap-2">
-                      {isEditing ? (
-                        <Select
-                          value={editedProfile.city || ""}
-                          onValueChange={(value) =>
-                            handleInputChange("city", value)
-                          }
-                          disabled={!selectedCounty}
-                        >
-                          <SelectTrigger className="border-gray-300 focus:border-[#00aff5] focus:ring-[#00aff5]">
-                            <SelectValue placeholder="Selectează localitatea" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {selectedCounty &&
-                              getCitiesForCounty(selectedCounty).map((city) => (
-                                <SelectItem key={city} value={city}>
-                                  {city}
-                                </SelectItem>
-                              ))}
-                          </SelectContent>
-                        </Select>
-                      ) : (
-                        <p className="text-gray-900">
-                          {userProfile.city || "Nespecificat"}
-                        </p>
-                      )}
-                      {!isEditing && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={handleEditClick}
-                          className="h-8 w-8 hover:text-[#00aff5]"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {isEditing && (
-                  <div className="flex justify-end gap-2 mt-6">
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        setIsEditing(false);
-                        setEditedProfile(userProfile);
-                      }}
-                      className="hover:bg-gray-100"
-                    >
-                      Anulează
-                    </Button>
-                    <Button onClick={handleSave} className="bg-[#00aff5] hover:bg-[#0099d6]">
-                      Salvează
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Requests section mobile optimization */}
+        {activeTab === "profile" && renderProfile()}
         {activeTab === "requests" && (
           <Card className="shadow-lg overflow-hidden">
             <CardHeader className="border-b bg-gray-50">
@@ -1121,8 +1055,6 @@ export default function ClientDashboard() {
             </CardContent>
           </Card>
         )}
-
-        {/* Rest of the component remains unchanged */}
         {activeTab === "offers" && renderOffers()}
         {activeTab === "messages" && renderMessages()}
         {activeTab === "car" && <CarManagement />}

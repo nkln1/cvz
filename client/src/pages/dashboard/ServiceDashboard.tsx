@@ -1,5 +1,5 @@
 import { useAuth } from "@/context/AuthContext";
-import { doc, getDoc, updateDoc, collection, query, where, getDocs, doc as docRef } from "firebase/firestore";
+import { doc, getDoc, updateDoc, collection, query, where, getDocs, doc as docRef, addDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useEffect, useState, Fragment } from "react";
 import { z } from "zod";
@@ -45,6 +45,15 @@ import { useToast } from "@/hooks/use-toast";
 import romanianCitiesData from "../../../../attached_assets/municipii_orase_romania.json";
 import { format } from "date-fns";
 import { Table, TableBody, TableCell, TableHeader, TableHead, TableRow } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 
 interface Car {
   id: string;
@@ -78,7 +87,16 @@ interface User {
   prenume?: string;
 }
 
-// Previous interfaces remain unchanged
+interface Message {
+  id: string;
+  requestId: string;
+  fromId: string;
+  toId: string;
+  content: string;
+  createdAt: string;
+  read: boolean;
+}
+
 
 const serviceDataSchema = z.object({
   companyName: z.string().min(3, "Numele companiei trebuie să aibă cel puțin 3 caractere"),
@@ -131,6 +149,10 @@ export default function ServiceDashboard() {
   const [clientRequests, setClientRequests] = useState<Request[]>([]);
   const [selectedRequest, setSelectedRequest] = useState<Request | null>(null);
   const [requestClient, setRequestClient] = useState<User | null>(null);
+  const [messageDialogOpen, setMessageDialogOpen] = useState(false);
+  const [messageContent, setMessageContent] = useState("");
+  const [sendingMessage, setSendingMessage] = useState(false);
+  const [selectedMessageRequest, setSelectedMessageRequest] = useState<Request | null>(null);
 
   const romanianCounties = Object.keys(romanianCitiesData);
 
@@ -412,10 +434,8 @@ export default function ServiceDashboard() {
   };
 
   const handleMessage = (request: Request) => {
-    // To be implemented when messaging functionality is ready
-    toast({
-      description: "Funcționalitatea de mesaje va fi disponibilă în curând.",
-    });
+    setSelectedMessageRequest(request);
+    setMessageDialogOpen(true);
   };
 
   const handleSendOffer = async (request: Request) => {
@@ -424,6 +444,44 @@ export default function ServiceDashboard() {
       description: "Funcționalitatea de trimitere oferte va fi disponibilă în curând.",
     });
   };
+
+  const sendMessage = async (request: Request) => {
+    if (!user || !messageContent.trim()) return;
+
+    setSendingMessage(true);
+    try {
+      const messageRef = collection(db, "messages");
+      const newMessage = {
+        requestId: request.id,
+        fromId: user.uid,
+        toId: request.userId,
+        content: messageContent.trim(),
+        createdAt: new Date().toISOString(),
+        read: false,
+      };
+
+      await addDoc(messageRef, newMessage);
+
+      toast({
+        title: "Succes",
+        description: "Mesajul a fost trimis cu succes.",
+      });
+
+      setMessageContent("");
+      setMessageDialogOpen(false);
+      setSelectedMessageRequest(null);
+    } catch (error) {
+      console.error("Error sending message:", error);
+      toast({
+        variant: "destructive",
+        title: "Eroare",
+        description: "Nu s-a putut trimite mesajul. Încercați din nou.",
+      });
+    } finally {
+      setSendingMessage(false);
+    }
+  };
+
 
   const renderRequestsContent = () => (
     <TabsContent value="requests">
@@ -596,6 +654,60 @@ export default function ServiceDashboard() {
         </CardContent>
       </Card>
     </TabsContent>
+  );
+
+  const MessageDialog = () => (
+    <Dialog open={messageDialogOpen} onOpenChange={setMessageDialogOpen}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Trimite mesaj</DialogTitle>
+          <DialogDescription>
+            {selectedMessageRequest && (
+              <span className="text-sm text-muted-foreground">
+                Pentru cererea: {selectedMessageRequest.title}
+              </span>
+            )}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4">
+          <Textarea
+            value={messageContent}
+            onChange={(e) => setMessageContent(e.target.value)}
+            placeholder="Scrie mesajul tău aici..."
+            className="min-h-[100px]"
+          />
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setMessageDialogOpen(false);
+                setMessageContent("");
+                setSelectedMessageRequest(null);
+              }}
+            >
+              Anulează
+            </Button>
+            <Button
+              onClick={() => selectedMessageRequest && sendMessage(selectedMessageRequest)}
+              disabled={!messageContent.trim() || sendingMessage}
+              className="bg-[#00aff5] hover:bg-[#0099d6]"
+            >
+              {sendingMessage ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Se trimite...
+                </>
+              ) : (
+                <>
+                  <SendHorizontal className="mr-2 h-4 w-4" />
+                  Trimite
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 
   if (loading) {
