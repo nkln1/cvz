@@ -338,14 +338,14 @@ export default function ServiceDashboard() {
       const userDoc = await getDoc(doc(db, "users", userId));
       if (userDoc.exists()) {
         const userData = userDoc.data();
+        console.log("Fetched user data:", userData); // Added debug log
         return {
           id: userDoc.id,
-          ...userData,
-          // Construct full name from nume and prenume if numeComplet is not available
-          numeComplet: userData.numeComplet ||
-            (userData.nume && userData.prenume ?
-              `${userData.nume} ${userData.prenume}` :
-              userData.name)
+          name: userData.name,
+          email: userData.email,
+          numeComplet: userData.numeComplet,
+          nume: userData.nume,
+          prenume: userData.prenume
         } as User;
       }
       return null;
@@ -364,6 +364,7 @@ export default function ServiceDashboard() {
       // If clicking a different request, show its details
       setSelectedRequest(request);
       const client = await fetchRequestClient(request.userId);
+      console.log("Fetched client:", client); // Added debug log
       setRequestClient(client);
     }
   };
@@ -443,9 +444,9 @@ export default function ServiceDashboard() {
                               </h3>
                               <p className="text-sm mt-1">
                                 {requestClient?.numeComplet ||
-                                  (requestClient?.nume && requestClient?.prenume ?
-                                    `${requestClient.nume} ${requestClient.prenume}` :
-                                    requestClient?.name || "Nume indisponibil")}
+                                  (requestClient?.nume && requestClient?.prenume &&
+                                    `${requestClient.nume} ${requestClient.prenume}`) ||
+                                  requestClient?.name || "Nume indisponibil"}
                               </p>
                               <p className="text-xs text-muted-foreground">{requestClient?.email}</p>
                             </div>
