@@ -1,7 +1,7 @@
 import { useAuth } from "@/context/AuthContext";
 import { doc, getDoc, updateDoc, collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Fragment } from "react";
 import { z } from "zod";
 import {
   Tabs,
@@ -35,12 +35,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Navigation from "@/components/Navigation";
@@ -122,7 +116,6 @@ export default function ServiceDashboard() {
   const [clientRequests, setClientRequests] = useState<Request[]>([]);
   const [selectedRequest, setSelectedRequest] = useState<Request | null>(null);
   const [requestClient, setRequestClient] = useState<User | null>(null);
-  const [showDetailsDialog, setShowDetailsDialog] = useState(false);
 
   const romanianCounties = Object.keys(romanianCitiesData);
 
@@ -334,10 +327,16 @@ export default function ServiceDashboard() {
   };
 
   const handleViewDetails = async (request: Request) => {
-    setSelectedRequest(request);
-    const client = await fetchRequestClient(request.userId);
-    setRequestClient(client);
-    setShowDetailsDialog(true);
+    if (selectedRequest?.id === request.id) {
+      // If clicking the same request, close the details
+      setSelectedRequest(null);
+      setRequestClient(null);
+    } else {
+      // If clicking a different request, show its details
+      setSelectedRequest(request);
+      const client = await fetchRequestClient(request.userId);
+      setRequestClient(client);
+    }
   };
 
   useEffect(() => {
@@ -372,37 +371,100 @@ export default function ServiceDashboard() {
             </TableHeader>
             <TableBody>
               {clientRequests.map((request) => (
-                <TableRow key={request.id}>
-                  <TableCell className="font-medium">{request.title}</TableCell>
-                  <TableCell>
-                    {format(new Date(request.preferredDate), "dd.MM.yyyy")}
-                  </TableCell>
-                  <TableCell>{request.county}</TableCell>
-                  <TableCell>{request.cities.join(", ")}</TableCell>
-                  <TableCell>
-                    <span
-                      className={`px-2 py-1 rounded-full text-sm ${
-                        request.status === "Active"
-                          ? "bg-yellow-100 text-yellow-800"
-                          : request.status === "Rezolvat"
-                          ? "bg-green-100 text-green-800"
-                          : "bg-red-100 text-red-800"
-                      }`}
-                    >
-                      {request.status}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleViewDetails(request)}
-                      className="text-[#00aff5] hover:text-[#0099d6] hover:bg-[#00aff5]/10"
-                    >
-                      Vizualizează detalii
-                    </Button>
-                  </TableCell>
-                </TableRow>
+                <Fragment key={request.id}>
+                  <TableRow>
+                    <TableCell className="font-medium">{request.title}</TableCell>
+                    <TableCell>
+                      {format(new Date(request.preferredDate), "dd.MM.yyyy")}
+                    </TableCell>
+                    <TableCell>{request.county}</TableCell>
+                    <TableCell>{request.cities.join(", ")}</TableCell>
+                    <TableCell>
+                      <span
+                        className={`px-2 py-1 rounded-full text-sm ${
+                          request.status === "Active"
+                            ? "bg-yellow-100 text-yellow-800"
+                            : request.status === "Rezolvat"
+                            ? "bg-green-100 text-green-800"
+                            : "bg-red-100 text-red-800"
+                        }`}
+                      >
+                        {request.status}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleViewDetails(request)}
+                        className="text-[#00aff5] hover:text-[#0099d6] hover:bg-[#00aff5]/10"
+                      >
+                        Vizualizează detalii
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                  {selectedRequest?.id === request.id && (
+                    <TableRow>
+                      <TableCell colSpan={6} className="p-0">
+                        <div className="bg-gray-50 p-6 border-t border-b">
+                          <div className="grid grid-cols-2 gap-6">
+                            <div>
+                              <h3 className="text-sm font-medium text-muted-foreground mb-2">
+                                Client
+                              </h3>
+                              <p className="text-gray-900">{requestClient?.name || "Nume indisponibil"}</p>
+                              <p className="text-sm text-muted-foreground">{requestClient?.email}</p>
+                            </div>
+                            <div>
+                              <h3 className="text-sm font-medium text-muted-foreground mb-2">
+                                Data preferată
+                              </h3>
+                              <p className="text-gray-900">
+                                {format(new Date(request.preferredDate), "dd.MM.yyyy")}
+                              </p>
+                            </div>
+                            <div className="col-span-2">
+                              <h3 className="text-sm font-medium text-muted-foreground mb-2">
+                                Titlu
+                              </h3>
+                              <p className="text-gray-900">{request.title}</p>
+                            </div>
+                            <div className="col-span-2">
+                              <h3 className="text-sm font-medium text-muted-foreground mb-2">
+                                Descriere
+                              </h3>
+                              <p className="text-gray-900">{request.description}</p>
+                            </div>
+                            <div>
+                              <h3 className="text-sm font-medium text-muted-foreground mb-2">
+                                Locație
+                              </h3>
+                              <p className="text-gray-900">
+                                {request.cities.join(", ")} - {request.county}
+                              </p>
+                            </div>
+                            <div>
+                              <h3 className="text-sm font-medium text-muted-foreground mb-2">
+                                Status
+                              </h3>
+                              <span
+                                className={`px-2 py-1 rounded-full text-sm ${
+                                  request.status === "Active"
+                                    ? "bg-yellow-100 text-yellow-800"
+                                    : request.status === "Rezolvat"
+                                    ? "bg-green-100 text-green-800"
+                                    : "bg-red-100 text-red-800"
+                                }`}
+                              >
+                                {request.status}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </Fragment>
               ))}
               {clientRequests.length === 0 && (
                 <TableRow>
@@ -413,57 +475,6 @@ export default function ServiceDashboard() {
               )}
             </TableBody>
           </Table>
-
-          <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
-            <DialogContent className="sm:max-w-[600px]">
-              <DialogHeader>
-                <DialogTitle className="text-[#00aff5]">Detalii Cerere Service</DialogTitle>
-              </DialogHeader>
-              {selectedRequest && (
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="text-sm font-medium text-muted-foreground">Client</h3>
-                    <p className="mt-1">{requestClient?.name || "Nume indisponibil"}</p>
-                    <p className="text-sm text-muted-foreground">{requestClient?.email}</p>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-medium text-muted-foreground">Titlu</h3>
-                    <p className="mt-1">{selectedRequest.title}</p>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-medium text-muted-foreground">Descriere</h3>
-                    <p className="mt-1">{selectedRequest.description}</p>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-medium text-muted-foreground">Data preferată</h3>
-                    <p className="mt-1">
-                      {format(new Date(selectedRequest.preferredDate), "dd.MM.yyyy")}
-                    </p>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-medium text-muted-foreground">Locație</h3>
-                    <p className="mt-1">
-                      {selectedRequest.cities.join(", ")} - {selectedRequest.county}
-                    </p>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-medium text-muted-foreground">Status</h3>
-                    <span
-                      className={`px-2 py-1 rounded-full text-sm ${
-                        selectedRequest.status === "Active"
-                          ? "bg-yellow-100 text-yellow-800"
-                          : selectedRequest.status === "Rezolvat"
-                          ? "bg-green-100 text-green-800"
-                          : "bg-red-100 text-red-800"
-                      }`}
-                    >
-                      {selectedRequest.status}
-                    </span>
-                  </div>
-                </div>
-              )}
-            </DialogContent>
-          </Dialog>
         </CardContent>
       </Card>
     </TabsContent>
