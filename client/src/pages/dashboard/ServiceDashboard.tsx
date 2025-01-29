@@ -485,24 +485,29 @@ export default function ServiceDashboard() {
     if (!user?.uid) return;
 
     try {
+      console.log("Fetching messages for user:", user.uid);
+
       // First query for messages where user is sender
       const sentMessagesQuery = query(
         collection(db, "messages"),
-        where("fromId", "==", user.uid),
-        orderBy("createdAt", "desc")
+        where("fromId", "==", user.uid)
       );
 
       // Second query for messages where user is receiver
       const receivedMessagesQuery = query(
         collection(db, "messages"),
-        where("toId", "==", user.uid),
-        orderBy("createdAt", "desc")
+        where("toId", "==", user.uid)
       );
 
       const [sentSnapshot, receivedSnapshot] = await Promise.all([
         getDocs(sentMessagesQuery),
         getDocs(receivedMessagesQuery)
       ]);
+
+      console.log("Got messages snapshots:", {
+        sent: sentSnapshot.size,
+        received: receivedSnapshot.size
+      });
 
       const loadedMessages: Message[] = [];
       const groupedMessages: { [key: string]: Message[] } = {};
@@ -520,14 +525,16 @@ export default function ServiceDashboard() {
         });
       });
 
+      console.log("Grouped messages by request:", Object.keys(groupedMessages).length);
+
       const groups: MessageGroup[] = [];
       for (const [requestId, messages] of Object.entries(groupedMessages)) {
         try {
-          const request = await getDoc(doc(db, "requests", requestId));
-          if (request.exists()) {
-            const requestData = request.data();
-            // Sort messages by date for correct "last message"
+          const requestDoc = await getDoc(doc(db, "requests", requestId));
+          if (requestDoc.exists()) {
+            const requestData = requestDoc.data();
             messages.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
             groups.push({
               requestId,
               requestTitle: requestData.title,
@@ -540,10 +547,11 @@ export default function ServiceDashboard() {
         }
       }
 
-      // Sort groups by last message date
       groups.sort((a, b) => 
         new Date(b.lastMessage.createdAt).getTime() - new Date(a.lastMessage.createdAt).getTime()
       );
+
+      console.log("Final message groups:", groups.length);
 
       setMessageGroups(groups);
       setMessages(loadedMessages);
