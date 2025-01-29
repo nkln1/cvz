@@ -568,9 +568,12 @@ export default function ClientDashboard() {
         </CardTitle>
       </CardHeader>
       <CardContent className="p-6">
-        <div className="grid gap-4">
-          <p>No offers yet</p>
-        </div>
+        <RequestsTable
+          requests={requests}
+          cars={cars}
+          refreshRequests={fetchRequests}
+          hideDeleteButton={true}
+        />
       </CardContent>
     </Card>
   );

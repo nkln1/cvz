@@ -43,8 +43,9 @@ interface Request {
 interface RequestsTableProps {
   requests: Request[];
   cars: Car[];
-  onDelete: (id: string) => Promise<void>;
+  onDelete?: (id: string) => Promise<void>;
   refreshRequests: () => Promise<void>;
+  hideDeleteButton?: boolean;
 }
 
 export function RequestsTable({
@@ -52,6 +53,7 @@ export function RequestsTable({
   cars,
   onDelete,
   refreshRequests,
+  hideDeleteButton = false,
 }: RequestsTableProps) {
   const [selectedRequest, setSelectedRequest] = useState<Request | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -59,6 +61,7 @@ export function RequestsTable({
   const { toast } = useToast();
 
   const handleDelete = async (requestId: string) => {
+    if (!onDelete) return;
     try {
       await onDelete(requestId);
       toast({
@@ -133,7 +136,7 @@ export function RequestsTable({
                   >
                     <Eye className="h-4 w-4" />
                   </Button>
-                  {request.status !== "Anulat" && (
+                  {!hideDeleteButton && request.status !== "Anulat" && onDelete && (
                     <Button
                       variant="ghost"
                       size="icon"
