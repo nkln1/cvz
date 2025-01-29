@@ -72,7 +72,9 @@ interface User {
   id: string;
   name: string;
   email: string;
-  numeComplet?: string;  // Added for full name
+  numeComplet?: string;
+  nume?: string;
+  prenume?: string;
 }
 
 // Previous interfaces remain unchanged
@@ -313,10 +315,10 @@ export default function ServiceDashboard() {
         const carDoc = await getDoc(docRef(db, "cars", requestData.carId));
         const carData = carDoc.exists() ? carDoc.data() as Car : undefined;
 
-        allRequests.push({ 
-          id: doc.id, 
+        allRequests.push({
+          id: doc.id,
           ...requestData,
-          car: carData 
+          car: carData
         } as Request);
       }
 
@@ -335,9 +337,15 @@ export default function ServiceDashboard() {
     try {
       const userDoc = await getDoc(doc(db, "users", userId));
       if (userDoc.exists()) {
+        const userData = userDoc.data();
         return {
           id: userDoc.id,
-          ...userDoc.data(),
+          ...userData,
+          // Construct full name from nume and prenume if numeComplet is not available
+          numeComplet: userData.numeComplet ||
+            (userData.nume && userData.prenume ?
+              `${userData.nume} ${userData.prenume}` :
+              userData.name)
         } as User;
       }
       return null;
@@ -433,7 +441,12 @@ export default function ServiceDashboard() {
                               <h3 className="text-xs font-medium text-muted-foreground">
                                 Client
                               </h3>
-                              <p className="text-sm mt-1">{requestClient?.numeComplet || requestClient?.name || "Nume indisponibil"}</p>
+                              <p className="text-sm mt-1">
+                                {requestClient?.numeComplet ||
+                                  (requestClient?.nume && requestClient?.prenume ?
+                                    `${requestClient.nume} ${requestClient.prenume}` :
+                                    requestClient?.name || "Nume indisponibil")}
+                              </p>
                               <p className="text-xs text-muted-foreground">{requestClient?.email}</p>
                             </div>
                             <div>
