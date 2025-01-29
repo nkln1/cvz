@@ -45,14 +45,6 @@ import { useToast } from "@/hooks/use-toast";
 import romanianCitiesData from "../../../../attached_assets/municipii_orase_romania.json";
 import { format } from "date-fns";
 import { Table, TableBody, TableCell, TableHeader, TableHead, TableRow } from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 
 interface Car {
@@ -149,10 +141,10 @@ export default function ServiceDashboard() {
   const [clientRequests, setClientRequests] = useState<Request[]>([]);
   const [selectedRequest, setSelectedRequest] = useState<Request | null>(null);
   const [requestClient, setRequestClient] = useState<User | null>(null);
-  const [messageDialogOpen, setMessageDialogOpen] = useState(false);
   const [messageContent, setMessageContent] = useState("");
   const [sendingMessage, setSendingMessage] = useState(false);
   const [selectedMessageRequest, setSelectedMessageRequest] = useState<Request | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
 
   const romanianCounties = Object.keys(romanianCitiesData);
 
@@ -435,7 +427,7 @@ export default function ServiceDashboard() {
 
   const handleMessage = (request: Request) => {
     setSelectedMessageRequest(request);
-    setMessageDialogOpen(true);
+    setActiveTab("messages");
   };
 
   const handleSendOffer = async (request: Request) => {
@@ -445,22 +437,23 @@ export default function ServiceDashboard() {
     });
   };
 
-  const sendMessage = async (request: Request) => {
-    if (!user || !messageContent.trim()) return;
+  const sendMessage = async () => {
+    if (!user || !messageContent.trim() || !selectedMessageRequest) return;
 
     setSendingMessage(true);
     try {
       const messageRef = collection(db, "messages");
       const newMessage = {
-        requestId: request.id,
+        requestId: selectedMessageRequest.id,
         fromId: user.uid,
-        toId: request.userId,
+        toId: selectedMessageRequest.userId,
         content: messageContent.trim(),
         createdAt: new Date().toISOString(),
         read: false,
       };
 
       await addDoc(messageRef, newMessage);
+      await fetchMessages();
 
       toast({
         title: "Succes",
@@ -468,8 +461,6 @@ export default function ServiceDashboard() {
       });
 
       setMessageContent("");
-      setMessageDialogOpen(false);
-      setSelectedMessageRequest(null);
     } catch (error) {
       console.error("Error sending message:", error);
       toast({
@@ -482,6 +473,37 @@ export default function ServiceDashboard() {
     }
   };
 
+  const fetchMessages = async () => {
+    if (!user?.uid) return;
+
+    try {
+      const messagesQuery = query(
+        collection(db, "messages"),
+        where("fromId", "==", user.uid)
+      );
+      const querySnapshot = await getDocs(messagesQuery);
+      const loadedMessages: Message[] = [];
+      querySnapshot.forEach((doc) => {
+        loadedMessages.push({ id: doc.id, ...doc.data() } as Message);
+      });
+
+      loadedMessages.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      setMessages(loadedMessages);
+    } catch (error) {
+      console.error("Error loading messages:", error);
+      toast({
+        variant: "destructive",
+        title: "Eroare",
+        description: "Nu s-au putut încărca mesajele.",
+      });
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === "messages") {
+      fetchMessages();
+    }
+  }, [activeTab]);
 
   const renderRequestsContent = () => (
     <TabsContent value="requests">
@@ -656,58 +678,77 @@ export default function ServiceDashboard() {
     </TabsContent>
   );
 
-  const MessageDialog = () => (
-    <Dialog open={messageDialogOpen} onOpenChange={setMessageDialogOpen}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Trimite mesaj</DialogTitle>
-          <DialogDescription>
-            {selectedMessageRequest && (
-              <span className="text-sm text-muted-foreground">
-                Pentru cererea: {selectedMessageRequest.title}
-              </span>
-            )}
-          </DialogDescription>
-        </DialogHeader>
-        <div className="space-y-4">
-          <Textarea
-            value={messageContent}
-            onChange={(e) => setMessageContent(e.target.value)}
-            placeholder="Scrie mesajul tău aici..."
-            className="min-h-[100px]"
-          />
-          <div className="flex justify-end gap-2">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setMessageDialogOpen(false);
-                setMessageContent("");
-                setSelectedMessageRequest(null);
-              }}
-            >
-              Anulează
-            </Button>
-            <Button
-              onClick={() => selectedMessageRequest && sendMessage(selectedMessageRequest)}
-              disabled={!messageContent.trim() || sendingMessage}
-              className="bg-[#00aff5] hover:bg-[#0099d6]"
-            >
-              {sendingMessage ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Se trimite...
-                </>
-              ) : (
-                <>
-                  <SendHorizontal className="mr-2 h-4 w-4" />
-                  Trimite
-                </>
-              )}
-            </Button>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+  const renderMessages = () => (
+    <TabsContent value="messages">
+      <Card className="border-[#00aff5]/20">
+        <CardHeader>
+          <CardTitle className="text-[#00aff5] flex items-center gap-2">
+            <MessageSquare className="h-5 w-5" />
+            Mesaje
+          </CardTitle>
+          <CardDescription>
+            Comunicare directă cu clienții și gestionarea conversațiilor
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {selectedMessageRequest ? (
+            <div className="space-y-4">
+              <div className="border-b pb-4">
+                <h3 className="font-medium">Conversație pentru cererea: {selectedMessageRequest.title}</h3>
+              </div>
+              <div className="space-y-4 max-h-[400px] overflow-y-auto mb-4">
+                {messages
+                  .filter(msg => msg.requestId === selectedMessageRequest.id)
+                  .map((message) => (
+                    <div
+                      key={message.id}
+                      className={`p-3 rounded-lg max-w-[80%] ${
+                        message.fromId === user?.uid
+                          ? 'ml-auto bg-blue-500 text-white'
+                          : 'bg-gray-100'
+                      }`}
+                    >
+                      <p className="text-sm">{message.content}</p>
+                      <span className="text-xs opacity-70">
+                        {format(new Date(message.createdAt), "dd.MM.yyyy HH:mm")}
+                      </span>
+                    </div>
+                  ))}
+              </div>
+              <div className="flex gap-2">
+                <Textarea
+                  value={messageContent}
+                  onChange={(e) => setMessageContent(e.target.value)}
+                  placeholder="Scrie un mesaj..."
+                  className="flex-1"
+                />
+                <Button
+                  onClick={sendMessage}
+                  disabled={!messageContent.trim() || sendingMessage}
+                  className="bg-[#00aff5] hover:bg-[#0099d6]"
+                >
+                  {sendingMessage ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Se trimite...
+                    </>
+                  ) : (
+                    <>
+                      <SendHorizontal className="mr-2 h-4 w-4" />
+                      Trimite
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <p className="text-muted-foreground text-center py-4">
+              Selectează o cerere pentru a începe o conversație
+            </p>
+          )}
+        </CardContent>
+      </Card>
+    </TabsContent>
   );
 
   if (loading) {
@@ -744,18 +785,6 @@ export default function ServiceDashboard() {
             Cereri Clienți
           </Button>
           <Button
-            variant={activeTab === "offers" ? "default" : "ghost"}
-            onClick={() => setActiveTab("offers")}
-            className={`flex items-center justify-start ${
-              activeTab === "offers"
-                ? "bg-[#00aff5] text-white hover:bg-[#0099d6]"
-                : "hover:text-[#00aff5]"
-            }`}
-          >
-            <SendHorizontal className="w-4 h-4 mr-2" />
-            Oferte Trimise
-          </Button>
-          <Button
             variant={activeTab === "messages" ? "default" : "ghost"}
             onClick={() => setActiveTab("messages")}
             className={`flex items-center justify-start ${
@@ -766,6 +795,18 @@ export default function ServiceDashboard() {
           >
             <MessageSquare className="w-4 h-4 mr-2" />
             Mesaje
+          </Button>
+          <Button
+            variant={activeTab === "offers" ? "default" : "ghost"}
+            onClick={() => setActiveTab("offers")}
+            className={`flex items-center justify-start ${
+              activeTab === "offers"
+                ? "bg-[#00aff5] text-white hover:bg-[#0099d6]"
+                : "hover:text-[#00aff5]"
+            }`}
+          >
+            <SendHorizontal className="w-4 h-4 mr-2" />
+            Oferte Trimise
           </Button>
           <Button
             variant={activeTab === "appointments" ? "default" : "ghost"}
@@ -837,24 +878,7 @@ export default function ServiceDashboard() {
               </CardContent>
             </Card>
           </TabsContent>
-          <TabsContent value="messages">
-            <Card className="border-[#00aff5]/20">
-              <CardHeader>
-                <CardTitle className="text-[#00aff5] flex items-center gap-2">
-                  <MessageSquare className="h-5 w-5" />
-                  Mesaje
-                </CardTitle>
-                <CardDescription>
-                  Comunicare directă cu clienții și gestionarea conversațiilor
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">
-                  Nu există mesaje noi.
-                </p>
-              </CardContent>
-            </Card>
-          </TabsContent>
+          {renderMessages()}
           <TabsContent value="appointments">
             <Card className="border-[#00aff5]/20">
               <CardHeader>
