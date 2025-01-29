@@ -476,39 +476,43 @@ export default function ServiceDashboard() {
                       <div className="flex justify-end gap-2">
                         <Button
                           variant="ghost"
-                          size="icon"
+                          size="sm"
                           onClick={() => handleMessage(request)}
-                          className="h-8 w-8 text-blue-500 hover:text-blue-700 hover:bg-blue-50"
+                          className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 flex items-center gap-1"
                         >
                           <MessageSquare className="h-4 w-4" />
+                          Mesaj
                         </Button>
                         {request.status === "Active" && (
                           <>
                             <Button
                               variant="ghost"
-                              size="icon"
+                              size="sm"
                               onClick={() => handleSendOffer(request)}
-                              className="h-8 w-8 text-green-500 hover:text-green-700 hover:bg-green-50"
+                              className="text-green-500 hover:text-green-700 hover:bg-green-50 flex items-center gap-1"
                             >
                               <SendHorizontal className="h-4 w-4" />
+                              Trimite ofertă
                             </Button>
                             <Button
                               variant="ghost"
-                              size="icon"
+                              size="sm"
                               onClick={() => handleRejectRequest(request.id)}
-                              className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50"
+                              className="text-red-500 hover:text-red-700 hover:bg-red-50 flex items-center gap-1"
                             >
                               <X className="h-4 w-4" />
+                              Respinge
                             </Button>
                           </>
                         )}
                         <Button
                           variant="ghost"
-                          size="icon"
+                          size="sm"
                           onClick={() => handleViewDetails(request)}
-                          className="h-8 w-8 text-blue-500 hover:text-blue-700 hover:bg-blue-50"
+                          className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 flex items-center gap-1"
                         >
                           <Eye className="h-4 w-4" />
+                          Detalii
                         </Button>
                       </div>
                     </TableCell>
