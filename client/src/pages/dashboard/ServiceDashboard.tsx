@@ -547,7 +547,7 @@ export default function ServiceDashboard() {
         }
       }
 
-      groups.sort((a, b) => 
+      groups.sort((a, b) =>
         new Date(b.lastMessage.createdAt).getTime() - new Date(a.lastMessage.createdAt).getTime()
       );
 
@@ -777,17 +777,30 @@ export default function ServiceDashboard() {
           <Card
             key={group.requestId}
             className="cursor-pointer hover:bg-gray-50 transition-colors"
-            onClick={() => handleSelectConversation(group.requestId)}
           >
             <CardContent className="p-4">
               <div className="flex justify-between items-start">
-                <div>
-                  <h4 className="font-medium">{group.requestTitle}</h4>
+                <div className="flex-1" onClick={() => handleSelectConversation(group.requestId)}>
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-medium">{group.requestTitle}</h4>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleViewRequestDetails(group.requestId);
+                      }}
+                      className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 flex items-center gap-1"
+                    >
+                      <Eye className="h-4 w-4" />
+                      Detalii
+                    </Button>
+                  </div>
                   <p className="text-sm text-muted-foreground truncate">
                     {group.lastMessage.content}
                   </p>
                 </div>
-                <div className="flex flex-col items-end">
+                <div className="flex flex-col items-end ml-4">
                   <span className="text-xs text-muted-foreground">
                     {format(new Date(group.lastMessage.createdAt), "dd.MM.yyyy HH:mm")}
                   </span>
@@ -804,6 +817,18 @@ export default function ServiceDashboard() {
       )}
     </div>
   );
+
+  const handleViewRequestDetails = (requestId: string) => {
+    const request = clientRequests.find(r => r.id === requestId);
+    if (request) {
+      setSelectedRequest(request);
+      setActiveTab("requests");
+      // Load client details for the request
+      fetchRequestClient(request.userId).then(client => {
+        setRequestClient(client);
+      });
+    }
+  };
 
   const renderConversation = () => (
     <div className="space-y-4">
@@ -930,8 +955,7 @@ export default function ServiceDashboard() {
             className={`flex items-center justify-start ${
               activeTab === "requests"
                 ? "bg-[#00aff5] text-white hover:bg-[#0099d6]"
-                : "hover:text-[#00aff5]"
-            }`}
+                : "hover:text-[#00aff5]"            }`}
           >
             <Clock className="w-4 h-4 mr-2" />
             Cereri Clienți
