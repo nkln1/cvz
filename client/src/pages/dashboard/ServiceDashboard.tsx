@@ -725,9 +725,24 @@ export default function ServiceDashboard() {
     });
 
     const sortedRequests = [...filteredRequests].sort((a, b) => {
+      // First, sort by viewed status
+      const aIsNew = !viewedRequests.has(a.id);
+      const bIsNew = !viewedRequests.has(b.id);
+
+      if (aIsNew !== bIsNew) {
+        return aIsNew ? -1 : 1; // New requests go to the top
+      }
+
+      // Within each group (new/viewed), sort by the selected field
       const aValue = a[sortField];
       const bValue = b[sortField];
       const modifier = sortDirection === "asc" ? 1 : -1;
+
+      if (sortField === "createdAt") {
+        return (
+          (new Date(bValue).getTime() - new Date(aValue).getTime()) * modifier
+        );
+      }
 
       if (typeof aValue === "string" && typeof bValue === "string") {
         return aValue.localeCompare(bValue) * modifier;
