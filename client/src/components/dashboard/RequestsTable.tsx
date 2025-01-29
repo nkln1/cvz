@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   Table,
   TableBody,
@@ -8,8 +8,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Eye, Trash2, ArrowUpDown, Search } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { Eye, Trash2 } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -37,9 +36,8 @@ interface Request {
   carId: string;
   preferredDate: string;
   county: string;
-  cities?: string[];
+  cities?: string[]; 
   status: "Active" | "Rezolvat" | "Anulat";
-  createdAt: string; // Added createdAt field
 }
 
 interface RequestsTableProps {
@@ -49,8 +47,6 @@ interface RequestsTableProps {
   refreshRequests: () => Promise<void>;
   hideDeleteButton?: boolean;
 }
-
-type SortDirection = 'asc' | 'desc';
 
 export function RequestsTable({
   requests,
@@ -62,58 +58,7 @@ export function RequestsTable({
   const [selectedRequest, setSelectedRequest] = useState<Request | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showViewDialog, setShowViewDialog] = useState(false);
-  const [sortedRequests, setSortedRequests] = useState<Request[]>([]);
-  const [sortConfig, setSortConfig] = useState<{ field: keyof Request; direction: SortDirection }>({
-    field: 'createdAt',
-    direction: 'desc'
-  });
-  const [searchTerm, setSearchTerm] = useState('');
   const { toast } = useToast();
-
-  useEffect(() => {
-    let filteredRequests = [...requests];
-
-    // Apply search filter
-    if (searchTerm) {
-      const searchLower = searchTerm.toLowerCase();
-      filteredRequests = filteredRequests.filter(request => 
-        request.title.toLowerCase().includes(searchLower) ||
-        request.description.toLowerCase().includes(searchLower) ||
-        request.county.toLowerCase().includes(searchLower) ||
-        (request.cities?.join(', ').toLowerCase().includes(searchLower)) ||
-        request.status.toLowerCase().includes(searchLower) ||
-        cars.find(car => car.id === request.carId)?.brand.toLowerCase().includes(searchLower) ||
-        cars.find(car => car.id === request.carId)?.model.toLowerCase().includes(searchLower)
-      );
-    }
-
-    // Apply sorting
-    filteredRequests.sort((a, b) => {
-      if (sortConfig.field === 'createdAt' || sortConfig.field === 'preferredDate') {
-        const dateA = new Date(a[sortConfig.field]);
-        const dateB = new Date(b[sortConfig.field]);
-        return sortConfig.direction === 'asc' 
-          ? dateA.getTime() - dateB.getTime() 
-          : dateB.getTime() - dateA.getTime();
-      }
-
-      const valueA = String(a[sortConfig.field]).toLowerCase();
-      const valueB = String(b[sortConfig.field]).toLowerCase();
-
-      return sortConfig.direction === 'asc'
-        ? valueA.localeCompare(valueB)
-        : valueB.localeCompare(valueA);
-    });
-
-    setSortedRequests(filteredRequests);
-  }, [requests, sortConfig, searchTerm, cars]);
-
-  const handleSort = (field: keyof Request) => {
-    setSortConfig(current => ({
-      field,
-      direction: current.field === field && current.direction === 'desc' ? 'asc' : 'desc'
-    }));
-  };
 
   const handleDelete = async (requestId: string) => {
     if (!onDelete) return;
@@ -142,51 +87,27 @@ export function RequestsTable({
 
   return (
     <>
-      <div className="flex justify-end mb-4">
-        <div className="relative w-72">
-          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Caută cereri..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-8"
-          />
-        </div>
-      </div>
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="cursor-pointer" onClick={() => handleSort('title')}>
-              Titlu
-              <ArrowUpDown className="ml-1 h-4 w-4 inline" />
-            </TableHead>
-            <TableHead className="cursor-pointer" onClick={() => handleSort('createdAt')}>
-              Data primirii
-              <ArrowUpDown className="ml-1 h-4 w-4 inline" />
-            </TableHead>
-            <TableHead className="cursor-pointer" onClick={() => handleSort('preferredDate')}>
-              Data preferată
-              <ArrowUpDown className="ml-1 h-4 w-4 inline" />
-            </TableHead>
+            <TableHead>Titlu</TableHead>
             <TableHead>Mașină</TableHead>
+            <TableHead>Data preferată</TableHead>
             <TableHead>Locație</TableHead>
             <TableHead>Status</TableHead>
             <TableHead className="text-right">Acțiuni</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {sortedRequests.map((request) => (
+          {requests.map((request) => (
             <TableRow key={request.id} className="hover:bg-gray-50">
               <TableCell className="font-medium">{request.title}</TableCell>
               <TableCell>
-                {format(new Date(request.createdAt), "dd.MM.yyyy HH:mm")}
+                {cars.find((car) => car.id === request.carId)?.brand}{" "}
+                {cars.find((car) => car.id === request.carId)?.model}
               </TableCell>
               <TableCell>
                 {format(new Date(request.preferredDate), "dd.MM.yyyy")}
-              </TableCell>
-              <TableCell>
-                {cars.find((car) => car.id === request.carId)?.brand}{" "}
-                {cars.find((car) => car.id === request.carId)?.model}
               </TableCell>
               <TableCell>{getLocationDisplay(request)}</TableCell>
               <TableCell>
@@ -232,13 +153,13 @@ export function RequestsTable({
               </TableCell>
             </TableRow>
           ))}
-          {sortedRequests.length === 0 && (
+          {requests.length === 0 && (
             <TableRow>
               <TableCell
-                colSpan={7}
+                colSpan={6}
                 className="text-center text-muted-foreground"
               >
-                {searchTerm ? "Nu s-au găsit cereri care să corespundă căutării." : "Nu există cereri în această categorie."}
+                Nu există cereri în această categorie.
               </TableCell>
             </TableRow>
           )}
@@ -280,14 +201,6 @@ export function RequestsTable({
               </div>
               <div>
                 <h3 className="font-medium text-sm text-muted-foreground">
-                  Data primirii
-                </h3>
-                <p>
-                  {format(new Date(selectedRequest.createdAt), "dd.MM.yyyy HH:mm")}
-                </p>
-              </div>
-              <div>
-                <h3 className="font-medium text-sm text-muted-foreground">
                   Descriere
                 </h3>
                 <p>{selectedRequest.description}</p>
@@ -306,7 +219,10 @@ export function RequestsTable({
                   Data preferată
                 </h3>
                 <p>
-                  {format(new Date(selectedRequest.preferredDate), "dd.MM.yyyy")}
+                  {format(
+                    new Date(selectedRequest.preferredDate),
+                    "dd.MM.yyyy"
+                  )}
                 </p>
               </div>
               <div>
