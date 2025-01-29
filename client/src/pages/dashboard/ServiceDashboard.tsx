@@ -146,7 +146,7 @@ export default function ServiceDashboard() {
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState("requests");
+  const [activeTab, setActiveTab] = useState("requests"); // Changed default to "requests"
   const [availableCities, setAvailableCities] = useState<string[]>([]);
   const [clientRequests, setClientRequests] = useState<Request[]>([]);
   const [selectedRequest, setSelectedRequest] = useState<Request | null>(null);
@@ -160,13 +160,20 @@ export default function ServiceDashboard() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [messageGroups, setMessageGroups] = useState<MessageGroup[]>([]);
   const [isViewingConversation, setIsViewingConversation] = useState(false);
-  const [viewedRequests, setViewedRequests] = useState<Set<string>>(new Set());
+  const [viewedRequests, setViewedRequests] = useState<Set<string>>(() => {
+    const saved = localStorage.getItem('viewedRequests');
+    return new Set(saved ? JSON.parse(saved) : []);
+  });
   const [sortField, setSortField] = useState<keyof Request>("createdAt");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
+  // Add useEffect to persist viewedRequests
+  useEffect(() => {
+    localStorage.setItem('viewedRequests', JSON.stringify([...viewedRequests]));
+  }, [viewedRequests]);
 
   const romanianCounties = Object.keys(romanianCitiesData);
 
@@ -397,7 +404,11 @@ export default function ServiceDashboard() {
   };
 
   const handleViewDetails = async (request: Request) => {
-    setViewedRequests(prev => new Set([...prev, request.id]));
+    setViewedRequests(prev => {
+      const newSet = new Set(prev);
+      newSet.add(request.id);
+      return newSet;
+    });
     if (selectedRequest?.id === request.id) {
       setSelectedRequest(null);
       setRequestClient(null);
@@ -668,15 +679,6 @@ export default function ServiceDashboard() {
             <CardDescription>
               Vezi și gestionează toate cererile primite de la clienți
             </CardDescription>
-            <div className="mt-4">
-              <Input
-                placeholder="Caută cereri..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="max-w-sm"
-                icon={<Search className="h-4 w-4" />}
-              />
-            </div>
           </CardHeader>
           <CardContent>
             <div className="max-h-[600px] overflow-y-auto pr-2">
@@ -723,6 +725,14 @@ export default function ServiceDashboard() {
                     <TableHead>Localități</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Acțiuni</TableHead>
+                    <TableHead>
+                      <Input
+                        placeholder="Caută cereri..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="max-w-[200px]"
+                      />
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody className="[&_tr:not(:last-child)]:mb-2">
@@ -901,8 +911,7 @@ export default function ServiceDashboard() {
                   </Button>
                   <Button
                     variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    size="sm"                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                     disabled={currentPage === totalPages}
                   >
                     Următor
