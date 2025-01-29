@@ -485,39 +485,65 @@ export default function ServiceDashboard() {
     if (!user?.uid) return;
 
     try {
-      const messagesQuery = query(
+      // First query for messages where user is sender
+      const sentMessagesQuery = query(
         collection(db, "messages"),
-        where("fromId", "in", [user.uid, selectedMessageRequest?.userId || '']),
+        where("fromId", "==", user.uid),
         orderBy("createdAt", "desc")
       );
 
-      const querySnapshot = await getDocs(messagesQuery);
+      // Second query for messages where user is receiver
+      const receivedMessagesQuery = query(
+        collection(db, "messages"),
+        where("toId", "==", user.uid),
+        orderBy("createdAt", "desc")
+      );
+
+      const [sentSnapshot, receivedSnapshot] = await Promise.all([
+        getDocs(sentMessagesQuery),
+        getDocs(receivedMessagesQuery)
+      ]);
+
       const loadedMessages: Message[] = [];
       const groupedMessages: { [key: string]: Message[] } = {};
 
-      querySnapshot.forEach((doc) => {
-        const message = { id: doc.id, ...doc.data() } as Message;
-        loadedMessages.push(message);
+      // Process both sent and received messages
+      [sentSnapshot, receivedSnapshot].forEach(snapshot => {
+        snapshot.forEach((doc) => {
+          const message = { id: doc.id, ...doc.data() } as Message;
+          loadedMessages.push(message);
 
-        if (!groupedMessages[message.requestId]) {
-          groupedMessages[message.requestId] = [];
-        }
-        groupedMessages[message.requestId].push(message);
+          if (!groupedMessages[message.requestId]) {
+            groupedMessages[message.requestId] = [];
+          }
+          groupedMessages[message.requestId].push(message);
+        });
       });
 
       const groups: MessageGroup[] = [];
       for (const [requestId, messages] of Object.entries(groupedMessages)) {
-        const request = await getDoc(doc(db, "requests", requestId));
-        if (request.exists()) {
-          const requestData = request.data();
-          groups.push({
-            requestId,
-            requestTitle: requestData.title,
-            lastMessage: messages[0],
-            unreadCount: messages.filter(m => !m.read && m.toId === user.uid).length
-          });
+        try {
+          const request = await getDoc(doc(db, "requests", requestId));
+          if (request.exists()) {
+            const requestData = request.data();
+            // Sort messages by date for correct "last message"
+            messages.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+            groups.push({
+              requestId,
+              requestTitle: requestData.title,
+              lastMessage: messages[0],
+              unreadCount: messages.filter(m => !m.read && m.toId === user.uid).length
+            });
+          }
+        } catch (error) {
+          console.error(`Error fetching request ${requestId}:`, error);
         }
       }
+
+      // Sort groups by last message date
+      groups.sort((a, b) => 
+        new Date(b.lastMessage.createdAt).getTime() - new Date(a.lastMessage.createdAt).getTime()
+      );
 
       setMessageGroups(groups);
       setMessages(loadedMessages);
