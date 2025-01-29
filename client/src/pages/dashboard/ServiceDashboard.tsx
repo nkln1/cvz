@@ -166,10 +166,10 @@ export default function ServiceDashboard() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [messageGroups, setMessageGroups] = useState<MessageGroup[]>([]);
   const [isViewingConversation, setIsViewingConversation] = useState(false);
-  const [viewedRequests, setViewedRequests] = useState<Set<string>>(new Set(() => {
+  const [viewedRequests, setViewedRequests] = useState<Set<string>>(() => {
     const savedViewedRequests = localStorage.getItem('viewedRequests');
-    return savedViewedRequests ? new Set(JSON.parse(savedViewedRequests)) : new Set();
-  }));
+    return new Set(savedViewedRequests ? JSON.parse(savedViewedRequests) : []);
+  });
   const [sortField, setSortField] = useState<keyof Request>("createdAt");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
   const [searchQuery, setSearchQuery] = useState("");
