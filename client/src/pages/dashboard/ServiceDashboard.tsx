@@ -329,21 +329,23 @@ export default function ServiceDashboard() {
         collection(db, "requests"),
         where("status", "==", "Active"),
         where("county", "==", serviceData.county),
-        where("cities", "array-contains", serviceData.city)
+        where("cities", "array-contains", serviceData.city),
+        orderBy("createdAt", "desc")
       );
 
       const querySnapshot = await getDocs(requestsQuery);
       const allRequests: Request[] = [];
 
       for (const doc of querySnapshot.docs) {
-        const requestData = doc.data() as Request; // Type assertion here
+        const requestData = doc.data() as Request;
         const carDoc = await getDoc(docRef(db, "cars", requestData.carId));
         const carData = carDoc.exists() ? carDoc.data() as Car : undefined;
 
         allRequests.push({
           id: doc.id,
           ...requestData,
-          car: carData
+          car: carData,
+          createdAt: requestData.createdAt || new Date().toISOString()
         } as Request);
       }
 
