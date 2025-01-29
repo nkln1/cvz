@@ -27,9 +27,6 @@ import {
   SendHorizontal,
   Pen,
   Save,
-  ChevronDown,
-  ChevronUp,
-  XCircle
 } from "lucide-react";
 import {
   Card,
@@ -46,13 +43,8 @@ import { useToast } from "@/hooks/use-toast";
 import romanianCitiesData from "../../../../attached_assets/municipii_orase_romania.json";
 import { format } from "date-fns";
 import { Table, TableBody, TableCell, TableHeader, TableHead, TableRow } from "@/components/ui/table";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 
-// Update Request interface to include client name
+// Add Request interface
 interface Request {
   id: string;
   title: string;
@@ -64,7 +56,6 @@ interface Request {
   status: "Active" | "Rezolvat" | "Anulat";
   createdAt: string;
   userId: string;
-  clientName?: string; // Add client name
 }
 
 // Previous interfaces remain unchanged
@@ -283,39 +274,26 @@ export default function ServiceDashboard() {
 
   const hasChanges = JSON.stringify(serviceData) !== JSON.stringify(editedData);
 
+  // Add new function to fetch client requests
   const fetchClientRequests = async () => {
     if (!user || !serviceData) return;
 
     try {
-      // First get all active requests for the county
       const requestsQuery = query(
         collection(db, "requests"),
         where("status", "==", "Active"),
-        where("county", "==", serviceData.county)
+        where("county", "==", serviceData.county),
+        where("cities", "array-contains", serviceData.city)
       );
 
       const querySnapshot = await getDocs(requestsQuery);
       const allRequests: Request[] = [];
 
-      for (const doc of querySnapshot.docs) {
-        const requestData = doc.data();
+      querySnapshot.forEach((doc) => {
+        allRequests.push({ id: doc.id, ...doc.data() } as Request);
+      });
 
-        // Check if the service's city is included in the request's cities array
-        if (requestData.cities && requestData.cities.includes(serviceData.city)) {
-          // Fetch client name
-          const userDoc = await getDoc(doc(db, "users", requestData.userId));
-          const userData = userDoc.data();
-          const clientName = userData ? userData.name : "Client necunoscut";
 
-          allRequests.push({ 
-            id: doc.id, 
-            ...requestData,
-            clientName 
-          } as Request);
-        }
-      }
-
-      console.log("Fetched requests:", allRequests); // Debug log
       setClientRequests(allRequests);
     } catch (error) {
       console.error("Error fetching client requests:", error);
@@ -334,30 +312,6 @@ export default function ServiceDashboard() {
     }
   }, [serviceData]);
 
-  const handleMessageClick = (request: Request) => {
-    // TODO: Implement messaging functionality
-    toast({
-      title: "Info",
-      description: "Funcționalitatea de mesagerie va fi implementată în curând.",
-    });
-  };
-
-  const handleSendOffer = (request: Request) => {
-    // TODO: Implement send offer functionality
-    toast({
-      title: "Info",
-      description: "Funcționalitatea de trimitere ofertă va fi implementată în curând.",
-    });
-  };
-
-  const handleRejectRequest = (request: Request) => {
-    // TODO: Implement reject functionality
-    toast({
-      title: "Info",
-      description: "Funcționalitatea de respingere va fi implementată în curând.",
-    });
-  };
-
   // Modify the TabsContent for requests
   const renderRequestsContent = () => (
     <TabsContent value="requests">
@@ -372,102 +326,59 @@ export default function ServiceDashboard() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {clientRequests.map((request) => (
-              <Collapsible key={request.id} className="border rounded-lg">
-                <div className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="grid grid-cols-5 gap-4 flex-1">
-                      <div className="font-medium">{request.title}</div>
-                      <div>{format(new Date(request.preferredDate), "dd.MM.yyyy")}</div>
-                      <div>{request.county}</div>
-                      <div>{request.cities.join(", ")}</div>
-                      <div>
-                        <span
-                          className={`px-2 py-1 rounded-full text-sm ${
-                            request.status === "Active"
-                              ? "bg-yellow-100 text-yellow-800"
-                              : request.status === "Rezolvat"
-                              ? "bg-green-100 text-green-800"
-                              : "bg-red-100 text-red-800"
-                          }`}
-                        >
-                          {request.status}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-blue-500 hover:text-blue-700 hover:bg-blue-50"
-                        onClick={() => handleMessageClick(request)}
-                      >
-                        <MessageSquare className="h-4 w-4 mr-1" />
-                        Mesaj
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-green-500 hover:text-green-700 hover:bg-green-50"
-                        onClick={() => handleSendOffer(request)}
-                      >
-                        <SendHorizontal className="h-4 w-4 mr-1" />
-                        Trimite oferta
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                        onClick={() => handleRejectRequest(request)}
-                      >
-                        <XCircle className="h-4 w-4 mr-1" />
-                        Respinge oferta
-                      </Button>
-                      <CollapsibleTrigger className="p-2 hover:bg-gray-100 rounded-lg">
-                        {open => (
-                          open ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />
-                        )}
-                      </CollapsibleTrigger>
-                    </div>
-                  </div>
-                </div>
-                <CollapsibleContent>
-                  <div className="p-4 bg-gray-50 space-y-4 border-t">
-                    <div>
-                      <h3 className="font-medium text-sm text-muted-foreground">
-                        Client
-                      </h3>
-                      <p>{request.clientName}</p>
-                    </div>
-                    <div>
-                      <h3 className="font-medium text-sm text-muted-foreground">
-                        Descriere
-                      </h3>
-                      <p>{request.description}</p>
-                    </div>
-                    <div>
-                      <h3 className="font-medium text-sm text-muted-foreground">
-                        Data preferată
-                      </h3>
-                      <p>{format(new Date(request.preferredDate), "dd.MM.yyyy")}</p>
-                    </div>
-                    <div>
-                      <h3 className="font-medium text-sm text-muted-foreground">
-                        Locație
-                      </h3>
-                      <p>{request.cities.join(", ")}, {request.county}</p>
-                    </div>
-                  </div>
-                </CollapsibleContent>
-              </Collapsible>
-            ))}
-            {clientRequests.length === 0 && (
-              <div className="text-center text-muted-foreground py-4">
-                Nu există cereri active în zona ta
-              </div>
-            )}
-          </div>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Titlu</TableHead>
+                <TableHead>Data preferată</TableHead>
+                <TableHead>Județ</TableHead>
+                <TableHead>Localități</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Acțiuni</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {clientRequests.map((request) => (
+                <TableRow key={request.id}>
+                  <TableCell className="font-medium">{request.title}</TableCell>
+                  <TableCell>
+                    {format(new Date(request.preferredDate), "dd.MM.yyyy")}
+                  </TableCell>
+                  <TableCell>{request.county}</TableCell>
+                  <TableCell>{request.cities.join(", ")}</TableCell>
+                  <TableCell>
+                    <span
+                      className={`px-2 py-1 rounded-full text-sm ${
+                        request.status === "Active"
+                          ? "bg-yellow-100 text-yellow-800"
+                          : request.status === "Rezolvat"
+                          ? "bg-green-100 text-green-800"
+                          : "bg-red-100 text-red-800"
+                      }`}
+                    >
+                      {request.status}
+                    </span>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-[#00aff5] hover:text-[#0099d6] hover:bg-[#00aff5]/10"
+                    >
+                      Vizualizează detalii
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+              {clientRequests.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center text-muted-foreground">
+                    Nu există cereri active în zona ta
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
     </TabsContent>
