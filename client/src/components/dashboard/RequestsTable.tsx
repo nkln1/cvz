@@ -8,7 +8,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Eye, Trash2, Flag } from "lucide-react";
+import { Eye, Trash2 } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -39,7 +39,6 @@ interface Request {
   county: string;
   cities?: string[];
   status: "Active" | "Rezolvat" | "Anulat";
-  flagged?: boolean;
 }
 
 interface RequestsTableProps {
@@ -48,7 +47,6 @@ interface RequestsTableProps {
   onDelete?: (id: string) => Promise<void>;
   refreshRequests: () => Promise<void>;
   hideDeleteButton?: boolean;
-  onToggleFlag?: (request: Request) => Promise<void>;
 }
 
 export function RequestsTable({
@@ -57,7 +55,6 @@ export function RequestsTable({
   onDelete,
   refreshRequests,
   hideDeleteButton = false,
-  onToggleFlag,
 }: RequestsTableProps) {
   const [selectedRequest, setSelectedRequest] = useState<Request | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -91,29 +88,21 @@ export function RequestsTable({
     return citiesDisplay ? `${citiesDisplay}, ${request.county}` : request.county;
   };
 
-  const handleFlagToggle = async (request: Request) => {
-    if (onToggleFlag) {
-      await onToggleFlag(request);
-    }
-  };
-
   const filteredRequests = showOnlyNew
     ? requests.filter(request => !viewedRequests.has(request.id))
     : requests;
 
   return (
     <>
-      <div className="mb-4 flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <Switch
-            id="show-new"
-            checked={showOnlyNew}
-            onCheckedChange={setShowOnlyNew}
-          />
-          <label htmlFor="show-new" className="text-sm text-muted-foreground">
-            Arată doar cereri noi
-          </label>
-        </div>
+      <div className="mb-4 flex items-center space-x-2">
+        <Switch
+          id="show-new"
+          checked={showOnlyNew}
+          onCheckedChange={setShowOnlyNew}
+        />
+        <label htmlFor="show-new" className="text-sm text-muted-foreground">
+          Doar oferte noi
+        </label>
       </div>
 
       <Table>
@@ -131,9 +120,7 @@ export function RequestsTable({
           {filteredRequests.map((request) => (
             <TableRow
               key={request.id}
-              className={`hover:bg-gray-50 transition-colors ${
-                request.flagged ? "border-l-4 border-l-red-500" : ""
-              }`}
+              className="hover:bg-gray-50 transition-colors"
             >
               <TableCell className="font-medium">
                 <div className="flex items-center gap-2">
@@ -174,38 +161,28 @@ export function RequestsTable({
                 <div className="flex justify-end gap-2">
                   <Button
                     variant="ghost"
-                    size="icon"
-                    onClick={() => handleFlagToggle(request)}
-                    className={`h-8 w-8 ${
-                      request.flagged
-                        ? "text-red-500 hover:text-red-700 hover:bg-red-50"
-                        : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
-                    }`}
-                  >
-                    <Flag className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
+                    size="sm"
                     onClick={() => {
                       setSelectedRequest(request);
                       setShowViewDialog(true);
                     }}
-                    className="h-8 w-8 text-blue-500 hover:text-blue-700 hover:bg-blue-50"
+                    className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 flex items-center gap-1"
                   >
                     <Eye className="h-4 w-4" />
+                    Detalii
                   </Button>
                   {!hideDeleteButton && request.status !== "Anulat" && onDelete && (
                     <Button
                       variant="ghost"
-                      size="icon"
+                      size="sm"
                       onClick={() => {
                         setSelectedRequest(request);
                         setShowDeleteDialog(true);
                       }}
-                      className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50"
+                      className="text-red-500 hover:text-red-700 hover:bg-red-50 flex items-center gap-1"
                     >
                       <Trash2 className="h-4 w-4" />
+                      Anulează
                     </Button>
                   )}
                 </div>

@@ -26,7 +26,6 @@ import {
   Loader2,
   MessageSquare,
   Calendar,
-  Star,
   UserCog,
   Store,
   Clock,
@@ -85,7 +84,6 @@ interface Request {
   createdAt: string;
   userId: string;
   clientName: string;
-  flagged?: boolean;
 }
 
 interface User {
@@ -903,15 +901,6 @@ export default function ServiceDashboard() {
                                 </Button>
                               </>
                             )}
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleToggleFlag(request)}
-                              className="text-purple-500 hover:text-purple-700 hover:bg-purple-50 flex items-center gap-1"
-                            >
-                              <Star className="h-4 w-4" />
-                              {request.flagged ? 'Unflag' : 'Flag'}
-                            </Button>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -1224,26 +1213,6 @@ export default function ServiceDashboard() {
     localStorage.removeItem("selectedMessageRequestId");
   };
 
-  const handleToggleFlag = async (request: Request) => {
-    try {
-      const requestRef = doc(db, "requests", request.id);
-      await updateDoc(requestRef, {
-        flagged: !request.flagged
-      });
-      await fetchClientRequests();
-      toast({
-        title: "Success",
-        description: request.flagged ? "Marcaj eliminat cu succes." : "Cerere marcată ca importantă.",
-      });
-    } catch (error) {
-      console.error("Error toggling flag:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Nu s-a putut actualiza marcajul. Încercați din nou.",
-      });
-    }
-  };
 
   if (loading) {
     return (
