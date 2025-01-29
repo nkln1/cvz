@@ -35,6 +35,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Navigation from "@/components/Navigation";
@@ -44,7 +50,6 @@ import romanianCitiesData from "../../../../attached_assets/municipii_orase_roma
 import { format } from "date-fns";
 import { Table, TableBody, TableCell, TableHeader, TableHead, TableRow } from "@/components/ui/table";
 
-// Add Request interface
 interface Request {
   id: string;
   title: string;
@@ -56,6 +61,12 @@ interface Request {
   status: "Active" | "Rezolvat" | "Anulat";
   createdAt: string;
   userId: string;
+}
+
+interface User {
+  id: string;
+  name: string;
+  email: string;
 }
 
 // Previous interfaces remain unchanged
@@ -109,6 +120,9 @@ export default function ServiceDashboard() {
   const [activeTab, setActiveTab] = useState("requests");
   const [availableCities, setAvailableCities] = useState<string[]>([]);
   const [clientRequests, setClientRequests] = useState<Request[]>([]);
+  const [selectedRequest, setSelectedRequest] = useState<Request | null>(null);
+  const [requestClient, setRequestClient] = useState<User | null>(null);
+  const [showDetailsDialog, setShowDetailsDialog] = useState(false);
 
   const romanianCounties = Object.keys(romanianCitiesData);
 
@@ -274,7 +288,6 @@ export default function ServiceDashboard() {
 
   const hasChanges = JSON.stringify(serviceData) !== JSON.stringify(editedData);
 
-  // Add new function to fetch client requests
   const fetchClientRequests = async () => {
     if (!user || !serviceData) return;
 
@@ -293,7 +306,6 @@ export default function ServiceDashboard() {
         allRequests.push({ id: doc.id, ...doc.data() } as Request);
       });
 
-
       setClientRequests(allRequests);
     } catch (error) {
       console.error("Error fetching client requests:", error);
@@ -305,14 +317,35 @@ export default function ServiceDashboard() {
     }
   };
 
-  // Add useEffect for fetching client requests
+  const fetchRequestClient = async (userId: string) => {
+    try {
+      const userDoc = await getDoc(doc(db, "users", userId));
+      if (userDoc.exists()) {
+        return {
+          id: userDoc.id,
+          ...userDoc.data(),
+        } as User;
+      }
+      return null;
+    } catch (error) {
+      console.error("Error fetching client details:", error);
+      return null;
+    }
+  };
+
+  const handleViewDetails = async (request: Request) => {
+    setSelectedRequest(request);
+    const client = await fetchRequestClient(request.userId);
+    setRequestClient(client);
+    setShowDetailsDialog(true);
+  };
+
   useEffect(() => {
     if (serviceData) {
       fetchClientRequests();
     }
   }, [serviceData]);
 
-  // Modify the TabsContent for requests
   const renderRequestsContent = () => (
     <TabsContent value="requests">
       <Card className="border-[#00aff5]/20">
@@ -363,6 +396,7 @@ export default function ServiceDashboard() {
                     <Button
                       variant="outline"
                       size="sm"
+                      onClick={() => handleViewDetails(request)}
                       className="text-[#00aff5] hover:text-[#0099d6] hover:bg-[#00aff5]/10"
                     >
                       Vizualizează detalii
@@ -379,6 +413,57 @@ export default function ServiceDashboard() {
               )}
             </TableBody>
           </Table>
+
+          <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
+            <DialogContent className="sm:max-w-[600px]">
+              <DialogHeader>
+                <DialogTitle className="text-[#00aff5]">Detalii Cerere Service</DialogTitle>
+              </DialogHeader>
+              {selectedRequest && (
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-sm font-medium text-muted-foreground">Client</h3>
+                    <p className="mt-1">{requestClient?.name || "Nume indisponibil"}</p>
+                    <p className="text-sm text-muted-foreground">{requestClient?.email}</p>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-medium text-muted-foreground">Titlu</h3>
+                    <p className="mt-1">{selectedRequest.title}</p>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-medium text-muted-foreground">Descriere</h3>
+                    <p className="mt-1">{selectedRequest.description}</p>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-medium text-muted-foreground">Data preferată</h3>
+                    <p className="mt-1">
+                      {format(new Date(selectedRequest.preferredDate), "dd.MM.yyyy")}
+                    </p>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-medium text-muted-foreground">Locație</h3>
+                    <p className="mt-1">
+                      {selectedRequest.cities.join(", ")} - {selectedRequest.county}
+                    </p>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-medium text-muted-foreground">Status</h3>
+                    <span
+                      className={`px-2 py-1 rounded-full text-sm ${
+                        selectedRequest.status === "Active"
+                          ? "bg-yellow-100 text-yellow-800"
+                          : selectedRequest.status === "Rezolvat"
+                          ? "bg-green-100 text-green-800"
+                          : "bg-red-100 text-red-800"
+                      }`}
+                    >
+                      {selectedRequest.status}
+                    </span>
+                  </div>
+                </div>
+              )}
+            </DialogContent>
+          </Dialog>
         </CardContent>
       </Card>
     </TabsContent>
