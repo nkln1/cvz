@@ -1,5 +1,5 @@
 import { useAuth } from "@/context/AuthContext";
-import { doc, getDoc, updateDoc, collection, query, where, getDocs } from "firebase/firestore";
+import { doc, getDoc, updateDoc, collection, query, where, getDocs, doc as docRef } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useEffect, useState, Fragment } from "react";
 import { z } from "zod";
@@ -27,6 +27,7 @@ import {
   SendHorizontal,
   Pen,
   Save,
+  Eye,
 } from "lucide-react";
 import {
   Card,
@@ -44,11 +45,21 @@ import romanianCitiesData from "../../../../attached_assets/municipii_orase_roma
 import { format } from "date-fns";
 import { Table, TableBody, TableCell, TableHeader, TableHead, TableRow } from "@/components/ui/table";
 
+interface Car {
+  id: string;
+  brand: string;
+  model: string;
+  year: string;
+  vin?: string;
+  licensePlate?: string;
+}
+
 interface Request {
   id: string;
   title: string;
   description: string;
   carId: string;
+  car?: Car;
   preferredDate: string;
   county: string;
   cities: string[];
@@ -61,6 +72,7 @@ interface User {
   id: string;
   name: string;
   email: string;
+  numeComplet?: string;  // Added for full name
 }
 
 // Previous interfaces remain unchanged
@@ -295,9 +307,18 @@ export default function ServiceDashboard() {
       const querySnapshot = await getDocs(requestsQuery);
       const allRequests: Request[] = [];
 
-      querySnapshot.forEach((doc) => {
-        allRequests.push({ id: doc.id, ...doc.data() } as Request);
-      });
+      for (const doc of querySnapshot.docs) {
+        const requestData = doc.data();
+        // Fetch car details
+        const carDoc = await getDoc(docRef(db, "cars", requestData.carId));
+        const carData = carDoc.exists() ? carDoc.data() as Car : undefined;
+
+        allRequests.push({ 
+          id: doc.id, 
+          ...requestData,
+          car: carData 
+        } as Request);
+      }
 
       setClientRequests(allRequests);
     } catch (error) {
@@ -372,7 +393,7 @@ export default function ServiceDashboard() {
             <TableBody>
               {clientRequests.map((request) => (
                 <Fragment key={request.id}>
-                  <TableRow>
+                  <TableRow className="hover:bg-gray-50">
                     <TableCell className="font-medium">{request.title}</TableCell>
                     <TableCell>
                       {format(new Date(request.preferredDate), "dd.MM.yyyy")}
@@ -394,70 +415,72 @@ export default function ServiceDashboard() {
                     </TableCell>
                     <TableCell className="text-right">
                       <Button
-                        variant="outline"
-                        size="sm"
+                        variant="ghost"
+                        size="icon"
                         onClick={() => handleViewDetails(request)}
-                        className="text-[#00aff5] hover:text-[#0099d6] hover:bg-[#00aff5]/10"
+                        className="h-8 w-8 text-blue-500 hover:text-blue-700 hover:bg-blue-50"
                       >
-                        Vizualizează detalii
+                        <Eye className="h-4 w-4" />
                       </Button>
                     </TableCell>
                   </TableRow>
                   {selectedRequest?.id === request.id && (
                     <TableRow>
                       <TableCell colSpan={6} className="p-0">
-                        <div className="bg-gray-50 p-6 border-t border-b">
-                          <div className="grid grid-cols-2 gap-6">
+                        <div className="bg-gray-50 p-4 border-t border-b">
+                          <div className="grid grid-cols-3 gap-4">
                             <div>
-                              <h3 className="text-sm font-medium text-muted-foreground mb-2">
+                              <h3 className="text-xs font-medium text-muted-foreground">
                                 Client
                               </h3>
-                              <p className="text-gray-900">{requestClient?.name || "Nume indisponibil"}</p>
-                              <p className="text-sm text-muted-foreground">{requestClient?.email}</p>
+                              <p className="text-sm mt-1">{requestClient?.numeComplet || requestClient?.name || "Nume indisponibil"}</p>
+                              <p className="text-xs text-muted-foreground">{requestClient?.email}</p>
                             </div>
                             <div>
-                              <h3 className="text-sm font-medium text-muted-foreground mb-2">
+                              <h3 className="text-xs font-medium text-muted-foreground">
+                                Mașină
+                              </h3>
+                              <p className="text-sm mt-1">
+                                {request.car ? (
+                                  <>
+                                    {request.car.brand} {request.car.model} ({request.car.year})
+                                    {request.car.licensePlate && (
+                                      <span className="text-xs text-muted-foreground ml-1">
+                                        Nr. {request.car.licensePlate}
+                                      </span>
+                                    )}
+                                    {request.car.vin && (
+                                      <span className="block text-xs text-muted-foreground">
+                                        VIN: {request.car.vin}
+                                      </span>
+                                    )}
+                                  </>
+                                ) : (
+                                  "Detalii indisponibile"
+                                )}
+                              </p>
+                            </div>
+                            <div>
+                              <h3 className="text-xs font-medium text-muted-foreground">
                                 Data preferată
                               </h3>
-                              <p className="text-gray-900">
+                              <p className="text-sm mt-1">
                                 {format(new Date(request.preferredDate), "dd.MM.yyyy")}
                               </p>
                             </div>
                             <div className="col-span-2">
-                              <h3 className="text-sm font-medium text-muted-foreground mb-2">
-                                Titlu
-                              </h3>
-                              <p className="text-gray-900">{request.title}</p>
-                            </div>
-                            <div className="col-span-2">
-                              <h3 className="text-sm font-medium text-muted-foreground mb-2">
+                              <h3 className="text-xs font-medium text-muted-foreground">
                                 Descriere
                               </h3>
-                              <p className="text-gray-900">{request.description}</p>
+                              <p className="text-sm mt-1 whitespace-pre-wrap">{request.description}</p>
                             </div>
                             <div>
-                              <h3 className="text-sm font-medium text-muted-foreground mb-2">
+                              <h3 className="text-xs font-medium text-muted-foreground">
                                 Locație
                               </h3>
-                              <p className="text-gray-900">
+                              <p className="text-sm mt-1">
                                 {request.cities.join(", ")} - {request.county}
                               </p>
-                            </div>
-                            <div>
-                              <h3 className="text-sm font-medium text-muted-foreground mb-2">
-                                Status
-                              </h3>
-                              <span
-                                className={`px-2 py-1 rounded-full text-sm ${
-                                  request.status === "Active"
-                                    ? "bg-yellow-100 text-yellow-800"
-                                    : request.status === "Rezolvat"
-                                    ? "bg-green-100 text-green-800"
-                                    : "bg-red-100 text-red-800"
-                                }`}
-                              >
-                                {request.status}
-                              </span>
                             </div>
                           </div>
                         </div>
