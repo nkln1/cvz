@@ -28,6 +28,7 @@ import {
   Pen,
   Save,
   Eye,
+  X,
 } from "lucide-react";
 import {
   Card,
@@ -368,6 +369,62 @@ export default function ServiceDashboard() {
     }
   }, [serviceData]);
 
+  const handleAcceptRequest = async (requestId: string) => {
+    try {
+      const requestRef = doc(db, "requests", requestId);
+      await updateDoc(requestRef, {
+        status: "Rezolvat"
+      });
+      await fetchClientRequests();
+      toast({
+        title: "Succes",
+        description: "Cererea a fost acceptată cu succes.",
+      });
+    } catch (error) {
+      console.error("Error accepting request:", error);
+      toast({
+        variant: "destructive",
+        title: "Eroare",
+        description: "Nu s-a putut accepta cererea. Încercați din nou.",
+      });
+    }
+  };
+
+  const handleRejectRequest = async (requestId: string) => {
+    try {
+      const requestRef = doc(db, "requests", requestId);
+      await updateDoc(requestRef, {
+        status: "Anulat"
+      });
+      await fetchClientRequests();
+      toast({
+        title: "Succes",
+        description: "Cererea a fost respinsă.",
+      });
+    } catch (error) {
+      console.error("Error rejecting request:", error);
+      toast({
+        variant: "destructive",
+        title: "Eroare",
+        description: "Nu s-a putut respinge cererea. Încercați din nou.",
+      });
+    }
+  };
+
+  const handleMessage = (request: Request) => {
+    // To be implemented when messaging functionality is ready
+    toast({
+      description: "Funcționalitatea de mesaje va fi disponibilă în curând.",
+    });
+  };
+
+  const handleSendOffer = async (request: Request) => {
+    // To be implemented when offer functionality is ready
+    toast({
+      description: "Funcționalitatea de trimitere oferte va fi disponibilă în curând.",
+    });
+  };
+
   const renderRequestsContent = () => (
     <TabsContent value="requests">
       <Card className="border-[#00aff5]/20">
@@ -416,14 +473,44 @@ export default function ServiceDashboard() {
                       </span>
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleViewDetails(request)}
-                        className="h-8 w-8 text-blue-500 hover:text-blue-700 hover:bg-blue-50"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleMessage(request)}
+                          className="h-8 w-8 text-blue-500 hover:text-blue-700 hover:bg-blue-50"
+                        >
+                          <MessageSquare className="h-4 w-4" />
+                        </Button>
+                        {request.status === "Active" && (
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleSendOffer(request)}
+                              className="h-8 w-8 text-green-500 hover:text-green-700 hover:bg-green-50"
+                            >
+                              <SendHorizontal className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleRejectRequest(request.id)}
+                              className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50"
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleViewDetails(request)}
+                          className="h-8 w-8 text-blue-500 hover:text-blue-700 hover:bg-blue-50"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                   {selectedRequest?.id === request.id && (
