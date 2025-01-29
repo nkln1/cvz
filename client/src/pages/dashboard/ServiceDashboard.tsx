@@ -673,15 +673,6 @@ export default function ServiceDashboard() {
                             </Button>
                           </>
                         )}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleViewDetails(request)}
-                          className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 flex items-center gap-1"
-                        >
-                          <Eye className="h-4 w-4" />
-                          Detalii
-                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -781,21 +772,7 @@ export default function ServiceDashboard() {
             <CardContent className="p-4">
               <div className="flex justify-between items-start">
                 <div className="flex-1" onClick={() => handleSelectConversation(group.requestId)}>
-                  <div className="flex items-center justify-between">
-                    <h4 className="font-medium">{group.requestTitle}</h4>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleViewRequestDetails(group.requestId);
-                      }}
-                      className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 flex items-center gap-1"
-                    >
-                      <Eye className="h-4 w-4" />
-                      Detalii
-                    </Button>
-                  </div>
+                  <h4 className="font-medium">{group.requestTitle}</h4>
                   <p className="text-sm text-muted-foreground truncate">
                     {group.lastMessage.content}
                   </p>
@@ -818,33 +795,32 @@ export default function ServiceDashboard() {
     </div>
   );
 
-  const handleViewRequestDetails = (requestId: string) => {
-    const request = clientRequests.find(r => r.id === requestId);
-    if (request) {
-      setSelectedRequest(request);
-      setActiveTab("requests");
-      // Load client details for the request
-      fetchRequestClient(request.userId).then(client => {
-        setRequestClient(client);
-      });
-    }
-  };
-
   const renderConversation = () => (
     <div className="space-y-4">
-      <div className="flex items-center gap-2 border-b pb-4">
+      <div className="flex items-center justify-between border-b pb-4">
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleBackToList}
+            className="hover:bg-gray-100"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Înapoi
+          </Button>
+          <h3 className="font-medium">
+            {selectedMessageRequest?.title}
+          </h3>
+        </div>
         <Button
           variant="ghost"
           size="sm"
-          onClick={handleBackToList}
-          className="hover:bg-gray-100"
+          onClick={() => handleViewRequestDetails(selectedMessageRequest?.id || '')}
+          className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 flex items-center gap-1"
         >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Înapoi
+          <Eye className="h-4 w-4" />
+          Detalii cerere
         </Button>
-        <h3 className="font-medium">
-          {selectedMessageRequest?.title}
-        </h3>
       </div>
       <div className="space-y-4 max-h-[400px] overflow-y-auto mb-4">
         {messages
@@ -894,19 +870,16 @@ export default function ServiceDashboard() {
     </div>
   );
 
-  const handleSelectConversation = (requestId: string) => {
+  const handleViewRequestDetails = (requestId: string) => {
     const request = clientRequests.find(r => r.id === requestId);
     if (request) {
-      setSelectedMessageRequest(request);
-      setIsViewingConversation(true);
-      localStorage.setItem('selectedMessageRequestId', requestId);
+      setSelectedRequest(request);
+      setActiveTab("requests");
+      // Load client details for the request
+      fetchRequestClient(request.userId).then(client => {
+        setRequestClient(client);
+      });
     }
-  };
-
-  const handleBackToList = () => {
-    setIsViewingConversation(false);
-    setSelectedMessageRequest(null);
-    localStorage.removeItem('selectedMessageRequestId');
   };
 
   const renderMessages = () => (
@@ -927,6 +900,21 @@ export default function ServiceDashboard() {
       </Card>
     </TabsContent>
   );
+
+  const handleSelectConversation = (requestId: string) => {
+    const request = clientRequests.find(r => r.id === requestId);
+    if (request) {
+      setSelectedMessageRequest(request);
+      setIsViewingConversation(true);
+      localStorage.setItem('selectedMessageRequestId', requestId);
+    }
+  };
+
+  const handleBackToList = () => {
+    setIsViewingConversation(false);
+    setSelectedMessageRequest(null);
+    localStorage.removeItem('selectedMessageRequestId');
+  };
 
   if (loading) {
     return (
