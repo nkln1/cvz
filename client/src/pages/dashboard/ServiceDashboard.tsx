@@ -84,7 +84,8 @@ interface Request {
   status: "Active" | "Rezolvat" | "Anulat";
   createdAt: string;
   userId: string;
-  clientName: string; // Add this field
+  clientName: string;
+  flagged?: boolean;
 }
 
 interface User {
@@ -173,12 +174,10 @@ export default function ServiceDashboard() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState(() => {
-    // If we're directly accessing /service-dashboard, default to "requests"
     if (window.location.pathname.endsWith("/service-dashboard")) {
       localStorage.setItem("activeTab", "requests");
       return "requests";
     }
-    // Otherwise use saved tab or default to "requests"
     return localStorage.getItem("activeTab") || "requests";
   });
   const [availableCities, setAvailableCities] = useState<string[]>([]);
@@ -204,6 +203,8 @@ export default function ServiceDashboard() {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [cars, setCars] = useState<Record<string, Car>>({});
+
 
   const romanianCounties = Object.keys(romanianCitiesData);
 
@@ -411,6 +412,7 @@ export default function ServiceDashboard() {
 
       const querySnapshot = await getDocs(requestsQuery);
       const allRequests: Request[] = [];
+      const allCars: Record<string, Car> = {};
 
       for (const doc of querySnapshot.docs) {
         const requestData = doc.data() as Request;
@@ -422,6 +424,7 @@ export default function ServiceDashboard() {
           ...requestData,
           car: carData,
         } as Request);
+        if (carData) allCars[requestData.carId] = carData;
       }
 
       allRequests.sort((a, b) => {
@@ -434,6 +437,7 @@ export default function ServiceDashboard() {
       });
 
       setClientRequests(allRequests);
+      setCars(allCars);
     } catch (error) {
       console.error("Error fetching client requests:", error);
       toast({
@@ -899,6 +903,15 @@ export default function ServiceDashboard() {
                                 </Button>
                               </>
                             )}
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleToggleFlag(request)}
+                              className="text-purple-500 hover:text-purple-700 hover:bg-purple-50 flex items-center gap-1"
+                            >
+                              <Star className="h-4 w-4" />
+                              {request.flagged ? 'Unflag' : 'Flag'}
+                            </Button>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -1209,6 +1222,27 @@ export default function ServiceDashboard() {
     setIsViewingConversation(false);
     setSelectedMessageRequest(null);
     localStorage.removeItem("selectedMessageRequestId");
+  };
+
+  const handleToggleFlag = async (request: Request) => {
+    try {
+      const requestRef = doc(db, "requests", request.id);
+      await updateDoc(requestRef, {
+        flagged: !request.flagged
+      });
+      await fetchClientRequests();
+      toast({
+        title: "Success",
+        description: request.flagged ? "Marcaj eliminat cu succes." : "Cerere marcată ca importantă.",
+      });
+    } catch (error) {
+      console.error("Error toggling flag:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Nu s-a putut actualiza marcajul. Încercați din nou.",
+      });
+    }
   };
 
   if (loading) {

@@ -8,7 +8,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Eye, Trash2 } from "lucide-react";
+import { Eye, Trash2, Flag } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,6 +28,7 @@ import {
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { type Car } from "@/pages/dashboard/CarManagement";
+import { Switch } from "@/components/ui/switch";
 
 interface Request {
   id: string;
@@ -36,8 +37,9 @@ interface Request {
   carId: string;
   preferredDate: string;
   county: string;
-  cities?: string[]; 
+  cities?: string[];
   status: "Active" | "Rezolvat" | "Anulat";
+  flagged?: boolean;
 }
 
 interface RequestsTableProps {
@@ -46,6 +48,7 @@ interface RequestsTableProps {
   onDelete?: (id: string) => Promise<void>;
   refreshRequests: () => Promise<void>;
   hideDeleteButton?: boolean;
+  onToggleFlag?: (request: Request) => Promise<void>;
 }
 
 export function RequestsTable({
@@ -54,11 +57,14 @@ export function RequestsTable({
   onDelete,
   refreshRequests,
   hideDeleteButton = false,
+  onToggleFlag,
 }: RequestsTableProps) {
   const [selectedRequest, setSelectedRequest] = useState<Request | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showViewDialog, setShowViewDialog] = useState(false);
+  const [showOnlyNew, setShowOnlyNew] = useState(false);
   const { toast } = useToast();
+  const viewedRequests = new Set<string>(); // Assuming this is managed elsewhere
 
   const handleDelete = async (requestId: string) => {
     if (!onDelete) return;
@@ -85,8 +91,31 @@ export function RequestsTable({
     return citiesDisplay ? `${citiesDisplay}, ${request.county}` : request.county;
   };
 
+  const handleFlagToggle = async (request: Request) => {
+    if (onToggleFlag) {
+      await onToggleFlag(request);
+    }
+  };
+
+  const filteredRequests = showOnlyNew
+    ? requests.filter(request => !viewedRequests.has(request.id))
+    : requests;
+
   return (
     <>
+      <div className="mb-4 flex items-center justify-between">
+        <div className="flex items-center space-x-2">
+          <Switch
+            id="show-new"
+            checked={showOnlyNew}
+            onCheckedChange={setShowOnlyNew}
+          />
+          <label htmlFor="show-new" className="text-sm text-muted-foreground">
+            Arată doar cereri noi
+          </label>
+        </div>
+      </div>
+
       <Table>
         <TableHeader>
           <TableRow>
@@ -99,9 +128,27 @@ export function RequestsTable({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {requests.map((request) => (
-            <TableRow key={request.id} className="hover:bg-gray-50">
-              <TableCell className="font-medium">{request.title}</TableCell>
+          {filteredRequests.map((request) => (
+            <TableRow
+              key={request.id}
+              className={`hover:bg-gray-50 transition-colors ${
+                request.flagged ? "border-l-4 border-l-red-500" : ""
+              }`}
+            >
+              <TableCell className="font-medium">
+                <div className="flex items-center gap-2">
+                  {!viewedRequests.has(request.id) && (
+                    <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full font-bold">
+                      NEW
+                    </span>
+                  )}
+                  <span
+                    className={!viewedRequests.has(request.id) ? "font-bold" : ""}
+                  >
+                    {request.title}
+                  </span>
+                </div>
+              </TableCell>
               <TableCell>
                 {cars.find((car) => car.id === request.carId)?.brand}{" "}
                 {cars.find((car) => car.id === request.carId)?.model}
@@ -116,8 +163,8 @@ export function RequestsTable({
                     request.status === "Active"
                       ? "bg-yellow-100 text-yellow-800"
                       : request.status === "Rezolvat"
-                      ? "bg-green-100 text-green-800"
-                      : "bg-red-100 text-red-800"
+                        ? "bg-green-100 text-green-800"
+                        : "bg-red-100 text-red-800"
                   }`}
                 >
                   {request.status}
@@ -125,6 +172,18 @@ export function RequestsTable({
               </TableCell>
               <TableCell className="text-right">
                 <div className="flex justify-end gap-2">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleFlagToggle(request)}
+                    className={`h-8 w-8 ${
+                      request.flagged
+                        ? "text-red-500 hover:text-red-700 hover:bg-red-50"
+                        : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+                    }`}
+                  >
+                    <Flag className="h-4 w-4" />
+                  </Button>
                   <Button
                     variant="ghost"
                     size="icon"
@@ -153,12 +212,9 @@ export function RequestsTable({
               </TableCell>
             </TableRow>
           ))}
-          {requests.length === 0 && (
+          {filteredRequests.length === 0 && (
             <TableRow>
-              <TableCell
-                colSpan={6}
-                className="text-center text-muted-foreground"
-              >
+              <TableCell colSpan={6} className="text-center text-muted-foreground">
                 Nu există cereri în această categorie.
               </TableCell>
             </TableRow>
@@ -171,7 +227,8 @@ export function RequestsTable({
           <AlertDialogHeader>
             <AlertDialogTitle>Anulați această cerere?</AlertDialogTitle>
             <AlertDialogDescription>
-              Această acțiune nu poate fi anulată. Cererea va fi mutată în categoria "Anulate".
+              Această acțiune nu poate fi anulată. Cererea va fi mutată în categoria
+              "Anulate".
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -240,8 +297,8 @@ export function RequestsTable({
                     selectedRequest.status === "Active"
                       ? "bg-yellow-100 text-yellow-800"
                       : selectedRequest.status === "Rezolvat"
-                      ? "bg-green-100 text-green-800"
-                      : "bg-red-100 text-red-800"
+                        ? "bg-green-100 text-green-800"
+                        : "bg-red-100 text-red-800"
                   }`}
                 >
                   {selectedRequest.status}
