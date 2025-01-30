@@ -28,10 +28,19 @@ interface ServiceData {
 }
 
 const serviceDataSchema = z.object({
-  companyName: z.string().min(3, "Numele companiei trebuie să aibă cel puțin 3 caractere"),
-  representativeName: z.string().min(3, "Numele reprezentantului trebuie să aibă cel puțin 3 caractere"),
+  companyName: z
+    .string()
+    .min(3, "Numele companiei trebuie să aibă cel puțin 3 caractere"),
+  representativeName: z
+    .string()
+    .min(3, "Numele reprezentantului trebuie să aibă cel puțin 3 caractere"),
   email: z.string().email("Adresa de email nu este validă"),
-  phone: z.string().regex(/^(\+4|)?(07[0-8]{1}[0-9]{1}|02[0-9]{2}|03[0-9]{2}){1}?(\s|\.|\-)?([0-9]{3}(\s|\.|\-|)){2}$/, "Numărul de telefon nu este valid"),
+  phone: z
+    .string()
+    .regex(
+      /^(\+4|)?(07[0-8]{1}[0-9]{1}|02[0-9]{2}|03[0-9]{2}){1}?(\s|\.|\-)?([0-9]{3}(\s|\.|\-|)){2}$/,
+      "Numărul de telefon nu este valid",
+    ),
   cui: z.string(),
   tradeRegNumber: z.string(),
   address: z.string().min(5, "Adresa trebuie să aibă cel puțin 5 caractere"),
@@ -53,7 +62,9 @@ export function ServiceProfileSection({
   romanianCities,
 }: ServiceProfileSectionProps) {
   const { toast } = useToast();
-  const [formData, setFormData] = useState<ServiceData>(serviceData || {} as ServiceData);
+  const [formData, setFormData] = useState<ServiceData>(
+    serviceData || ({} as ServiceData),
+  );
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -78,9 +89,10 @@ export function ServiceProfileSection({
         toast({
           variant: "destructive",
           title: "Eroare de sincronizare",
-          description: "Nu s-au putut sincroniza datele profilului în timp real.",
+          description:
+            "Nu s-au putut sincroniza datele profilului în timp real.",
         });
-      }
+      },
     );
 
     // Cleanup listener on component unmount
@@ -115,8 +127,8 @@ export function ServiceProfileSection({
   const handleChange = (field: keyof ServiceData, value: string) => {
     setFormData((prev) => {
       const newData = { ...prev, [field]: value };
-      if (field === 'county') {
-        newData.city = '';
+      if (field === "county") {
+        newData.city = "";
       }
       return newData;
     });
@@ -145,7 +157,8 @@ export function ServiceProfileSection({
       toast({
         variant: "destructive",
         title: "Eroare",
-        description: "Nu am putut actualiza datele. Vă rugăm încercați din nou.",
+        description:
+          "Nu am putut actualiza datele. Vă rugăm încercați din nou.",
       });
     } finally {
       setSaving(false);
@@ -159,7 +172,7 @@ export function ServiceProfileSection({
       <CardHeader className="border-b bg-gray-50">
         <CardTitle className="text-[#00aff5] flex items-center gap-2">
           <UserCog className="h-5 w-5" />
-          Datele Serviciului
+          Date Service Auto
         </CardTitle>
       </CardHeader>
       <CardContent className="p-6">
@@ -167,57 +180,65 @@ export function ServiceProfileSection({
           <div>
             <label className="text-sm font-medium">Nume Companie</label>
             <Input
-              value={formData.companyName || ''}
-              onChange={(e) => handleChange('companyName', e.target.value)}
+              value={formData.companyName || ""}
+              onChange={(e) => handleChange("companyName", e.target.value)}
               className={errors.companyName ? "border-red-500" : ""}
             />
-            {errors.companyName && <p className="text-xs text-red-500 mt-1">{errors.companyName}</p>}
+            {errors.companyName && (
+              <p className="text-xs text-red-500 mt-1">{errors.companyName}</p>
+            )}
           </div>
 
           <div>
             <label className="text-sm font-medium">Nume Reprezentant</label>
             <Input
-              value={formData.representativeName || ''}
-              onChange={(e) => handleChange('representativeName', e.target.value)}
+              value={formData.representativeName || ""}
+              onChange={(e) =>
+                handleChange("representativeName", e.target.value)
+              }
               className={errors.representativeName ? "border-red-500" : ""}
             />
-            {errors.representativeName && <p className="text-xs text-red-500 mt-1">{errors.representativeName}</p>}
+            {errors.representativeName && (
+              <p className="text-xs text-red-500 mt-1">
+                {errors.representativeName}
+              </p>
+            )}
           </div>
 
           <div>
             <label className="text-sm font-medium">Email</label>
             <Input
-              value={formData.email || ''}
-              onChange={(e) => handleChange('email', e.target.value)}
+              value={formData.email || ""}
+              onChange={(e) => handleChange("email", e.target.value)}
               className={errors.email ? "border-red-500" : ""}
               disabled
             />
-            {errors.email && <p className="text-xs text-red-500 mt-1">{errors.email}</p>}
+            {errors.email && (
+              <p className="text-xs text-red-500 mt-1">{errors.email}</p>
+            )}
           </div>
 
           <div>
             <label className="text-sm font-medium">Telefon</label>
             <Input
-              value={formData.phone || ''}
-              onChange={(e) => handleChange('phone', e.target.value)}
+              value={formData.phone || ""}
+              onChange={(e) => handleChange("phone", e.target.value)}
               className={errors.phone ? "border-red-500" : ""}
             />
-            {errors.phone && <p className="text-xs text-red-500 mt-1">{errors.phone}</p>}
+            {errors.phone && (
+              <p className="text-xs text-red-500 mt-1">{errors.phone}</p>
+            )}
           </div>
 
           <div>
             <label className="text-sm font-medium">CUI</label>
-            <Input
-              value={formData.cui || ''}
-              disabled
-              className="bg-gray-50"
-            />
+            <Input value={formData.cui || ""} disabled className="bg-gray-50" />
           </div>
 
           <div>
             <label className="text-sm font-medium">Nr. Înregistrare</label>
             <Input
-              value={formData.tradeRegNumber || ''}
+              value={formData.tradeRegNumber || ""}
               disabled
               className="bg-gray-50"
             />
@@ -226,18 +247,20 @@ export function ServiceProfileSection({
           <div>
             <label className="text-sm font-medium">Adresă</label>
             <Input
-              value={formData.address || ''}
-              onChange={(e) => handleChange('address', e.target.value)}
+              value={formData.address || ""}
+              onChange={(e) => handleChange("address", e.target.value)}
               className={errors.address ? "border-red-500" : ""}
             />
-            {errors.address && <p className="text-xs text-red-500 mt-1">{errors.address}</p>}
+            {errors.address && (
+              <p className="text-xs text-red-500 mt-1">{errors.address}</p>
+            )}
           </div>
 
           <div>
             <label className="text-sm font-medium">Județ</label>
             <Select
               value={formData.county}
-              onValueChange={(value) => handleChange('county', value)}
+              onValueChange={(value) => handleChange("county", value)}
             >
               <SelectTrigger className={errors.county ? "border-red-500" : ""}>
                 <SelectValue placeholder="Selectează județul" />
@@ -250,28 +273,34 @@ export function ServiceProfileSection({
                 ))}
               </SelectContent>
             </Select>
-            {errors.county && <p className="text-xs text-red-500 mt-1">{errors.county}</p>}
+            {errors.county && (
+              <p className="text-xs text-red-500 mt-1">{errors.county}</p>
+            )}
           </div>
 
           <div>
             <label className="text-sm font-medium">Oraș</label>
             <Select
               value={formData.city}
-              onValueChange={(value) => handleChange('city', value)}
+              onValueChange={(value) => handleChange("city", value)}
               disabled={!formData.county}
             >
               <SelectTrigger className={errors.city ? "border-red-500" : ""}>
                 <SelectValue placeholder="Selectează orașul" />
               </SelectTrigger>
               <SelectContent>
-                {(formData.county ? romanianCities[formData.county] : []).map((city) => (
-                  <SelectItem key={city} value={city}>
-                    {city}
-                  </SelectItem>
-                ))}
+                {(formData.county ? romanianCities[formData.county] : []).map(
+                  (city) => (
+                    <SelectItem key={city} value={city}>
+                      {city}
+                    </SelectItem>
+                  ),
+                )}
               </SelectContent>
             </Select>
-            {errors.city && <p className="text-xs text-red-500 mt-1">{errors.city}</p>}
+            {errors.city && (
+              <p className="text-xs text-red-500 mt-1">{errors.city}</p>
+            )}
           </div>
         </div>
 
