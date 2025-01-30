@@ -10,7 +10,8 @@ import {
   onSnapshot,
   orderBy,
   Unsubscribe,
-  serverTimestamp
+  serverTimestamp,
+  Timestamp
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
@@ -31,6 +32,7 @@ export function useServiceMessages(userId: string) {
     if (!userId) return;
 
     let unsubscribes: Unsubscribe[] = [];
+    console.log("Setting up message listeners for user:", userId);
 
     try {
       // Subscribe to sent messages
@@ -48,19 +50,21 @@ export function useServiceMessages(userId: string) {
       );
 
       const unsubscribeSent = onSnapshot(sentQuery, async (snapshot) => {
+        console.log("Received sent messages update:", snapshot.docs.length, "messages");
         const newMessages = snapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data()
         } as Message));
-        await processMessages([...newMessages]);
+        await processMessages(newMessages);
       });
 
       const unsubscribeReceived = onSnapshot(receivedQuery, async (snapshot) => {
+        console.log("Received received messages update:", snapshot.docs.length, "messages");
         const newMessages = snapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data()
         } as Message));
-        await processMessages([...newMessages]);
+        await processMessages(newMessages);
       });
 
       unsubscribes = [unsubscribeSent, unsubscribeReceived];
@@ -74,12 +78,14 @@ export function useServiceMessages(userId: string) {
     }
 
     return () => {
+      console.log("Cleaning up message listeners");
       unsubscribes.forEach(unsubscribe => unsubscribe());
     };
   }, [userId, toast]);
 
   const processMessages = async (newMessages: Message[]) => {
     try {
+      console.log("Processing", newMessages.length, "messages");
       // Update messages state
       setMessages(prev => {
         const combined = [...prev];
@@ -91,9 +97,11 @@ export function useServiceMessages(userId: string) {
             combined[index] = message;
           }
         });
-        return combined.sort((a, b) => 
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        );
+        return combined.sort((a, b) => {
+          const dateA = a.createdAt instanceof Timestamp ? a.createdAt.toDate() : new Date(a.createdAt);
+          const dateB = b.createdAt instanceof Timestamp ? b.createdAt.toDate() : new Date(b.createdAt);
+          return dateB.getTime() - dateA.getTime();
+        });
       });
 
       // Process message groups
@@ -104,9 +112,11 @@ export function useServiceMessages(userId: string) {
 
         const requestData = requestDoc.data();
         const requestMessages = newMessages.filter(m => m.requestId === requestId);
-        requestMessages.sort((a, b) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        );
+        requestMessages.sort((a, b) => {
+          const dateA = a.createdAt instanceof Timestamp ? a.createdAt.toDate() : new Date(a.createdAt);
+          const dateB = b.createdAt instanceof Timestamp ? b.createdAt.toDate() : new Date(b.createdAt);
+          return dateB.getTime() - dateA.getTime();
+        });
 
         return {
           requestId,
@@ -128,10 +138,11 @@ export function useServiceMessages(userId: string) {
             combined[index] = group;
           }
         });
-        return combined.sort((a, b) =>
-          new Date(b.lastMessage.createdAt).getTime() -
-          new Date(a.lastMessage.createdAt).getTime()
-        );
+        return combined.sort((a, b) => {
+          const dateA = a.lastMessage.createdAt instanceof Timestamp ? a.lastMessage.createdAt.toDate() : new Date(a.lastMessage.createdAt);
+          const dateB = b.lastMessage.createdAt instanceof Timestamp ? b.lastMessage.createdAt.toDate() : new Date(b.lastMessage.createdAt);
+          return dateB.getTime() - dateA.getTime();
+        });
       });
 
       setIsLoading(false);
@@ -143,6 +154,7 @@ export function useServiceMessages(userId: string) {
 
   const handleSelectConversation = useCallback(async (requestId: string) => {
     try {
+      console.log("Selecting conversation for request:", requestId);
       const requestDoc = await getDoc(doc(db, "requests", requestId));
       if (requestDoc.exists()) {
         const requestData = requestDoc.data();
@@ -153,6 +165,7 @@ export function useServiceMessages(userId: string) {
         // Send initial message if this is a new conversation
         const conversationMessages = messages.filter(m => m.requestId === requestId);
         if (conversationMessages.length === 0) {
+          console.log("Sending initial message for new conversation");
           const initialMessage = {
             requestId,
             fromId: userId,
@@ -186,6 +199,7 @@ export function useServiceMessages(userId: string) {
 
     setSendingMessage(true);
     try {
+      console.log("Sending message to request:", selectedMessageRequest.id);
       const messageRef = collection(db, "messages");
       const newMessage = {
         requestId: selectedMessageRequest.id,
