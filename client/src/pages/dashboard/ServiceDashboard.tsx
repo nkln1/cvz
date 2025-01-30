@@ -63,6 +63,9 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { MessageList } from "@/components/dashboard/service/messages/MessageList";
+import { type Message, type MessageGroup } from "@/components/dashboard/service/messages/types";
+
 
 interface Car {
   id: string;
@@ -97,43 +100,6 @@ interface User {
   prenume?: string;
 }
 
-interface Message {
-  id: string;
-  requestId: string;
-  fromId: string;
-  toId: string;
-  content: string;
-  createdAt: string;
-  read: boolean;
-}
-
-interface MessageGroup {
-  requestId: string;
-  requestTitle: string;
-  lastMessage: Message;
-  unreadCount: number;
-}
-
-const serviceDataSchema = z.object({
-  companyName: z
-    .string()
-    .min(3, "Numele companiei trebuie să aibă cel puțin 3 caractere"),
-  representativeName: z
-    .string()
-    .min(3, "Numele reprezentantului trebuie să aibă cel puțin 3 caractere"),
-  email: z.string().email("Adresa de email nu este validă"),
-  phone: z
-    .string()
-    .regex(
-      /^(\+4|)?(07[0-8]{1}[0-9]{1}|02[0-9]{2}|03[0-9]{2}){1}?(\s|\.|\-)?([0-9]{3}(\s|\.|\-|)){2}$/,
-      "Numărul de telefon nu este valid",
-    ),
-  cui: z.string(),
-  tradeRegNumber: z.string(),
-  address: z.string().min(5, "Adresa trebuie să aibă cel puțin 5 caractere"),
-  county: z.string().min(2, "Selectați județul"),
-  city: z.string().min(2, "Selectați orașul"),
-});
 
 interface ServiceData {
   companyName: string;
@@ -1008,8 +974,7 @@ export default function ServiceDashboard() {
                           </TableCell>
                         </TableRow>
                       )}
-                    </Fragment>
-                  ))}
+                    </Fragment>                  ))}
                   {paginatedRequests.length === 0 && (
                     <TableRow>
                       <TableCell
@@ -1211,22 +1176,25 @@ export default function ServiceDashboard() {
   };
 
   const renderMessages = () => (
-    <TabsContent value="messages">
-      <Card className="border-[#00aff5]/20">
-        <CardHeader>
-          <CardTitle className="text-[#00aff5] flex items-center gap-2">
-            <MessageSquare className="h-5 w-5" />
-            Mesaje
-          </CardTitle>
-          <CardDescription>
-            Comunicare directă cu clienții și gestionarea conversațiilor
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isViewingConversation ? renderConversation() : renderMessagesList()}
-        </CardContent>
-      </Card>
-    </TabsContent>
+    <Card className="shadow-lg">
+      <CardHeader className="border-b bg-gray-50">
+        <CardTitle className="text-[#00aff5] flex items-center gap-2">
+          <MessageSquare className="h-5 w-5" />
+          Mesaje
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="p-6">
+        <MessageList
+          messages={messages}
+          messageGroups={messageGroups}
+          onMarkAsRead={markMessageAsRead}
+          selectedMessageRequest={selectedMessageRequest}
+          setSelectedMessageRequest={setSelectedMessageRequest}
+          setActiveTab={setActiveTab}
+          setIsViewingConversation={setIsViewingConversation}
+        />
+      </CardContent>
+    </Card>
   );
 
   const handleSelectConversation = (requestId: string) => {
@@ -1243,6 +1211,21 @@ export default function ServiceDashboard() {
     localStorage.removeItem("selectedMessageRequestId");
   };
 
+
+  const markMessageAsRead = async (messageId: string) => {
+    try {
+      const messageRef = doc(db, "messages", messageId);
+      await updateDoc(messageRef, { read: true });
+      await fetchMessages();
+    } catch (error) {
+      console.error("Error marking message as read:", error);
+      toast({
+        variant: "destructive",
+        title: "Eroare",
+        description: "Nu s-a putut marca mesajul ca citit.",
+      });
+    }
+  };
 
   if (loading) {
     return (
