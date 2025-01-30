@@ -67,6 +67,7 @@ import { ServiceProfileSection } from "@/components/dashboard/ServiceProfileSect
 import { ClientRequests } from "@/components/dashboard/ClientRequests";
 import { SentOffers } from "@/components/dashboard/SentOffers"; // Changed import to use new component
 import { ServiceMessagesSection } from "@/components/dashboard/ServiceMessagesSection";
+import { AppointmentsSection } from "@/components/dashboard/AppointmentsSection";
 
 
 interface Car {
@@ -935,22 +936,7 @@ export default function ServiceDashboard() {
       case "appointments":
         return (
           <TabsContent value="appointments">
-            <Card className="border-[#00aff5]/20">
-              <CardHeader>
-                <CardTitle className="text-[#00aff5] flex items-center gap-2">
-                  <Calendar className="h-5 w-5" />
-                  Programări
-                </CardTitle>
-                <CardDescription>
-                  Gestionează programările și disponibilitatea serviciului
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">
-                  Calendar și programări vor apărea aici
-                </p>
-              </CardContent>
-            </Card>
+            <AppointmentsSection />
           </TabsContent>
         );
       case "reviews":
@@ -1000,90 +986,69 @@ export default function ServiceDashboard() {
                             variant="ghost"
                             size="sm"
                             onClick={() => handleEdit(key)}
-                            className="h-6 w-6 p-0 absolute right-2 top-0"
+                            className="px-2 h-7"
                           >
-                            <Pen className="h-3.5 w-3.5 text-gray-400 hover:text-gray-600" />
+                            {editingFields[key] ? (
+                              <Save className="h-4 w-4" />
+                            ) : (
+                              <Pen className="h-4 w-4" />
+                            )}
                           </Button>
                         )}
                       </div>
-                      <div className="space-y-1">
-                        {type === "select" ? (
-                          <Select
-                            value={serviceData[key]}
-                            onValueChange={(value) => handleChange(key, value)}
-                            disabled={!editable}
-                          >
-                            <SelectTrigger
-                              className={`w-full ${
-                                !editable ? "bg-gray-50" : "bg-white"
-                              } ${validationErrors[key] ? "border-red-500" : ""}`}
-                            >
-                              <SelectValue 
-                                placeholder={`Selectează ${label.toLowerCase()}`}
-                              />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {options?.map((option) => (
-                                <SelectItem key={option} value={option}>
-                                  {option}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        ) : (
-                          <Input
-                            type="text"
-                            value={serviceData[key]}
-                            onChange={(e) => handleChange(key, e.target.value)}
-                            disabled={!editable}
-                            className={`${
-                              !editable ? "bg-gray-50" : "bg-white"
-                            } ${validationErrors[key] ? "border-red-500" : ""}`}
-                          />
-                        )}
-                        {validationErrors[key] && (
-                          <p className="text-xs text-red-500 mt-1">
-                            {validationErrors[key]}
-                          </p>
-                        )}
-                      </div>
+                      {type === "select" ? (
+                        <Select
+                          value={serviceData[key]}
+                          onValueChange={(value) => handleChange(key, value)}
+                          disabled={!editingFields[key]}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {(options || []).map((option) => (
+                              <SelectItem key={option} value={option}>
+                                {option}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <Input
+                          value={serviceData[key]}
+                          onChange={(e) => handleChange(key, e.target.value)}
+                          disabled={!editable || !editingFields[key]}
+                          className={                          validationErrors[key] ? "border-red-500" : ""
+                          }
+                        />
+                      )}
+                      {validationErrors[key] && (
+                        <p className="text-xs text-red-500 mt-1">
+                          {validationErrors[key]}
+                        </p>
+                      )}
                     </div>
                   ))}
                 </div>
-
-                <Button
-                  onClick={handleSave}
-                  disabled={loading || Object.keys(validationErrors).length > 0}
-                  className="mt-6 bg-[#00aff5] hover:bg-[#0099d6] float-right"
-                >
-                  {loading ? (
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  ) : (
-                    <Save className="h-4 w-4 mr-2" />
-                  )}
-                  Salvează
-                </Button>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        );
-      case "public-profile":
-        return (
-          <TabsContent value="public-profile">
-            <Card className="border-[#00aff5]/20">
-              <CardHeader>
-                <CardTitle className="text-[#00aff5] flex items-center gap-2">
-                  <Store className="h-5 w-5" />
-                  Profil Public
-                </CardTitle>
-                <CardDescription>
-                  Gestionează informațiile afișate public despre serviciul tău
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">
-                  Informațiile profilului public vor apărea aici
-                </p>
+                <div className="mt-6">
+                  <Button
+                    onClick={handleSave}
+                    className="bg-[#00aff5] hover:bg-[#0099d6] text-white"
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Se salvează...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="mr-2 h-4 w-4" />
+                        Salvează modificările
+                      </>
+                    )}
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
