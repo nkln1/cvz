@@ -21,18 +21,50 @@ import { useServiceMessages } from "@/hooks/useServiceMessages";
 import { useServiceRequests } from "@/hooks/useServiceRequests";
 import type { ServiceData, EditableField } from "@/types/service";
 
+type TabType = "requests" | "offers" | "messages" | "appointments" | "reviews" | "account";
+
+interface NavigationButtonProps {
+  tab: TabType;
+  activeTab: TabType;
+  icon: React.ReactNode;
+  label: string;
+  onClick: (tab: TabType) => void;
+}
+
+const NavigationButton: React.FC<NavigationButtonProps> = ({
+  tab,
+  activeTab,
+  icon,
+  label,
+  onClick,
+}) => (
+  <Button
+    variant={activeTab === tab ? "default" : "ghost"}
+    onClick={() => onClick(tab)}
+    className={`flex items-center justify-start w-full sm:w-auto ${
+      activeTab === tab
+        ? "bg-[#00aff5] hover:bg-[#0099d6] text-white"
+        : "hover:text-[#00aff5]"
+    }`}
+  >
+    {icon}
+    {label}
+  </Button>
+);
+
 export default function ServiceDashboard() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [serviceData, setServiceData] = useState<ServiceData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showOnlyNew, setShowOnlyNew] = useState(false);
-  const [activeTab, setActiveTab] = useState(() => {
+  const [activeTab, setActiveTab] = useState<TabType>(() => {
     if (window.location.pathname.endsWith("/service-dashboard")) {
       localStorage.setItem("activeTab", "requests");
       return "requests";
     }
-    return localStorage.getItem("activeTab") || "requests";
+    return (localStorage.getItem("activeTab") as TabType) || "requests";
   });
 
   const {
@@ -95,15 +127,21 @@ export default function ServiceDashboard() {
 
   useEffect(() => {
     async function fetchServiceData() {
-      if (!user) return;
+      if (!user) {
+        setLoading(false);
+        return;
+      }
 
       try {
         const serviceDoc = await getDoc(doc(db, "services", user.uid));
         if (serviceDoc.exists()) {
           setServiceData(serviceDoc.data() as ServiceData);
+        } else {
+          setError("Nu s-au găsit date pentru acest service");
         }
       } catch (error) {
         console.error("Error fetching service data:", error);
+        setError("Nu am putut încărca datele serviciului");
         toast({
           variant: "destructive",
           title: "Eroare",
@@ -127,8 +165,7 @@ export default function ServiceDashboard() {
   const handleSendOffer = async (request: any) => {
     markRequestAsViewed(request.id);
     toast({
-      description:
-        "Funcționalitatea de trimitere oferte va fi disponibilă în curând.",
+      description: "Funcționalitatea de trimitere oferte va fi disponibilă în curând.",
     });
   };
 
@@ -140,84 +177,67 @@ export default function ServiceDashboard() {
     );
   }
 
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-500 mb-4">{error}</p>
+          <Button onClick={() => window.location.reload()} variant="outline">
+            Încearcă din nou
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Navigation />
       <div className="container mx-auto p-4 md:p-6 space-y-4 md:space-y-6">
         <nav className="flex flex-col sm:flex-row gap-2 border-b pb-4 overflow-x-auto">
           <div className="flex flex-col sm:flex-row gap-2 w-full">
-            <Button
-              variant={activeTab === "requests" ? "default" : "ghost"}
-              onClick={() => setActiveTab("requests")}
-              className={`flex items-center justify-start w-full sm:w-auto ${
-                activeTab === "requests"
-                  ? "bg-[#00aff5] hover:bg-[#0099d6] text-white"
-                  : "hover:text-[#00aff5]"
-              }`}
-            >
-              <FileText className="w-4 h-4 mr-2" />
-              Cereri
-            </Button>
-            <Button
-              variant={activeTab === "offers" ? "default" : "ghost"}
-              onClick={() => setActiveTab("offers")}
-              className={`flex items-center justify-start w-full sm:w-auto ${
-                activeTab === "offers"
-                  ? "bg-[#00aff5] hover:bg-[#0099d6] text-white"
-                  : "hover:text-[#00aff5]"
-              }`}
-            >
-              <MailOpen className="w-4 h-4 mr-2" />
-              Oferte
-            </Button>
-            <Button
-              variant={activeTab === "messages" ? "default" : "ghost"}
-              onClick={() => setActiveTab("messages")}
-              className={`flex items-center justify-start w-full sm:w-auto ${
-                activeTab === "messages"
-                  ? "bg-[#00aff5] hover:bg-[#0099d6] text-white"
-                  : "hover:text-[#00aff5]"
-              }`}
-            >
-              <MessageSquare className="w-4 h-4 mr-2" />
-              Mesaje
-            </Button>
-            <Button
-              variant={activeTab === "appointments" ? "default" : "ghost"}
-              onClick={() => setActiveTab("appointments")}
-              className={`flex items-center justify-start w-full sm:w-auto ${
-                activeTab === "appointments"
-                  ? "bg-[#00aff5] hover:bg-[#0099d6] text-white"
-                  : "hover:text-[#00aff5]"
-              }`}
-            >
-              <Calendar className="w-4 h-4 mr-2" />
-              Programări
-            </Button>
-            <Button
-              variant={activeTab === "reviews" ? "default" : "ghost"}
-              onClick={() => setActiveTab("reviews")}
-              className={`flex items-center justify-start w-full sm:w-auto ${
-                activeTab === "reviews"
-                  ? "bg-[#00aff5] hover:bg-[#0099d6] text-white"
-                  : "hover:text-[#00aff5]"
-              }`}
-            >
-              <Star className="w-4 h-4 mr-2" />
-              Recenzii
-            </Button>
-            <Button
-              variant={activeTab === "account" ? "default" : "ghost"}
-              onClick={() => setActiveTab("account")}
-              className={`flex items-center justify-start w-full sm:w-auto ${
-                activeTab === "account"
-                  ? "bg-[#00aff5] hover:bg-[#0099d6] text-white"
-                  : "hover:text-[#00aff5]"
-              }`}
-            >
-              <User className="w-4 h-4 mr-2" />
-              Cont
-            </Button>
+            <NavigationButton
+              tab="requests"
+              activeTab={activeTab}
+              icon={<FileText className="w-4 h-4 mr-2" />}
+              label="Cereri"
+              onClick={setActiveTab}
+            />
+            <NavigationButton
+              tab="offers"
+              activeTab={activeTab}
+              icon={<MailOpen className="w-4 h-4 mr-2" />}
+              label="Oferte"
+              onClick={setActiveTab}
+            />
+            <NavigationButton
+              tab="messages"
+              activeTab={activeTab}
+              icon={<MessageSquare className="w-4 h-4 mr-2" />}
+              label="Mesaje"
+              onClick={setActiveTab}
+            />
+            <NavigationButton
+              tab="appointments"
+              activeTab={activeTab}
+              icon={<Calendar className="w-4 h-4 mr-2" />}
+              label="Programări"
+              onClick={setActiveTab}
+            />
+            <NavigationButton
+              tab="reviews"
+              activeTab={activeTab}
+              icon={<Star className="w-4 h-4 mr-2" />}
+              label="Recenzii"
+              onClick={setActiveTab}
+            />
+            <NavigationButton
+              tab="account"
+              activeTab={activeTab}
+              icon={<User className="w-4 h-4 mr-2" />}
+              label="Cont"
+              onClick={setActiveTab}
+            />
           </div>
         </nav>
 
@@ -276,7 +296,7 @@ export default function ServiceDashboard() {
           {activeTab === "account" && (
             <ServiceAccountSection
               userId={user?.uid || ""}
-              serviceData={serviceData}
+              serviceData={serviceData || ({} as ServiceData)}
               fields={fields}
               validationErrors={{}}
             />
