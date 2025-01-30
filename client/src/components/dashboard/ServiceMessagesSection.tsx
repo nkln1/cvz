@@ -44,6 +44,7 @@ interface ServiceMessagesSectionProps {
   onViewRequestDetails: (requestId: string) => void;
   userId: string;
   serviceName: string;
+  markMessageAsRead?: (messageId: string) => Promise<void>;
 }
 
 export function ServiceMessagesSection({
@@ -60,6 +61,7 @@ export function ServiceMessagesSection({
   onViewRequestDetails,
   userId,
   serviceName,
+  markMessageAsRead,
 }: ServiceMessagesSectionProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [isScrolledToBottom, setIsScrolledToBottom] = useState(true);
@@ -180,6 +182,13 @@ export function ServiceMessagesSection({
           : new Date(b.createdAt).getTime();
         return dateA - dateB;
       });
+
+    // Mark messages as read
+    conversationMessages.forEach(message => {
+      if (message.toId === userId && !message.read && markMessageAsRead) {
+        markMessageAsRead(message.id);
+      }
+    });
 
     return (
       <div className="space-y-4 h-full flex flex-col">

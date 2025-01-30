@@ -7,6 +7,7 @@ import {
   addDoc,
   doc,
   getDoc,
+  updateDoc,
   onSnapshot,
   orderBy,
   Unsubscribe,
@@ -28,6 +29,23 @@ export function useServiceMessages(userId: string) {
   const [sendingMessage, setSendingMessage] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [unreadClientsCount, setUnreadClientsCount] = useState(0);
+
+  const markMessageAsRead = useCallback(async (messageId: string) => {
+    try {
+      const messageRef = doc(db, "messages", messageId);
+      await updateDoc(messageRef, {
+        read: true,
+      });
+
+      setMessages((prevMessages) =>
+        prevMessages.map((msg) =>
+          msg.id === messageId ? { ...msg, read: true } : msg
+        )
+      );
+    } catch (error) {
+      console.error("Error marking message as read:", error);
+    }
+  }, []);
 
   useEffect(() => {
     if (!userId) return;
@@ -167,11 +185,22 @@ export function useServiceMessages(userId: string) {
           } as Request);
           setIsViewingConversation(true);
 
-          // Initialize conversation if needed
-          const conversationMessages = messages.filter(
-            (m) => m.requestId === requestId,
+          // Get all unread messages in this conversation and mark them as read
+          const unreadMessages = messages.filter(
+            (m) => m.requestId === requestId && m.toId === userId && !m.read
           );
-          if (conversationMessages.length === 0) {
+
+          // Mark all unread messages as read
+          for (const message of unreadMessages) {
+            await markMessageAsRead(message.id);
+          }
+
+          // Check if this is a new conversation that needs initialization
+          const existingMessages = messages.filter(
+            (m) => m.requestId === requestId
+          );
+
+          if (existingMessages.length === 0) {
             const initialMessage = {
               requestId,
               fromId: userId,
@@ -194,7 +223,7 @@ export function useServiceMessages(userId: string) {
         });
       }
     },
-    [messages, userId, toast],
+    [messages, userId, toast, markMessageAsRead],
   );
 
   const handleBackToList = () => {
@@ -250,5 +279,6 @@ export function useServiceMessages(userId: string) {
     handleBackToList,
     setMessageContent,
     setSelectedMessageRequest,
+    markMessageAsRead,
   };
 }

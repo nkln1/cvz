@@ -103,6 +103,7 @@ export default function ServiceDashboard() {
     handleBackToList,
     setMessageContent,
     setSelectedMessageRequest,
+    markMessageAsRead, // Added based on intention
   } = useServiceMessages(user?.uid || "");
 
   const {
@@ -317,6 +318,7 @@ export default function ServiceDashboard() {
             onViewRequestDetails={switchToRequestsAndShowDetails}
             userId={user?.uid || ""}
             serviceName={serviceData?.companyName || "Service Auto"}
+            markMessageAsRead={markMessageAsRead}
           />
         )}
         {activeTab === "appointments" && <AppointmentsSection />}
