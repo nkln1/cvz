@@ -63,7 +63,6 @@ import {
 import { type Car } from "./CarManagement";
 import { RequestsTable } from "@/components/dashboard/RequestsTable";
 
-
 interface Request {
   id: string;
   title: string;
@@ -75,7 +74,7 @@ interface Request {
   status: "Active" | "Rezolvat" | "Anulat";
   createdAt: string;
   userId: string;
-  clientName?: string; // Added clientName
+  clientName?: string;
 }
 
 interface Message {
@@ -813,11 +812,7 @@ export default function ClientDashboard() {
           </div>
         </nav>
 
-        {activeTab === "profile" && renderProfile()}
-        {activeTab === "requests" && renderRequests()}
-        {activeTab === "offers" && renderOffers()}
-        {activeTab === "messages" && renderMessages()}
-        {activeTab === "car" && <CarManagement />}
+        {renderContent()}
         <Dialog open={isRequestDialogOpen} onOpenChange={setIsRequestDialogOpen}>
           <DialogContent className="sm:max-w-[600px]">
             <DialogHeader>
