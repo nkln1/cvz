@@ -142,19 +142,37 @@ export default function ServiceDashboard() {
   }
 
   return (
-    <>
+    <div className="min-h-screen bg-gray-50">
       <Navigation />
-      <main className="container mx-auto px-4 py-8">
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="w-full justify-start mb-8">
-            <TabsTrigger value="requests">Cereri</TabsTrigger>
-            <TabsTrigger value="offers">Oferte</TabsTrigger>
-            <TabsTrigger value="messages">Mesaje</TabsTrigger>
-            <TabsTrigger value="appointments">Programări</TabsTrigger>
-            <TabsTrigger value="reviews">Recenzii</TabsTrigger>
-            <TabsTrigger value="account">Cont</TabsTrigger>
-          </TabsList>
+      <div className="mx-auto max-w-7xl">
+        <div className="border-b bg-white">
+          <div className="px-4 py-3">
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <TabsList className="inline-flex h-9 items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground">
+                <TabsTrigger value="requests" className="rounded-md px-3 py-1 text-sm font-medium">
+                  Cereri
+                </TabsTrigger>
+                <TabsTrigger value="offers" className="rounded-md px-3 py-1 text-sm font-medium">
+                  Oferte
+                </TabsTrigger>
+                <TabsTrigger value="messages" className="rounded-md px-3 py-1 text-sm font-medium">
+                  Mesaje
+                </TabsTrigger>
+                <TabsTrigger value="appointments" className="rounded-md px-3 py-1 text-sm font-medium">
+                  Programări
+                </TabsTrigger>
+                <TabsTrigger value="reviews" className="rounded-md px-3 py-1 text-sm font-medium">
+                  Recenzii
+                </TabsTrigger>
+                <TabsTrigger value="account" className="rounded-md px-3 py-1 text-sm font-medium">
+                  Cont
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+        </div>
 
+        <main className="px-4 py-8">
           <TabsContent value="requests">
             <ClientRequests
               clientRequests={clientRequests}
@@ -168,7 +186,6 @@ export default function ServiceDashboard() {
               cars={cars}
             />
           </TabsContent>
-
           <TabsContent value="offers">
             <SentOffers
               requests={[]}
@@ -176,7 +193,6 @@ export default function ServiceDashboard() {
               refreshRequests={fetchMessages}
             />
           </TabsContent>
-
           <TabsContent value="messages">
             <ServiceMessagesSection
               messageGroups={messageGroups}
@@ -193,15 +209,12 @@ export default function ServiceDashboard() {
               userId={user?.uid || ""}
             />
           </TabsContent>
-
           <TabsContent value="appointments">
             <AppointmentsSection />
           </TabsContent>
-
           <TabsContent value="reviews">
             <ReviewsSection />
           </TabsContent>
-
           <TabsContent value="account">
             <ServiceAccountSection
               userId={user?.uid || ""}
@@ -210,9 +223,9 @@ export default function ServiceDashboard() {
               validationErrors={{}}
             />
           </TabsContent>
-        </Tabs>
-      </main>
+        </main>
+      </div>
       <Footer />
-    </>
+    </div>
   );
 }

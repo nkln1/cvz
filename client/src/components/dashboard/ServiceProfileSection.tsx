@@ -6,7 +6,6 @@ import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { UserCog, Save, Loader2 } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -14,39 +13,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-interface ServiceData {
-  companyName: string;
-  representativeName: string;
-  email: string;
-  phone: string;
-  cui: string;
-  tradeRegNumber: string;
-  address: string;
-  county: string;
-  city: string;
-}
-
-const serviceDataSchema = z.object({
-  companyName: z
-    .string()
-    .min(3, "Numele companiei trebuie să aibă cel puțin 3 caractere"),
-  representativeName: z
-    .string()
-    .min(3, "Numele reprezentantului trebuie să aibă cel puțin 3 caractere"),
-  email: z.string().email("Adresa de email nu este validă"),
-  phone: z
-    .string()
-    .regex(
-      /^(\+4|)?(07[0-8]{1}[0-9]{1}|02[0-9]{2}|03[0-9]{2}){1}?(\s|\.|\-)?([0-9]{3}(\s|\.|\-|)){2}$/,
-      "Numărul de telefon nu este valid",
-    ),
-  cui: z.string(),
-  tradeRegNumber: z.string(),
-  address: z.string().min(5, "Adresa trebuie să aibă cel puțin 5 caractere"),
-  county: z.string().min(2, "Selectați județul"),
-  city: z.string().min(2, "Selectați orașul"),
-});
+import type { ServiceData } from "@/types/service";
+import { serviceDataSchema } from "@/types/service";
 
 interface ServiceProfileSectionProps {
   userId: string;
@@ -63,14 +31,13 @@ export function ServiceProfileSection({
 }: ServiceProfileSectionProps) {
   const { toast } = useToast();
   const [formData, setFormData] = useState<ServiceData>(
-    serviceData || ({} as ServiceData),
+    serviceData || ({} as ServiceData)
   );
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const romanianCounties = Object.keys(romanianCities);
 
-  // Set up real-time listener for profile changes
   useEffect(() => {
     if (!userId) return;
 
@@ -89,17 +56,14 @@ export function ServiceProfileSection({
         toast({
           variant: "destructive",
           title: "Eroare de sincronizare",
-          description:
-            "Nu s-au putut sincroniza datele profilului în timp real.",
+          description: "Nu s-au putut sincroniza datele profilului în timp real.",
         });
-      },
+      }
     );
 
-    // Cleanup listener on component unmount
     return () => unsubscribe();
   }, [userId, setServiceData]);
 
-  // Update formData when serviceData prop changes
   useEffect(() => {
     if (serviceData) {
       setFormData(serviceData);
@@ -157,8 +121,7 @@ export function ServiceProfileSection({
       toast({
         variant: "destructive",
         title: "Eroare",
-        description:
-          "Nu am putut actualiza datele. Vă rugăm încercați din nou.",
+        description: "Nu am putut actualiza datele. Vă rugăm încercați din nou.",
       });
     } finally {
       setSaving(false);
@@ -171,7 +134,6 @@ export function ServiceProfileSection({
     <Card className="shadow-lg">
       <CardHeader className="border-b bg-gray-50">
         <CardTitle className="text-[#00aff5] flex items-center gap-2">
-          <UserCog className="h-5 w-5" />
           Date Service Auto
         </CardTitle>
       </CardHeader>
@@ -294,7 +256,7 @@ export function ServiceProfileSection({
                     <SelectItem key={city} value={city}>
                       {city}
                     </SelectItem>
-                  ),
+                  )
                 )}
               </SelectContent>
             </Select>
@@ -308,7 +270,7 @@ export function ServiceProfileSection({
           <Button onClick={handleSave} disabled={saving}>
             {saving ? (
               <>
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                <span className="animate-spin mr-2">...</span>
                 Se salvează...
               </>
             ) : (

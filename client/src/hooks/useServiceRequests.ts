@@ -10,37 +10,38 @@ export function useServiceRequests(userId: string, serviceData: ServiceData | nu
   const [selectedRequest, setSelectedRequest] = useState<Request | null>(null);
   const [requestClient, setRequestClient] = useState<User | null>(null);
   const [cars, setCars] = useState<Record<string, Car>>({});
-  const [viewedRequests, setViewedRequests] = useState<Set<string>>(() => {
-    const savedViewedRequests = localStorage.getItem("viewedRequests");
-    return new Set(savedViewedRequests ? JSON.parse(savedViewedRequests) : []);
-  });
+  const [viewedRequests, setViewedRequests] = useState<Set<string>>(new Set());
 
   const fetchClientRequests = async () => {
     if (!userId || !serviceData) return;
 
     try {
-      let requestsQuery = query(
+      const requestsQuery = query(
         collection(db, "requests"),
         where("status", "==", "Active"),
         where("county", "==", serviceData.county),
-        where("cities", "array-contains", serviceData.city),
+        where("cities", "array-contains", serviceData.city)
       );
 
       const querySnapshot = await getDocs(requestsQuery);
       const allRequests: Request[] = [];
       const allCars: Record<string, Car> = {};
 
-      for (const doc of querySnapshot.docs) {
-        const requestData = doc.data() as Request;
+      for (const docSnapshot of querySnapshot.docs) {
+        const requestData = docSnapshot.data() as Omit<Request, 'id'>;
         const carDoc = await getDoc(doc(db, "cars", requestData.carId));
-        const carData = carDoc.exists() ? (carDoc.data() as Car) : undefined;
+        const carData = carDoc.exists() ? carDoc.data() as Car : undefined;
 
-        allRequests.push({
-          id: doc.id,
+        const request: Request = {
           ...requestData,
-          car: carData,
-        } as Request);
-        if (carData) allCars[requestData.carId] = carData;
+          id: docSnapshot.id,
+          car: carData
+        };
+
+        allRequests.push(request);
+        if (carData) {
+          allCars[requestData.carId] = { ...carData, id: requestData.carId };
+        }
       }
 
       setClientRequests(allRequests);
@@ -89,12 +90,9 @@ export function useServiceRequests(userId: string, serviceData: ServiceData | nu
     setViewedRequests((prev) => {
       const newSet = new Set(prev);
       newSet.add(requestId);
+      localStorage.setItem("viewedRequests", JSON.stringify(Array.from(newSet)));
       return newSet;
     });
-    localStorage.setItem(
-      "viewedRequests",
-      JSON.stringify([...viewedRequests, requestId]),
-    );
   };
 
   const handleRejectRequest = async (requestId: string) => {
@@ -131,10 +129,6 @@ export function useServiceRequests(userId: string, serviceData: ServiceData | nu
       setViewedRequests(new Set(JSON.parse(savedViewedRequests)));
     }
   }, []);
-
-  useEffect(() => {
-    localStorage.setItem("viewedRequests", JSON.stringify([...viewedRequests]));
-  }, [viewedRequests]);
 
   return {
     clientRequests,
