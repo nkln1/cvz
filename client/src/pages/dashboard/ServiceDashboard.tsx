@@ -1,7 +1,7 @@
+import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -64,7 +64,7 @@ const NavigationButton: React.FC<NavigationButtonProps> = ({
     {icon}
     <span className="flex items-center gap-2 text-sm">
       {label}
-      {notificationCount > 0 && (
+      {notificationCount && notificationCount > 0 && (
         <Badge
           variant="secondary"
           className="bg-[#00aff5] text-white text-xs px-2 py-0.5 rounded-full"
@@ -121,6 +121,10 @@ export default function ServiceDashboard() {
     notificationPermission,
     requestNotificationPermission,
   } = useNotifications(user?.uid || "");
+
+  const newRequestsCount = clientRequests.filter(
+    (request) => !viewedRequests.has(request.id)
+  ).length;
 
   const filteredRequests = showOnlyNew
     ? clientRequests.filter((request) => !viewedRequests.has(request.id))
@@ -212,7 +216,7 @@ export default function ServiceDashboard() {
               icon={<FileText className="w-4 h-4 mr-2 flex-shrink-0" />}
               label="Cereri"
               onClick={setActiveTab}
-              notificationCount={filteredRequests.length}
+              notificationCount={newRequestsCount}
             />
             <NavigationButton
               tab="offers"
