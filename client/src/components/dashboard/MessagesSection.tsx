@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Card,
   CardContent,
@@ -63,8 +63,8 @@ export function MessagesSection({
     if (!timestamp) return "";
 
     try {
-      const date = timestamp && typeof timestamp.toDate === 'function' 
-        ? timestamp.toDate() 
+      const date = timestamp && typeof timestamp.toDate === 'function'
+        ? timestamp.toDate()
         : new Date(timestamp);
 
       const now = new Date();
