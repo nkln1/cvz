@@ -247,7 +247,7 @@ export default function ServiceDashboard() {
               tab="offers"
               activeTab={activeTab}
               icon={<MailOpen className="w-4 h-4 mr-2 flex-shrink-0" />}
-              label="Oferte"
+              label="Oferte trimise"
               onClick={setActiveTab}
             />
             <NavigationButton

@@ -40,16 +40,28 @@ export default function ClientDashboard() {
 
   const { profile } = useProfile(user?.uid || "");
   const { requests, fetchRequests, addRequest, cancelRequest } = useRequests(user?.uid || "");
-  const { messages, messageServices, fetchMessages, markMessageAsRead } = useMessages(user?.uid || "");
+  const { 
+    messages,
+    messageGroups,
+    messageServices,
+    messageContent,
+    sendingMessage,
+    selectedMessageRequest,
+    isViewingConversation,
+    setMessageContent,
+    sendMessage,
+    markMessageAsRead,
+    handleSelectConversation,
+    handleBackToList,
+  } = useMessages(user?.uid || "");
   const { cars, fetchCars } = useCars(user?.uid || "");
 
   useEffect(() => {
     if (user) {
       fetchRequests();
-      fetchMessages();
       fetchCars();
     }
-  }, [user, fetchRequests, fetchMessages, fetchCars]);
+  }, [user, fetchRequests, fetchCars]);
 
   const handleRequestSubmit = async (data: RequestFormData) => {
     if (!user) return;
@@ -180,12 +192,18 @@ export default function ClientDashboard() {
           {activeTab === "messages" && (
             <MessagesSection
               messages={messages}
+              messageGroups={messageGroups}
               messageServices={messageServices}
+              selectedMessageRequest={selectedMessageRequest}
+              isViewingConversation={isViewingConversation}
+              messageContent={messageContent}
+              sendingMessage={sendingMessage}
+              userId={user?.uid || ""}
+              onMessageContentChange={setMessageContent}
+              onSendMessage={sendMessage}
+              onSelectConversation={handleSelectConversation}
+              onBackToList={handleBackToList}
               markMessageAsRead={markMessageAsRead}
-              requestTitles={requests.reduce((acc, request) => {
-                acc[request.id] = request.title;
-                return acc;
-              }, {} as Record<string, string>)}
             />
           )}
           {activeTab === "car" && <CarManagement />}

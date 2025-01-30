@@ -1,61 +1,92 @@
-import { useState, useCallback } from 'react';
-import { collection, query, where, getDocs, doc, getDoc, updateDoc } from 'firebase/firestore';
+import { useState, useCallback, useEffect } from 'react';
+import { collection, query, where, getDocs, doc, getDoc, updateDoc, addDoc, onSnapshot, orderBy, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import type { Message } from '@/types/dashboard';
 
+interface MessageGroup {
+  requestId: string;
+  requestTitle: string;
+  lastMessage: Message;
+  unreadCount: number;
+}
+
 export const useMessages = (userId: string) => {
   const [messages, setMessages] = useState<Message[]>([]);
+  const [messageGroups, setMessageGroups] = useState<MessageGroup[]>([]);
   const [messageServices, setMessageServices] = useState<{ [key: string]: any }>({});
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedMessageRequest, setSelectedMessageRequest] = useState<string | null>(null);
+  const [isViewingConversation, setIsViewingConversation] = useState(false);
+  const [messageContent, setMessageContent] = useState("");
+  const [sendingMessage, setSendingMessage] = useState(false);
   const { toast } = useToast();
 
-  const fetchMessages = useCallback(async () => {
+  useEffect(() => {
     if (!userId) return;
 
-    setIsLoading(true);
-    setError(null);
+    const messagesQuery = query(
+      collection(db, "messages"),
+      where("participants", "array-contains", userId),
+      orderBy("createdAt", "desc")
+    );
 
-    try {
-      const messagesQuery = query(
-        collection(db, "messages"),
-        where("toId", "==", userId)
-      );
-      const querySnapshot = await getDocs(messagesQuery);
-      const loadedMessages: Message[] = [];
-      querySnapshot.forEach((doc) => {
-        loadedMessages.push({ id: doc.id, ...doc.data() } as Message);
-      });
+    const unsubscribe = onSnapshot(messagesQuery, async (snapshot) => {
+      try {
+        const loadedMessages: Message[] = [];
+        snapshot.forEach((doc) => {
+          loadedMessages.push({ id: doc.id, ...doc.data() } as Message);
+        });
 
-      loadedMessages.sort((a, b) => 
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      );
-      setMessages(loadedMessages);
+        // Group messages by request
+        const groups: { [key: string]: MessageGroup } = {};
+        loadedMessages.forEach((message) => {
+          if (!groups[message.requestId]) {
+            groups[message.requestId] = {
+              requestId: message.requestId,
+              requestTitle: message.requestTitle || "Untitled Request",
+              lastMessage: message,
+              unreadCount: message.toId === userId && !message.read ? 1 : 0
+            };
+          } else {
+            if (message.toId === userId && !message.read) {
+              groups[message.requestId].unreadCount++;
+            }
+            if (new Date(message.createdAt) > new Date(groups[message.requestId].lastMessage.createdAt)) {
+              groups[message.requestId].lastMessage = message;
+            }
+          }
+        });
 
-      const uniqueServiceIds = Array.from(new Set(loadedMessages.map(m => m.fromId)));
-      const serviceDetails: { [key: string]: any } = {};
+        setMessages(loadedMessages);
+        setMessageGroups(Object.values(groups).sort((a, b) => 
+          new Date(b.lastMessage.createdAt).getTime() - new Date(a.lastMessage.createdAt).getTime()
+        ));
 
-      for (const serviceId of uniqueServiceIds) {
-        const serviceDoc = await getDoc(doc(db, "services", serviceId));
-        if (serviceDoc.exists()) {
-          serviceDetails[serviceId] = serviceDoc.data();
+        // Fetch service details for all unique service IDs
+        const uniqueServiceIds = Array.from(new Set(loadedMessages.map(m => m.fromId)));
+        const serviceDetails: { [key: string]: any } = {};
+
+        for (const serviceId of uniqueServiceIds) {
+          const serviceDoc = await getDoc(doc(db, "services", serviceId));
+          if (serviceDoc.exists()) {
+            serviceDetails[serviceId] = serviceDoc.data();
+          }
         }
-      }
 
-      setMessageServices(serviceDetails);
-    } catch (error) {
-      const errorMessage = "Nu s-au putut încărca mesajele.";
-      console.error("Error loading messages:", error);
-      setError(errorMessage);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: errorMessage,
-      });
-    } finally {
-      setIsLoading(false);
-    }
+        setMessageServices(serviceDetails);
+      } catch (error) {
+        console.error("Error in messages listener:", error);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Could not load messages. Please refresh the page.",
+        });
+      }
+    });
+
+    return () => unsubscribe();
   }, [userId, toast]);
 
   const markMessageAsRead = useCallback(async (messageId: string) => {
@@ -77,12 +108,64 @@ export const useMessages = (userId: string) => {
     }
   }, []);
 
+  const sendMessage = useCallback(async (content: string, toId: string, requestId: string, requestTitle: string) => {
+    if (!content.trim() || !userId || !toId || !requestId) return;
+
+    setSendingMessage(true);
+    try {
+      await addDoc(collection(db, "messages"), {
+        content: content.trim(),
+        fromId: userId,
+        toId,
+        requestId,
+        requestTitle,
+        createdAt: Timestamp.now(),
+        read: false,
+        participants: [userId, toId]
+      });
+
+      setMessageContent("");
+      toast({
+        title: "Success",
+        description: "Message sent successfully",
+      });
+    } catch (error) {
+      console.error("Error sending message:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Could not send message. Please try again.",
+      });
+    } finally {
+      setSendingMessage(false);
+    }
+  }, [userId, toast]);
+
+  const handleSelectConversation = (requestId: string) => {
+    setSelectedMessageRequest(requestId);
+    setIsViewingConversation(true);
+  };
+
+  const handleBackToList = () => {
+    setSelectedMessageRequest(null);
+    setIsViewingConversation(false);
+    setMessageContent("");
+  };
+
   return {
     messages,
+    messageGroups,
     messageServices,
     isLoading,
     error,
-    fetchMessages,
+    selectedMessageRequest,
+    isViewingConversation,
+    messageContent,
+    sendingMessage,
+    setMessageContent,
     markMessageAsRead,
+    sendMessage,
+    handleSelectConversation,
+    handleBackToList,
   };
 };
