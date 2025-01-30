@@ -27,7 +27,7 @@ import { RequestsTable } from "@/components/dashboard/RequestsTable";
 import { ProfileSection } from "@/components/dashboard/ProfileSection";
 import { useToast } from "@/hooks/use-toast";
 import MainLayout from "@/components/layout/MainLayout";
-import type { RequestFormData, TabType } from "@/types/dashboard";
+import type { RequestFormData, TabType, Car } from "@/types/dashboard";
 import { useProfile } from "@/hooks/useProfile";
 import { useRequests } from "@/hooks/useRequests";
 import { useMessages } from "@/hooks/useMessages";
@@ -108,10 +108,6 @@ export default function ClientDashboard() {
       });
     }
   };
-
-  const renderProfile = () => (
-    <ProfileSection userId={user?.uid || ""} />
-  );
 
   const renderRequests = () => (
     <Card className="shadow-lg">
@@ -249,7 +245,7 @@ export default function ClientDashboard() {
       case "car":
         return <CarManagement />;
       case "profile":
-        return renderProfile();
+        return <ProfileSection userId={user?.uid || ""} />;
       default:
         return null;
     }
@@ -271,7 +267,7 @@ export default function ClientDashboard() {
           <Button
             onClick={handleResendVerification}
             disabled={isResendingVerification}
-            className="w-full max-w-md mx-auto block"
+            className="w-full max-w-md mx-auto block mt-4"
           >
             {isResendingVerification
               ? "Se trimite..."
@@ -360,6 +356,7 @@ export default function ClientDashboard() {
         </nav>
 
         {renderContent()}
+
         <Dialog open={isRequestDialogOpen} onOpenChange={setIsRequestDialogOpen}>
           <DialogContent className="sm:max-w-[600px]">
             <DialogHeader>

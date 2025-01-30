@@ -8,6 +8,17 @@ export interface UserProfile {
   city?: string;
 }
 
+export interface Car {
+  id: string;
+  brand: string;
+  model: string;
+  year: string;
+  vin?: string;
+  licensePlate?: string;
+  fuelType: string;
+  mileage: number;
+}
+
 export interface Request {
   id: string;
   title: string;
