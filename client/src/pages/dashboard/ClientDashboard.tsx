@@ -30,6 +30,7 @@ import type { RequestFormData, TabType } from "@/types/dashboard";
 import { useProfile } from "@/hooks/useProfile";
 import { useRequests } from "@/hooks/useRequests";
 import { useMessages } from "@/hooks/useMessages";
+import { useCars } from "@/hooks/useCars";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function ClientDashboard() {
@@ -44,13 +45,15 @@ export default function ClientDashboard() {
   const { profile } = useProfile(user?.uid || "");
   const { requests, fetchRequests, addRequest, cancelRequest } = useRequests(user?.uid || "");
   const { messages, messageServices, fetchMessages, markMessageAsRead } = useMessages(user?.uid || "");
+  const { cars, fetchCars } = useCars(user?.uid || "");
 
   useEffect(() => {
     if (user) {
       fetchRequests();
       fetchMessages();
+      fetchCars();
     }
-  }, [user, fetchRequests, fetchMessages]);
+  }, [user, fetchRequests, fetchMessages, fetchCars]);
 
   const handleResendVerification = async () => {
     if (!auth.currentUser) return;
@@ -127,6 +130,7 @@ export default function ClientDashboard() {
           <TabsContent value="active">
             <RequestsTable
               requests={requests.filter((req) => req.status === "Active")}
+              cars={cars}
               onDelete={handleDeleteRequest}
               refreshRequests={fetchRequests}
             />
@@ -134,6 +138,7 @@ export default function ClientDashboard() {
           <TabsContent value="solved">
             <RequestsTable
               requests={requests.filter((req) => req.status === "Rezolvat")}
+              cars={cars}
               onDelete={handleDeleteRequest}
               refreshRequests={fetchRequests}
             />
@@ -141,6 +146,7 @@ export default function ClientDashboard() {
           <TabsContent value="canceled">
             <RequestsTable
               requests={requests.filter((req) => req.status === "Anulat")}
+              cars={cars}
               onDelete={handleDeleteRequest}
               refreshRequests={fetchRequests}
             />
@@ -161,13 +167,13 @@ export default function ClientDashboard() {
       <CardContent className="p-6">
         <RequestsTable
           requests={requests}
+          cars={cars}
           hideDeleteButton={true}
           refreshRequests={fetchRequests}
         />
       </CardContent>
     </Card>
   );
-
 
   const renderMessages = () => (
     <Card className="shadow-lg">
@@ -252,7 +258,7 @@ export default function ClientDashboard() {
     return (
       <MainLayout>
         <div className="container mx-auto p-6">
-          <Alert variant="destructive" className="mb-6">
+          <Alert variant="destructive">
             <AlertTriangle className="h-4 w-4" />
             <AlertTitle>Email neverificat</AlertTitle>
             <AlertDescription>
