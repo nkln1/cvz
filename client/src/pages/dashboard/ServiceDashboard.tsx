@@ -21,15 +21,8 @@ import { useToast } from "@/hooks/use-toast";
 import romanianCitiesData from "../../../../attached_assets/municipii_orase_romania.json";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
-import { ServiceProfileSection } from "@/components/dashboard/ServiceProfileSection";
-import { ClientRequests } from "@/components/dashboard/ClientRequests";
-import { SentOffers } from "@/components/dashboard/SentOffers";
 import { ServiceMessagesSection } from "@/components/dashboard/ServiceMessagesSection";
-import { AppointmentsSection } from "@/components/dashboard/AppointmentsSection";
-import { ReviewsSection } from "@/components/dashboard/ReviewsSection";
-import { ServiceAccountSection } from "@/components/dashboard/ServiceAccountSection";
 import { useServiceMessages } from "@/hooks/useServiceMessages";
-import { useServiceRequests } from "@/hooks/useServiceRequests";
 import { useNotifications } from "@/hooks/useNotifications";
 import type { ServiceData } from "@/types/service";
 
@@ -82,7 +75,6 @@ export default function ServiceDashboard() {
   const [serviceData, setServiceData] = useState<ServiceData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showOnlyNew, setShowOnlyNew] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>(() => {
     if (window.location.pathname.endsWith("/service-dashboard")) {
       localStorage.setItem("activeTab", "requests");
@@ -98,37 +90,13 @@ export default function ServiceDashboard() {
     isViewingConversation,
     messageContent,
     sendingMessage,
-    fetchMessages,
     sendMessage,
     handleSelectConversation,
     handleBackToList,
     setMessageContent,
-    setSelectedMessageRequest,
   } = useServiceMessages(user?.uid || "");
 
-  const {
-    clientRequests,
-    selectedRequest,
-    requestClient,
-    cars,
-    viewedRequests,
-    handleViewDetails,
-    handleRejectRequest,
-    markRequestAsViewed,
-  } = useServiceRequests(user?.uid || "", serviceData);
-
-  const {
-    notificationPermission,
-    requestNotificationPermission,
-  } = useNotifications(user?.uid || "");
-
-  const newRequestsCount = clientRequests.filter(
-    (request) => !viewedRequests.has(request.id)
-  ).length;
-
-  const filteredRequests = showOnlyNew
-    ? clientRequests.filter((request) => !viewedRequests.has(request.id))
-    : clientRequests;
+  const { notificationPermission, requestNotificationPermission } = useNotifications(user?.uid || "");
 
   useEffect(() => {
     localStorage.setItem("activeTab", activeTab);
@@ -211,137 +179,34 @@ export default function ServiceDashboard() {
         <nav className="flex flex-col sm:flex-row gap-2 border-b pb-4 overflow-x-auto scrollbar-hide">
           <div className="grid grid-cols-2 sm:flex sm:flex-row gap-2 w-full">
             <NavigationButton
-              tab="requests"
-              activeTab={activeTab}
-              icon={<FileText className="w-4 h-4 mr-2 flex-shrink-0" />}
-              label="Cereri"
-              onClick={setActiveTab}
-              notificationCount={newRequestsCount}
-            />
-            <NavigationButton
-              tab="offers"
-              activeTab={activeTab}
-              icon={<MailOpen className="w-4 h-4 mr-2 flex-shrink-0" />}
-              label="Oferte"
-              onClick={setActiveTab}
-            />
-            <NavigationButton
               tab="messages"
               activeTab={activeTab}
               icon={<MessageSquare className="w-4 h-4 mr-2 flex-shrink-0" />}
               label="Mesaje"
               onClick={setActiveTab}
             />
-            <NavigationButton
-              tab="appointments"
-              activeTab={activeTab}
-              icon={<Calendar className="w-4 h-4 mr-2 flex-shrink-0" />}
-              label="Programări"
-              onClick={setActiveTab}
-            />
-            <NavigationButton
-              tab="reviews"
-              activeTab={activeTab}
-              icon={<Star className="w-4 h-4 mr-2 flex-shrink-0" />}
-              label="Recenzii"
-              onClick={setActiveTab}
-            />
-            <NavigationButton
-              tab="account"
-              activeTab={activeTab}
-              icon={<User className="w-4 h-4 mr-2 flex-shrink-0" />}
-              label="Cont"
-              onClick={setActiveTab}
-            />
           </div>
         </nav>
 
         <div className="bg-white rounded-lg border shadow-sm p-4 sm:p-6">
-          {activeTab === "requests" && (
-            <div className="space-y-4">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <h2 className="text-xl font-semibold">Cererile Clienților</h2>
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="show-new"
-                    checked={showOnlyNew}
-                    onCheckedChange={setShowOnlyNew}
-                  />
-                  <Label htmlFor="show-new">Doar cereri noi</Label>
-                </div>
-              </div>
-              <ClientRequests
-                clientRequests={filteredRequests}
-                viewedRequests={viewedRequests}
-                onViewDetails={handleViewDetails}
-                onMessage={setSelectedMessageRequest}
-                onSendOffer={() => {
-                  toast({
-                    description: "Funcționalitatea de trimitere oferte va fi disponibilă în curând.",
-                  });
-                }}
-                onRejectRequest={handleRejectRequest}
-                selectedRequest={selectedRequest}
-                requestClient={requestClient}
-                cars={cars}
-              />
-            </div>
-          )}
-          {activeTab === "offers" && (
-            <SentOffers
-              requests={[]}
-              cars={cars}
-              refreshRequests={fetchMessages}
-            />
-          )}
-          {activeTab === "messages" && (
-            <ServiceMessagesSection
-              messageGroups={messageGroups}
-              messages={messages}
-              selectedMessageRequest={selectedMessageRequest}
-              isViewingConversation={isViewingConversation}
-              messageContent={messageContent}
-              sendingMessage={sendingMessage}
-              onMessageContentChange={setMessageContent}
-              onSendMessage={sendMessage}
-              onSelectConversation={handleSelectConversation}
-              onBackToList={handleBackToList}
-              onViewRequestDetails={handleViewDetails}
-              userId={user?.uid || ""}
-            />
-          )}
-          {activeTab === "appointments" && <AppointmentsSection />}
-          {activeTab === "reviews" && <ReviewsSection />}
-          {activeTab === "account" && (
-            <ServiceAccountSection
-              userId={user?.uid || ""}
-              serviceData={serviceData || ({} as ServiceData)}
-              fields={[
-                { label: "Nume Companie", key: "companyName", editable: true },
-                { label: "Nume Reprezentant", key: "representativeName", editable: true },
-                { label: "Email", key: "email", editable: false },
-                { label: "Telefon", key: "phone", editable: true },
-                { label: "CUI", key: "cui", editable: false },
-                { label: "Nr. Înregistrare", key: "tradeRegNumber", editable: false },
-                { label: "Adresă", key: "address", editable: true },
-                {
-                  label: "Județ",
-                  key: "county",
-                  editable: true,
-                  type: "select",
-                  options: Object.keys(romanianCitiesData),
-                },
-                {
-                  label: "Oraș",
-                  key: "city",
-                  editable: true,
-                  type: "select",
-                  options: serviceData?.county ? romanianCitiesData[serviceData.county] : [],
-                },
-              ]}
-              validationErrors={{}}
-            />
-          )}
+          <ServiceMessagesSection
+            messageGroups={messageGroups}
+            messages={messages}
+            selectedMessageRequest={selectedMessageRequest}
+            isViewingConversation={isViewingConversation}
+            messageContent={messageContent}
+            sendingMessage={sendingMessage}
+            onMessageContentChange={setMessageContent}
+            onSendMessage={sendMessage}
+            onSelectConversation={handleSelectConversation}
+            onBackToList={handleBackToList}
+            onViewRequestDetails={(requestId: string) => {
+              toast({
+                description: "Vizualizare detalii cerere va fi disponibilă în curând.",
+              });
+            }}
+            userId={user?.uid || ""}
+          />
         </div>
       </div>
       <Footer />
