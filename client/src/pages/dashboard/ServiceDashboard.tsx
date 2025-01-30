@@ -984,7 +984,8 @@ export default function ServiceDashboard() {
                         </TableRow>
                       )}
                     </Fragment>
-                  ))}                  {paginatedRequests.length === 0 && (
+                  ))}
+                  {paginatedRequests.length === 0 && (
                     <TableRow>
                       <TableCell
                         colSpan={7}
@@ -1048,7 +1049,7 @@ export default function ServiceDashboard() {
           </CardContent>
         </Card>
       </TabsContent>
-      );
+    );
   };
 
   const renderMessagesList = () => (
@@ -1238,83 +1239,108 @@ export default function ServiceDashboard() {
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Navigation />
       <div className="container mx-auto p-4 md:p-6 space-y-4 md:space-y-6">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="w-full justify-start border-b rounded-none p-0 h-auto data-[orientation=horizontal]:border-b">
-            <TabsTrigger
-              value="requests"
-              className="relative data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-[#00aff5] rounded-none px-4 pb-3"
-            >
-              <div className="flex items-center gap-2">
-                <Clock className="h-5 w-5" />
-                Cereri Clienți
-                {clientRequests.filter(req => !viewedRequests.has(req.id)).length > 0 && (
-                  <Badge variant="secondary" className="bg-[#00aff5] text-white">
-                    {clientRequests.filter(req => !viewedRequests.has(req.id)).length}
-                  </Badge>
-                )}
-              </div>
-            </TabsTrigger>
-            <TabsTrigger
-              value="messages"
-              className="relative data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-[#00aff5] rounded-none px-4 pb-3"
-            >
-              <div className="flex items-center gap-2">
-                <MessageSquare className="h-5 w-5" />
-                Mesaje
-                {messageGroups.filter(group => group.unreadCount > 0).length > 0 && (
-                  <Badge variant="secondary" className="bg-[#00aff5] text-white">
-                    {messageGroups.reduce((sum, group) => sum + group.unreadCount, 0)}
-                  </Badge>
-                )}
-              </div>
-            </TabsTrigger>
-            <TabsTrigger
-              value="offers"
-              className="relative data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-[#00aff5] rounded-none px-4 pb-3"
-            >
-              <div className="flex items-center gap-2">
-                <SendHorizontal className="h-5 w-5" />
-                Oferte Trimise
-              </div>
-            </TabsTrigger>
-            <TabsTrigger
-              value="appointments"
-              className="relative data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-[#00aff5] rounded-none px-4 pb-3"
-            >
-              <div className="flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                Programări
-              </div>
-            </TabsTrigger>
-            <TabsTrigger
-              value="reviews"
-              className="relative data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-[#00aff5] rounded-none px-4 pb-3"
-            >
-              <div className="flex items-center gap-2">
-                <Star className="h-5 w-5" />
-                Recenzii
-              </div>
-            </TabsTrigger>
-            <TabsTrigger
-              value="account"
-              className="relative data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-[#00aff5] rounded-none px-4 pb-3"
-            >
-              <div className="flex items-center gap-2">
-                <UserCog className="h-5 w-5" />
-                Cont
-              </div>
-            </TabsTrigger>
-            <TabsTrigger
-              value="public-profile"
-              className="relative data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-[#00aff5] rounded-none px-4 pb-3"
-            >
-              <div className="flex items-center gap-2">
-                <Store className="h-5 w-5" />
-                Profil Public
-              </div>
-            </TabsTrigger>
-          </TabsList>
+      <nav className="flex flex-col sm:flex-row gap-2 border-b pb-4 overflow-x-auto">
+        <Button
+          variant={activeTab === "requests" ? "default" : "ghost"}
+          onClick={() => setActiveTab("requests")}
+          className={`flex items-center justify-start ${
+            activeTab === "requests"
+              ? "bg-[#00aff5] text-white hover:bg-[#0099d6]"
+              : "hover:text-[#00aff5]"
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            <Clock className="w-4 h-4" />
+            Cereri Clienți
+            {clientRequests.filter(req => !viewedRequests.has(req.id)).length > 0 && (
+              <Badge variant="secondary" className="bg-white text-[#00aff5]">
+                {clientRequests.filter(req => !viewedRequests.has(req.id)).length}
+              </Badge>
+            )}
+          </div>
+        </Button>
+        <Button
+          variant={activeTab === "messages" ? "default" : "ghost"}
+          onClick={() => setActiveTab("messages")}
+          className={`flex items-center justify-start ${
+            activeTab === "messages"
+              ? "bg-[#00aff5] text-white hover:bg-[#0099d6]"
+              : "hover:text-[#00aff5]"
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            <MessageSquare className="w-4 h-4" />
+            Mesaje
+            {messageGroups.filter(group => group.unreadCount > 0).length > 0 && (
+              <Badge variant="secondary" className="bg-white text-[#00aff5]">
+                {messageGroups.reduce((sum, group) => sum + group.unreadCount, 0)}
+              </Badge>
+            )}
+          </div>
+        </Button>
+        <Button
+          variant={activeTab === "offers" ? "default" : "ghost"}
+          onClick={() => setActiveTab("offers")}
+          className={`flex items-center justify-start ${
+            activeTab === "offers"
+              ? "bg-[#00aff5] text-white hover:bg-[#0099d6]"
+              : "hover:text-[#00aff5]"
+          }`}
+        >
+          <SendHorizontal className="w-4 h-4 mr-2" />
+          Oferte Trimise
+        </Button>
+        <Button
+          variant={activeTab === "appointments" ? "default" : "ghost"}
+          onClick={() => setActiveTab("appointments")}
+          className={`flex items-center justify-start ${
+            activeTab === "appointments"
+              ? "bg-[#00aff5] text-white hover:bg-[#0099d6]"
+              : "hover:text-[#00aff5]"
+          }`}
+        >
+          <Calendar className="w-4 h-4 mr-2" />
+          Programări
+        </Button>
+        <Button
+          variant={activeTab === "reviews" ? "default" : "ghost"}
+          onClick={() => setActiveTab("reviews")}
+          className={`flex items-center justify-start ${
+            activeTab === "reviews"
+              ? "bg-[#00aff5] text-white hover:bg-[#0099d6]"
+              : "hover:text-[#00aff5]"
+          }`}
+        >
+          <Star className="w-4 h-4 mr-2" />
+          Recenzii
+        </Button>
+        <Button
+          variant={activeTab === "account" ? "default" : "ghost"}
+          onClick={() => setActiveTab("account")}
+          className={`flex items-center justify-start ${
+            activeTab === "account"
+              ? "bg-[#00aff5] text-white hover:bg-[#0099d6]"
+              : "hover:text-[#00aff5]"
+          }`}
+        >
+          <UserCog className="w-4 h-4 mr-2" />
+          Cont
+        </Button>
+        <Button
+          variant={activeTab === "public-profile" ? "default" : "ghost"}
+          onClick={() => setActiveTab("public-profile")}
+          className={`flex items-center justify-start ${
+            activeTab === "public-profile"
+              ? "bg-[#00aff5] text-white hover:bg-[#0099d6]"
+              : "hover:text-[#00aff5]"
+          }`}
+        >
+          <Store className="w-4 h-4 mr-2" />
+          Profil Public
+        </Button>
+      </nav>
 
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
           {renderRequestsContent()}
           <TabsContent value="offers">
             <Card className="border-[#00aff5]/20">
