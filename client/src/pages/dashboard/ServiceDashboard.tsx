@@ -16,6 +16,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
 import romanianCitiesData from "../../../../attached_assets/municipii_orase_romania.json";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
@@ -78,6 +79,7 @@ const NavigationButton: React.FC<NavigationButtonProps> = ({
 export default function ServiceDashboard() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
   const [serviceData, setServiceData] = useState<ServiceData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -96,7 +98,6 @@ export default function ServiceDashboard() {
     isViewingConversation,
     messageContent,
     sendingMessage,
-    fetchMessages,
     sendMessage,
     handleSelectConversation,
     handleBackToList,
@@ -133,26 +134,37 @@ export default function ServiceDashboard() {
   useEffect(() => {
     async function fetchServiceData() {
       if (!user) {
-        setLoading(false);
+        console.log("No user found, redirecting to login");
+        setLocation("/login");
         return;
       }
 
+      console.log("Fetching service data for user:", user.uid);
+      setLoading(true);
+
       try {
-        const serviceDoc = await getDoc(doc(db, "services", user.uid));
+        const serviceRef = doc(db, "services", user.uid);
+        const serviceDoc = await getDoc(serviceRef);
+
         if (serviceDoc.exists()) {
-          setServiceData(serviceDoc.data() as ServiceData);
-          // Fetch messages after service data is loaded
-          await fetchMessages();
+          const data = serviceDoc.data() as ServiceData;
+          console.log("Service data fetched:", data);
+          setServiceData(data);
         } else {
-          setError("Nu s-au găsit date pentru acest service");
+          console.error("No service document found for user:", user.uid);
+          setError("Nu s-au găsit date pentru acest service. Vă rugăm să vă autentificați din nou.");
+          setLocation("/login");
         }
       } catch (error) {
         console.error("Error fetching service data:", error);
-        setError("Nu am putut încărca datele serviciului");
+        const errorMessage = error instanceof Error 
+          ? error.message 
+          : "Eroare necunoscută";
+        setError(`Nu am putut încărca datele serviciului: ${errorMessage}`);
         toast({
           variant: "destructive",
           title: "Eroare",
-          description: "Nu am putut încărca datele serviciului.",
+          description: "Nu am putut încărca datele serviciului. Vă rugăm să încercați din nou.",
         });
       } finally {
         setLoading(false);
@@ -160,7 +172,7 @@ export default function ServiceDashboard() {
     }
 
     fetchServiceData();
-  }, [user, fetchMessages]);
+  }, [user, toast, setLocation]);
 
   if (loading) {
     return (
@@ -271,7 +283,7 @@ export default function ServiceDashboard() {
             cars={cars}
           />
         )}
-        {activeTab === "offers" && <SentOffers requests={[]} cars={cars} refreshRequests={fetchMessages} />}
+        {activeTab === "offers" && <SentOffers requests={[]} cars={cars} refreshRequests={ () => {}} />}
         {activeTab === "messages" && (
           <ServiceMessagesSection
             messageGroups={messageGroups}
