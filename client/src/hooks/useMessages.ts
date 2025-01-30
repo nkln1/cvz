@@ -24,8 +24,12 @@ export const useMessages = (userId: string) => {
   const { toast } = useToast();
 
   useEffect(() => {
-    if (!userId) return;
+    if (!userId) {
+      console.log("No userId provided for messages query");
+      return;
+    }
 
+    console.log("Starting messages query for userId:", userId);
     const messagesQuery = query(
       collection(db, "messages"),
       where("participants", "array-contains", userId),
@@ -36,8 +40,12 @@ export const useMessages = (userId: string) => {
       try {
         const loadedMessages: Message[] = [];
         snapshot.forEach((doc) => {
-          loadedMessages.push({ id: doc.id, ...doc.data() } as Message);
+          const messageData = doc.data();
+          console.log("Loaded message:", { id: doc.id, ...messageData });
+          loadedMessages.push({ id: doc.id, ...messageData } as Message);
         });
+
+        console.log("Total messages loaded:", loadedMessages.length);
 
         // Group messages by request
         const groups: { [key: string]: MessageGroup } = {};
@@ -59,6 +67,8 @@ export const useMessages = (userId: string) => {
           }
         });
 
+        console.log("Message groups created:", Object.keys(groups).length);
+
         setMessages(loadedMessages);
         setMessageGroups(Object.values(groups).sort((a, b) => 
           new Date(b.lastMessage.createdAt).getTime() - new Date(a.lastMessage.createdAt).getTime()
@@ -66,12 +76,15 @@ export const useMessages = (userId: string) => {
 
         // Fetch service details for all unique service IDs
         const uniqueServiceIds = Array.from(new Set(loadedMessages.map(m => m.fromId)));
+        console.log("Unique service IDs:", uniqueServiceIds);
+
         const serviceDetails: { [key: string]: any } = {};
 
         for (const serviceId of uniqueServiceIds) {
           const serviceDoc = await getDoc(doc(db, "services", serviceId));
           if (serviceDoc.exists()) {
             serviceDetails[serviceId] = serviceDoc.data();
+            console.log("Service details loaded for:", serviceId);
           }
         }
 
@@ -109,11 +122,14 @@ export const useMessages = (userId: string) => {
   }, []);
 
   const sendMessage = useCallback(async (content: string, toId: string, requestId: string, requestTitle: string) => {
-    if (!content.trim() || !userId || !toId || !requestId) return;
+    if (!content.trim() || !userId || !toId || !requestId) {
+      console.log("Missing required fields for sending message:", { content: !!content.trim(), userId, toId, requestId });
+      return;
+    }
 
     setSendingMessage(true);
     try {
-      await addDoc(collection(db, "messages"), {
+      const messageData = {
         content: content.trim(),
         fromId: userId,
         toId,
@@ -122,7 +138,10 @@ export const useMessages = (userId: string) => {
         createdAt: Timestamp.now(),
         read: false,
         participants: [userId, toId]
-      });
+      };
+      console.log("Sending message:", messageData);
+
+      await addDoc(collection(db, "messages"), messageData);
 
       setMessageContent("");
       toast({
@@ -142,11 +161,13 @@ export const useMessages = (userId: string) => {
   }, [userId, toast]);
 
   const handleSelectConversation = (requestId: string) => {
+    console.log("Selecting conversation:", requestId);
     setSelectedMessageRequest(requestId);
     setIsViewingConversation(true);
   };
 
   const handleBackToList = () => {
+    console.log("Going back to messages list");
     setSelectedMessageRequest(null);
     setIsViewingConversation(false);
     setMessageContent("");
