@@ -34,6 +34,7 @@ interface MessagesSectionProps {
   messageContent: string;
   sendingMessage: boolean;
   userId: string;
+  userName: string;
   onMessageContentChange: (content: string) => void;
   onSendMessage: (content: string, toId: string, requestId: string, requestTitle: string) => Promise<void>;
   onSelectConversation: (requestId: string) => void;
@@ -50,6 +51,7 @@ export function MessagesSection({
   messageContent,
   sendingMessage,
   userId,
+  userName,
   onMessageContentChange,
   onSendMessage,
   onSelectConversation,
@@ -113,45 +115,52 @@ export function MessagesSection({
             Nu există conversații active
           </p>
         ) : (
-          messageGroups.map((group) => (
-            <motion.div
-              key={group.requestId}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
-            >
-              <Card
-                className="cursor-pointer hover:bg-gray-50 transition-colors"
-                onClick={() => onSelectConversation(group.requestId)}
+          messageGroups.map((group) => {
+            const serviceId = group.lastMessage.fromId === userId
+              ? group.lastMessage.toId
+              : group.lastMessage.fromId;
+            const serviceName = messageServices[serviceId]?.companyName || "Service Auto";
+
+            return (
+              <motion.div
+                key={group.requestId}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
               >
-                <CardContent className="p-4">
-                  <div className="flex items-start gap-4">
-                    <Avatar>
-                      <AvatarFallback className="bg-blue-100 text-blue-600">
-                        {getInitials(group.requestTitle)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex justify-between items-start">
-                        <h4 className="font-medium truncate">{group.requestTitle}</h4>
-                        <span className="text-xs text-muted-foreground whitespace-nowrap ml-2">
-                          {formatTimestamp(group.lastMessage?.createdAt)}
-                        </span>
+                <Card
+                  className="cursor-pointer hover:bg-gray-50 transition-colors"
+                  onClick={() => onSelectConversation(group.requestId)}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-start gap-4">
+                      <Avatar>
+                        <AvatarFallback className="bg-blue-100 text-blue-600">
+                          {getInitials(serviceName)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex justify-between items-start">
+                          <h4 className="font-medium truncate">{serviceName}</h4>
+                          <span className="text-xs text-muted-foreground whitespace-nowrap ml-2">
+                            {formatTimestamp(group.lastMessage?.createdAt)}
+                          </span>
+                        </div>
+                        <p className="text-sm text-muted-foreground truncate">
+                          {group.lastMessage?.content || 'No messages'}
+                        </p>
                       </div>
-                      <p className="text-sm text-muted-foreground truncate">
-                        {group.lastMessage?.content || 'No messages'}
-                      </p>
+                      {group.unreadCount > 0 && (
+                        <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
+                          {group.unreadCount}
+                        </span>
+                      )}
                     </div>
-                    {group.unreadCount > 0 && (
-                      <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
-                        {group.unreadCount}
-                      </span>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          ))
+                  </CardContent>
+                </Card>
+              </motion.div>
+            );
+          })
         )}
       </div>
     </ScrollArea>
@@ -176,6 +185,7 @@ export function MessagesSection({
     const serviceId = conversationMessages[0]?.fromId === userId
       ? conversationMessages[0]?.toId
       : conversationMessages[0]?.fromId;
+    const serviceName = messageServices[serviceId]?.companyName || "Service Auto";
 
     return (
       <div className="space-y-4 h-full flex flex-col">
@@ -192,13 +202,13 @@ export function MessagesSection({
             </Button>
             <Avatar className="h-8 w-8">
               <AvatarFallback className="bg-blue-100 text-blue-600">
-                {currentGroup ? getInitials(currentGroup.requestTitle) : "??"}
+                {getInitials(serviceName)}
               </AvatarFallback>
             </Avatar>
             <div>
-              <h3 className="font-medium text-sm">{currentGroup?.requestTitle}</h3>
+              <h3 className="font-medium text-sm">{serviceName}</h3>
               <p className="text-xs text-muted-foreground">
-                {messageServices[serviceId]?.companyName || 'Service Auto'}
+                {currentGroup?.requestTitle || ''}
               </p>
             </div>
           </div>
@@ -231,6 +241,9 @@ export function MessagesSection({
                           : "bg-gray-100 rounded-t-2xl rounded-r-2xl"
                       } p-3 relative`}
                     >
+                      <div className="text-xs mb-1 font-medium">
+                        {message.fromId === userId ? userName : serviceName}
+                      </div>
                       <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
                       <div className={`flex items-center gap-1 mt-1 text-xs ${
                         message.fromId === userId ? "text-blue-100" : "text-gray-500"
@@ -260,6 +273,9 @@ export function MessagesSection({
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
                   if (messageContent.trim() && currentGroup) {
+                    const serviceId = conversationMessages[0]?.fromId === userId
+                      ? conversationMessages[0]?.toId
+                      : conversationMessages[0]?.fromId;
                     onSendMessage(
                       messageContent,
                       serviceId,
@@ -273,6 +289,9 @@ export function MessagesSection({
             <Button
               onClick={() => {
                 if (currentGroup) {
+                  const serviceId = conversationMessages[0]?.fromId === userId
+                    ? conversationMessages[0]?.toId
+                    : conversationMessages[0]?.fromId;
                   onSendMessage(
                     messageContent,
                     serviceId,

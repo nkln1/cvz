@@ -199,6 +199,7 @@ export default function ClientDashboard() {
               messageContent={messageContent}
               sendingMessage={sendingMessage}
               userId={user?.uid || ""}
+              userName={profile?.numeComplet || profile?.name || `${profile?.nume || ''} ${profile?.prenume || ''}`.trim() || "Client"}
               onMessageContentChange={setMessageContent}
               onSendMessage={sendMessage}
               onSelectConversation={handleSelectConversation}
