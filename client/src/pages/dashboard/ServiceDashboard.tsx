@@ -198,7 +198,7 @@ export default function ServiceDashboard() {
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(20);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const [cars, setCars] = useState<Record<string, Car>>({});
 
 
@@ -777,7 +777,7 @@ export default function ServiceDashboard() {
                     }}
                   >
                     <SelectTrigger className="w-[100px]">
-                      <SelectValue placeholder="20 pe pagină" />
+                      <SelectValue placeholder="10 pe pagină" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="10">10 pe pagină</SelectItem>
