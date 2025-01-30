@@ -31,7 +31,6 @@ import { useServiceMessages } from "@/hooks/useServiceMessages";
 import { useServiceRequests } from "@/hooks/useServiceRequests";
 import { useNotifications } from "@/hooks/useNotifications";
 import type { ServiceData, Request as ServiceRequest } from "@/types/service";
-import type { Request as DashboardRequest } from "@/types/dashboard";
 
 type TabType = "requests" | "offers" | "messages" | "appointments" | "reviews" | "account";
 
@@ -124,8 +123,6 @@ export default function ServiceDashboard() {
   const newRequestsCount = clientRequests.filter(
     (request) => !viewedRequests.has(request.id)
   ).length;
-
-  const filteredRequests = clientRequests;
 
   useEffect(() => {
     localStorage.setItem("activeTab", activeTab);
@@ -298,12 +295,18 @@ export default function ServiceDashboard() {
             cars={cars}
           />
         )}
-        {activeTab === "offers" && <SentOffers requests={[]} cars={cars} refreshRequests={() => {}} />}
+        {activeTab === "offers" && (
+          <SentOffers
+            requests={[]}
+            cars={cars}
+            refreshRequests={async () => {}}
+          />
+        )}
         {activeTab === "messages" && (
           <ServiceMessagesSection
             messageGroups={messageGroups}
             messages={messages}
-            selectedMessageRequest={selectedMessageRequest as ServiceRequest}
+            selectedMessageRequest={selectedMessageRequest}
             isViewingConversation={isViewingConversation}
             messageContent={messageContent}
             sendingMessage={sendingMessage}
@@ -341,7 +344,7 @@ export default function ServiceDashboard() {
                 key: "city",
                 editable: true,
                 type: "select",
-                options: serviceData?.county ? romanianCitiesData[serviceData.county] : [],
+                options: serviceData?.county ? romanianCitiesData[serviceData.county as keyof typeof romanianCitiesData] : [],
               },
             ]}
             validationErrors={{}}

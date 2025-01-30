@@ -10,17 +10,24 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { MessageSquare, SendHorizontal, Loader2, Eye, ArrowLeft, CheckCircle2 } from "lucide-react";
+import {
+  MessageSquare,
+  SendHorizontal,
+  Loader2,
+  Eye,
+  ArrowLeft,
+  CheckCircle2,
+} from "lucide-react";
 import { format } from "date-fns";
-import { useToast } from "@/hooks/use-toast";
-import type { Request, Message } from "@/types/service";
 import { motion, AnimatePresence } from "framer-motion";
+import type { Request, Message } from "@/types/service";
 
 interface MessageGroup {
   requestId: string;
   requestTitle: string;
   lastMessage: Message;
   unreadCount: number;
+  clientName?: string;
 }
 
 interface ServiceMessagesSectionProps {
@@ -54,14 +61,12 @@ export function ServiceMessagesSection({
 }: ServiceMessagesSectionProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [isScrolledToBottom, setIsScrolledToBottom] = useState(true);
-  const { toast } = useToast();
 
   const formatTimestamp = (timestamp: any) => {
     if (!timestamp) return "";
-
     try {
-      const date = timestamp && typeof timestamp.toDate === 'function' 
-        ? timestamp.toDate() 
+      const date = timestamp && typeof timestamp.toDate === 'function'
+        ? timestamp.toDate()
         : new Date(timestamp);
 
       const now = new Date();
@@ -125,17 +130,20 @@ export function ServiceMessagesSection({
                   <div className="flex items-start gap-4">
                     <Avatar>
                       <AvatarFallback className="bg-blue-100 text-blue-600">
-                        {getInitials(group.requestTitle)}
+                        {getInitials(group.clientName || group.requestTitle)}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
                       <div className="flex justify-between items-start">
-                        <h4 className="font-medium truncate">{group.requestTitle}</h4>
+                        <div>
+                          <h4 className="font-medium">{group.clientName || "Client"}</h4>
+                          <p className="text-sm text-muted-foreground">{group.requestTitle}</p>
+                        </div>
                         <span className="text-xs text-muted-foreground whitespace-nowrap ml-2">
                           {formatTimestamp(group.lastMessage?.createdAt)}
                         </span>
                       </div>
-                      <p className="text-sm text-muted-foreground truncate">
+                      <p className="text-sm text-muted-foreground truncate mt-1">
                         {group.lastMessage?.content || 'No messages'}
                       </p>
                     </div>
@@ -155,17 +163,21 @@ export function ServiceMessagesSection({
   );
 
   const renderConversation = () => {
-    const conversationMessages = messages.filter(
-      (msg) => msg.requestId === selectedMessageRequest?.id
-    ).sort((a, b) => {
-      const dateA = a.createdAt && typeof a.createdAt.toDate === 'function' 
-        ? a.createdAt.toDate().getTime() 
-        : new Date(a.createdAt).getTime();
-      const dateB = b.createdAt && typeof b.createdAt.toDate === 'function'
-        ? b.createdAt.toDate().getTime()
-        : new Date(b.createdAt).getTime();
-      return dateA - dateB;
-    });
+    const currentGroup = messageGroups.find(
+      (g) => g.requestId === selectedMessageRequest?.id
+    );
+
+    const conversationMessages = messages
+      .filter((msg) => msg.requestId === selectedMessageRequest?.id)
+      .sort((a, b) => {
+        const dateA = a.createdAt && typeof a.createdAt.toDate === 'function'
+          ? a.createdAt.toDate().getTime()
+          : new Date(a.createdAt).getTime();
+        const dateB = b.createdAt && typeof b.createdAt.toDate === 'function'
+          ? b.createdAt.toDate().getTime()
+          : new Date(b.createdAt).getTime();
+        return dateA - dateB;
+      });
 
     return (
       <div className="space-y-4 h-full flex flex-col">
@@ -182,13 +194,18 @@ export function ServiceMessagesSection({
             </Button>
             <Avatar className="h-8 w-8">
               <AvatarFallback className="bg-blue-100 text-blue-600">
-                {selectedMessageRequest?.title ? getInitials(selectedMessageRequest.title) : "??"}
+                {currentGroup?.clientName ? getInitials(currentGroup.clientName) : "??"}
               </AvatarFallback>
             </Avatar>
             <div>
-              <h3 className="font-medium text-sm">{selectedMessageRequest?.title}</h3>
+              <h3 className="font-medium text-sm">
+                {currentGroup?.clientName || "Client"}
+                <span className="text-muted-foreground ml-2 text-xs">
+                  ({currentGroup?.requestTitle})
+                </span>
+              </h3>
               <p className="text-xs text-muted-foreground">
-                ID: {selectedMessageRequest?.id}
+                ID Cerere: {selectedMessageRequest?.id}
               </p>
             </div>
           </div>
@@ -203,7 +220,7 @@ export function ServiceMessagesSection({
           </Button>
         </div>
 
-        <ScrollArea 
+        <ScrollArea
           className="flex-1 pr-4"
           style={{ height: "calc(600px - 180px)" }}
           onScrollCapture={handleScroll}
@@ -225,7 +242,12 @@ export function ServiceMessagesSection({
                         : "bg-gray-100 rounded-t-2xl rounded-r-2xl"
                     } p-3 relative`}
                   >
-                    <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
+                    <div className="text-xs mb-1 font-medium">
+                      {message.fromId === userId ? "Service" : currentGroup?.clientName || "Client"}
+                    </div>
+                    <p className="text-sm whitespace-pre-wrap break-words">
+                      {message.content}
+                    </p>
                     <div className={`flex items-center gap-1 mt-1 text-xs ${
                       message.fromId === userId ? "text-blue-100" : "text-gray-500"
                     }`}>

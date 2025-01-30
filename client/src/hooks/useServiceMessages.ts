@@ -96,6 +96,9 @@ export function useServiceMessages(userId: string) {
         if (!requestDoc.exists()) continue;
 
         const requestData = requestDoc.data();
+        const clientDoc = await getDoc(doc(db, "users", requestData.userId));
+        const clientName = clientDoc.exists() ? clientDoc.data().name : "Client";
+
         const requestMessages = currentMessages.filter(
           (m) => m.requestId === requestId,
         );
@@ -114,6 +117,7 @@ export function useServiceMessages(userId: string) {
           unreadCount: requestMessages.filter(
             (m) => !m.read && m.toId === userId,
           ).length,
+          clientName,
         });
       }
 
@@ -140,9 +144,13 @@ export function useServiceMessages(userId: string) {
 
         if (requestDoc.exists()) {
           const requestData = requestDoc.data();
+          const clientDoc = await getDoc(doc(db, "users", requestData.userId));
+          const clientName = clientDoc.exists() ? clientDoc.data().name : "Client";
+
           setSelectedMessageRequest({
             id: requestId,
             ...requestData,
+            clientName,
           } as Request);
           setIsViewingConversation(true);
 
