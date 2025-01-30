@@ -31,7 +31,7 @@ import {
   SendHorizontal,
   X,
   ArrowUpDown,
-  Search,
+  Loader2,
 } from "lucide-react";
 import { format } from "date-fns";
 import type { Request, Car, User } from "@/types/dashboard";
@@ -46,6 +46,7 @@ interface ClientRequestsProps {
   selectedRequest: Request | null;
   requestClient: User | null;
   cars: Record<string, Car>;
+  loading?: boolean;
 }
 
 export function ClientRequests({
@@ -58,6 +59,7 @@ export function ClientRequests({
   selectedRequest,
   requestClient,
   cars,
+  loading = false,
 }: ClientRequestsProps) {
   const [sortField, setSortField] = useState<keyof Request>("createdAt");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
@@ -108,6 +110,34 @@ export function ClientRequests({
     startIndex + itemsPerPage
   );
 
+  if (loading) {
+    return (
+      <Card className="border-[#00aff5]/20">
+        <CardContent className="p-6 flex justify-center items-center min-h-[200px]">
+          <div className="flex flex-col items-center gap-2">
+            <Loader2 className="h-8 w-8 animate-spin text-[#00aff5]" />
+            <p className="text-muted-foreground">Loading requests...</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!loading && clientRequests.length === 0) {
+    return (
+      <Card className="border-[#00aff5]/20">
+        <CardContent className="p-6 flex justify-center items-center min-h-[200px]">
+          <div className="text-center">
+            <p className="text-muted-foreground">No client requests found.</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              New requests matching your location will appear here.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card className="border-[#00aff5]/20">
       <CardHeader>
@@ -119,16 +149,16 @@ export function ClientRequests({
             </CardTitle>
             {clientRequests.filter((req) => !viewedRequests.has(req.id)).length >
               0 && (
-              <Badge
-                variant="secondary"
-                className="bg-[#00aff5] text-white text-lg font-bold px-3 py-1"
-              >
-                {
-                  clientRequests.filter((req) => !viewedRequests.has(req.id))
-                    .length
-                }
-              </Badge>
-            )}
+                <Badge
+                  variant="secondary"
+                  className="bg-[#00aff5] text-white text-lg font-bold px-3 py-1"
+                >
+                  {
+                    clientRequests.filter((req) => !viewedRequests.has(req.id))
+                      .length
+                  }
+                </Badge>
+              )}
           </div>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
