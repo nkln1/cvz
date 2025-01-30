@@ -2,8 +2,8 @@ import { useAuth } from "@/context/AuthContext";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useEffect, useState } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Loader2, FileText, MailOpen, MessageSquare, Calendar, User, Star } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import romanianCitiesData from "../../../../attached_assets/municipii_orase_romania.json";
 import Navigation from "@/components/Navigation";
@@ -133,111 +133,135 @@ export default function ServiceDashboard() {
     );
   }
 
-  if (!serviceData) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-red-500">Error loading service data</p>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-gray-50">
       <Navigation />
-      <div className="mx-auto max-w-7xl px-4">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-8">
-          <TabsList className="h-10 items-center justify-start p-1 bg-white rounded-md border shadow-sm w-fit">
-            <TabsTrigger 
-              value="requests" 
-              className="px-4 h-8 data-[state=active]:bg-[#00aff5] data-[state=active]:text-white rounded"
+      <div className="container mx-auto p-4 md:p-6 space-y-4 md:space-y-6">
+        <nav className="flex flex-col sm:flex-row gap-2 border-b pb-4 overflow-x-auto">
+          <div className="flex flex-col sm:flex-row gap-2 w-full">
+            <Button
+              variant={activeTab === "requests" ? "default" : "ghost"}
+              onClick={() => setActiveTab("requests")}
+              className={`flex items-center justify-start w-full sm:w-auto ${
+                activeTab === "requests"
+                  ? "bg-[#00aff5] hover:bg-[#0099d6] text-white"
+                  : "hover:text-[#00aff5]"
+              }`}
             >
+              <FileText className="w-4 h-4 mr-2" />
               Cereri
-            </TabsTrigger>
-            <TabsTrigger 
-              value="offers" 
-              className="px-4 h-8 data-[state=active]:bg-[#00aff5] data-[state=active]:text-white rounded"
+            </Button>
+            <Button
+              variant={activeTab === "offers" ? "default" : "ghost"}
+              onClick={() => setActiveTab("offers")}
+              className={`flex items-center justify-start w-full sm:w-auto ${
+                activeTab === "offers"
+                  ? "bg-[#00aff5] hover:bg-[#0099d6] text-white"
+                  : "hover:text-[#00aff5]"
+              }`}
             >
+              <MailOpen className="w-4 h-4 mr-2" />
               Oferte
-            </TabsTrigger>
-            <TabsTrigger 
-              value="messages" 
-              className="px-4 h-8 data-[state=active]:bg-[#00aff5] data-[state=active]:text-white rounded"
+            </Button>
+            <Button
+              variant={activeTab === "messages" ? "default" : "ghost"}
+              onClick={() => setActiveTab("messages")}
+              className={`flex items-center justify-start w-full sm:w-auto ${
+                activeTab === "messages"
+                  ? "bg-[#00aff5] hover:bg-[#0099d6] text-white"
+                  : "hover:text-[#00aff5]"
+              }`}
             >
+              <MessageSquare className="w-4 h-4 mr-2" />
               Mesaje
-            </TabsTrigger>
-            <TabsTrigger 
-              value="appointments" 
-              className="px-4 h-8 data-[state=active]:bg-[#00aff5] data-[state=active]:text-white rounded"
+            </Button>
+            <Button
+              variant={activeTab === "appointments" ? "default" : "ghost"}
+              onClick={() => setActiveTab("appointments")}
+              className={`flex items-center justify-start w-full sm:w-auto ${
+                activeTab === "appointments"
+                  ? "bg-[#00aff5] hover:bg-[#0099d6] text-white"
+                  : "hover:text-[#00aff5]"
+              }`}
             >
+              <Calendar className="w-4 h-4 mr-2" />
               Programări
-            </TabsTrigger>
-            <TabsTrigger 
-              value="reviews" 
-              className="px-4 h-8 data-[state=active]:bg-[#00aff5] data-[state=active]:text-white rounded"
+            </Button>
+            <Button
+              variant={activeTab === "reviews" ? "default" : "ghost"}
+              onClick={() => setActiveTab("reviews")}
+              className={`flex items-center justify-start w-full sm:w-auto ${
+                activeTab === "reviews"
+                  ? "bg-[#00aff5] hover:bg-[#0099d6] text-white"
+                  : "hover:text-[#00aff5]"
+              }`}
             >
+              <Star className="w-4 h-4 mr-2" />
               Recenzii
-            </TabsTrigger>
-            <TabsTrigger 
-              value="account" 
-              className="px-4 h-8 data-[state=active]:bg-[#00aff5] data-[state=active]:text-white rounded"
+            </Button>
+            <Button
+              variant={activeTab === "account" ? "default" : "ghost"}
+              onClick={() => setActiveTab("account")}
+              className={`flex items-center justify-start w-full sm:w-auto ${
+                activeTab === "account"
+                  ? "bg-[#00aff5] hover:bg-[#0099d6] text-white"
+                  : "hover:text-[#00aff5]"
+              }`}
             >
+              <User className="w-4 h-4 mr-2" />
               Cont
-            </TabsTrigger>
-          </TabsList>
-
-          <div className="mt-6 bg-white rounded-lg border shadow-sm p-6">
-            <TabsContent value="requests">
-              <ClientRequests
-                clientRequests={clientRequests}
-                viewedRequests={viewedRequests}
-                onViewDetails={handleViewDetails}
-                onMessage={handleMessage}
-                onSendOffer={handleSendOffer}
-                onRejectRequest={handleRejectRequest}
-                selectedRequest={selectedRequest}
-                requestClient={requestClient}
-                cars={cars}
-              />
-            </TabsContent>
-            <TabsContent value="offers">
-              <SentOffers
-                requests={[]}
-                cars={cars}
-                refreshRequests={fetchMessages}
-              />
-            </TabsContent>
-            <TabsContent value="messages">
-              <ServiceMessagesSection
-                messageGroups={messageGroups}
-                messages={messages}
-                selectedMessageRequest={selectedMessageRequest}
-                isViewingConversation={isViewingConversation}
-                messageContent={messageContent}
-                sendingMessage={sendingMessage}
-                onMessageContentChange={setMessageContent}
-                onSendMessage={sendMessage}
-                onSelectConversation={handleSelectConversation}
-                onBackToList={handleBackToList}
-                onViewRequestDetails={handleViewDetails}
-                userId={user?.uid || ""}
-              />
-            </TabsContent>
-            <TabsContent value="appointments">
-              <AppointmentsSection />
-            </TabsContent>
-            <TabsContent value="reviews">
-              <ReviewsSection />
-            </TabsContent>
-            <TabsContent value="account">
-              <ServiceAccountSection
-                userId={user?.uid || ""}
-                serviceData={serviceData}
-                fields={fields}
-                validationErrors={{}}
-              />
-            </TabsContent>
+            </Button>
           </div>
-        </Tabs>
+        </nav>
+
+        <div className="bg-white rounded-lg border shadow-sm p-6">
+          {activeTab === "requests" && (
+            <ClientRequests
+              clientRequests={clientRequests}
+              viewedRequests={viewedRequests}
+              onViewDetails={handleViewDetails}
+              onMessage={handleMessage}
+              onSendOffer={handleSendOffer}
+              onRejectRequest={handleRejectRequest}
+              selectedRequest={selectedRequest}
+              requestClient={requestClient}
+              cars={cars}
+            />
+          )}
+          {activeTab === "offers" && (
+            <SentOffers
+              requests={[]}
+              cars={cars}
+              refreshRequests={fetchMessages}
+            />
+          )}
+          {activeTab === "messages" && (
+            <ServiceMessagesSection
+              messageGroups={messageGroups}
+              messages={messages}
+              selectedMessageRequest={selectedMessageRequest}
+              isViewingConversation={isViewingConversation}
+              messageContent={messageContent}
+              sendingMessage={sendingMessage}
+              onMessageContentChange={setMessageContent}
+              onSendMessage={sendMessage}
+              onSelectConversation={handleSelectConversation}
+              onBackToList={handleBackToList}
+              onViewRequestDetails={handleViewDetails}
+              userId={user?.uid || ""}
+            />
+          )}
+          {activeTab === "appointments" && <AppointmentsSection />}
+          {activeTab === "reviews" && <ReviewsSection />}
+          {activeTab === "account" && (
+            <ServiceAccountSection
+              userId={user?.uid || ""}
+              serviceData={serviceData}
+              fields={fields}
+              validationErrors={{}}
+            />
+          )}
+        </div>
       </div>
       <Footer />
     </div>
