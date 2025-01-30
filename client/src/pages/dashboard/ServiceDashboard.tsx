@@ -157,8 +157,8 @@ export default function ServiceDashboard() {
         }
       } catch (error) {
         console.error("Error fetching service data:", error);
-        const errorMessage = error instanceof Error 
-          ? error.message 
+        const errorMessage = error instanceof Error
+          ? error.message
           : "Eroare necunoscută";
         setError(`Nu am putut încărca datele serviciului: ${errorMessage}`);
         toast({
@@ -173,6 +173,13 @@ export default function ServiceDashboard() {
 
     fetchServiceData();
   }, [user, toast, setLocation]);
+
+  const switchToMessagesAndOpenConversation = (request: ServiceRequest) => {
+    setActiveTab("messages");
+    if (request) {
+      handleSelectConversation(request.id);
+    }
+  };
 
   if (loading) {
     return (
@@ -271,7 +278,7 @@ export default function ServiceDashboard() {
             clientRequests={clientRequests}
             viewedRequests={viewedRequests}
             onViewDetails={handleViewDetails}
-            onMessage={setSelectedMessageRequest}
+            onMessage={switchToMessagesAndOpenConversation}
             onSendOffer={() => {
               toast({
                 description: "Funcționalitatea de trimitere oferte va fi disponibilă în curând.",
@@ -283,7 +290,7 @@ export default function ServiceDashboard() {
             cars={cars}
           />
         )}
-        {activeTab === "offers" && <SentOffers requests={[]} cars={cars} refreshRequests={ () => {}} />}
+        {activeTab === "offers" && <SentOffers requests={[]} cars={cars} refreshRequests={() => {}} />}
         {activeTab === "messages" && (
           <ServiceMessagesSection
             messageGroups={messageGroups}

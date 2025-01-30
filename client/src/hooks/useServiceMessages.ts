@@ -9,7 +9,8 @@ import {
   getDoc,
   onSnapshot,
   orderBy,
-  Unsubscribe 
+  Unsubscribe,
+  serverTimestamp
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
@@ -144,9 +145,25 @@ export function useServiceMessages(userId: string) {
     try {
       const requestDoc = await getDoc(doc(db, "requests", requestId));
       if (requestDoc.exists()) {
-        setSelectedMessageRequest({ id: requestId, ...requestDoc.data() } as Request);
+        const requestData = requestDoc.data();
+        setSelectedMessageRequest({ id: requestId, ...requestData } as Request);
         setIsViewingConversation(true);
         localStorage.setItem("selectedMessageRequestId", requestId);
+
+        // Send initial message if this is a new conversation
+        const conversationMessages = messages.filter(m => m.requestId === requestId);
+        if (conversationMessages.length === 0) {
+          const initialMessage = {
+            requestId,
+            fromId: userId,
+            toId: requestData.userId,
+            content: `Bună ziua! Sunt reprezentantul service-ului auto și am primit cererea dumneavoastră pentru ${requestData.title}. Cum vă pot ajuta?`,
+            createdAt: serverTimestamp(),
+            read: false,
+          };
+
+          await addDoc(collection(db, "messages"), initialMessage);
+        }
       }
     } catch (error) {
       console.error("Error fetching request:", error);
@@ -156,7 +173,7 @@ export function useServiceMessages(userId: string) {
         description: "Could not load conversation. Please try again.",
       });
     }
-  }, [toast]);
+  }, [messages, userId, toast]);
 
   const handleBackToList = () => {
     setIsViewingConversation(false);
@@ -175,7 +192,7 @@ export function useServiceMessages(userId: string) {
         fromId: userId,
         toId: selectedMessageRequest.userId,
         content: messageContent.trim(),
-        createdAt: new Date().toISOString(),
+        createdAt: serverTimestamp(),
         read: false,
       };
 
@@ -209,6 +226,5 @@ export function useServiceMessages(userId: string) {
     handleSelectConversation,
     handleBackToList,
     setMessageContent,
-    setSelectedMessageRequest,
   };
 }
