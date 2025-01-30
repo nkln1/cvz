@@ -28,7 +28,6 @@ function ProfileSectionContent({ userId }: ProfileSectionProps) {
   const [selectedCounty, setSelectedCounty] = useState<string>(profile?.county || "");
   const { toast } = useToast();
 
-  // Update local state when profile changes
   useEffect(() => {
     if (profile) {
       setEditedProfile(profile);
@@ -146,6 +145,7 @@ function ProfileSectionContent({ userId }: ProfileSectionProps) {
                     size="icon"
                     onClick={handleEditClick}
                     className="h-8 w-8 hover:text-[#00aff5]"
+                    aria-label="Edit name"
                   >
                     <Pencil className="h-4 w-4" />
                   </Button>
@@ -181,6 +181,7 @@ function ProfileSectionContent({ userId }: ProfileSectionProps) {
                     size="icon"
                     onClick={handleEditClick}
                     className="h-8 w-8 hover:text-[#00aff5]"
+                    aria-label="Edit phone"
                   >
                     <Pencil className="h-4 w-4" />
                   </Button>
@@ -219,6 +220,7 @@ function ProfileSectionContent({ userId }: ProfileSectionProps) {
                     size="icon"
                     onClick={handleEditClick}
                     className="h-8 w-8 hover:text-[#00aff5]"
+                    aria-label="Edit county"
                   >
                     <Pencil className="h-4 w-4" />
                   </Button>
@@ -261,6 +263,7 @@ function ProfileSectionContent({ userId }: ProfileSectionProps) {
                     size="icon"
                     onClick={handleEditClick}
                     className="h-8 w-8 hover:text-[#00aff5]"
+                    aria-label="Edit city"
                   >
                     <Pencil className="h-4 w-4" />
                   </Button>
