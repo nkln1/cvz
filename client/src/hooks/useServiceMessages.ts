@@ -97,7 +97,9 @@ export function useServiceMessages(userId: string) {
 
         const requestData = requestDoc.data();
         const clientDoc = await getDoc(doc(db, "users", requestData.userId));
-        const clientName = clientDoc.exists() ? clientDoc.data().name : "Client";
+        const clientName = clientDoc.exists() 
+          ? clientDoc.data().numeComplet || clientDoc.data().name || `${clientDoc.data().nume || ''} ${clientDoc.data().prenume || ''}`.trim()
+          : "Client necunoscut";
 
         const requestMessages = currentMessages.filter(
           (m) => m.requestId === requestId,
@@ -105,8 +107,8 @@ export function useServiceMessages(userId: string) {
 
         // Sort messages by timestamp
         requestMessages.sort((a, b) => {
-          const aTime = (a.createdAt as Timestamp).toMillis();
-          const bTime = (b.createdAt as Timestamp).toMillis();
+          const aTime = (a.createdAt as unknown as Timestamp).toMillis();
+          const bTime = (b.createdAt as unknown as Timestamp).toMillis();
           return bTime - aTime;
         });
 
@@ -123,8 +125,8 @@ export function useServiceMessages(userId: string) {
 
       // Sort groups by latest message
       groups.sort((a, b) => {
-        const aTime = (a.lastMessage.createdAt as Timestamp).toMillis();
-        const bTime = (b.lastMessage.createdAt as Timestamp).toMillis();
+        const aTime = (a.lastMessage.createdAt as unknown as Timestamp).toMillis();
+        const bTime = (b.lastMessage.createdAt as unknown as Timestamp).toMillis();
         return bTime - aTime;
       });
 
@@ -145,7 +147,9 @@ export function useServiceMessages(userId: string) {
         if (requestDoc.exists()) {
           const requestData = requestDoc.data();
           const clientDoc = await getDoc(doc(db, "users", requestData.userId));
-          const clientName = clientDoc.exists() ? clientDoc.data().name : "Client";
+          const clientName = clientDoc.exists()
+            ? clientDoc.data().numeComplet || clientDoc.data().name || `${clientDoc.data().nume || ''} ${clientDoc.data().prenume || ''}`.trim()
+            : "Client necunoscut";
 
           setSelectedMessageRequest({
             id: requestId,
