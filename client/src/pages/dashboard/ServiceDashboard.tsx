@@ -201,6 +201,8 @@ export default function ServiceDashboard() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [cars, setCars] = useState<Record<string, Car>>({});
+  const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
+  const [editingFields, setEditingFields] = useState<Record<string, boolean>>({});
 
 
   const romanianCounties = Object.keys(romanianCitiesData);
@@ -918,6 +920,10 @@ export default function ServiceDashboard() {
             serviceData={serviceData}
             setServiceData={setServiceData}
             romanianCities={romanianCitiesData}
+            validationErrors={validationErrors}
+            handleEdit={handleEdit}
+            handleChange={handleChange}
+            validateField={validateField}
           />
         );
       case "requests":
