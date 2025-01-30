@@ -1,5 +1,15 @@
-import { useState, useEffect } from "react";
-import { collection, query, where, getDocs, addDoc, doc, getDoc } from "firebase/firestore";
+import { useState, useEffect, useCallback } from "react";
+import { 
+  collection, 
+  query, 
+  where, 
+  getDocs, 
+  addDoc, 
+  doc, 
+  getDoc,
+  onSnapshot,
+  orderBy 
+} from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import type { Message, MessageGroup, Request } from "@/types/service";
@@ -13,83 +23,107 @@ export function useServiceMessages(userId: string) {
   const [messageContent, setMessageContent] = useState("");
   const [sendingMessage, setSendingMessage] = useState(false);
 
-  const fetchMessages = async () => {
+  // Subscribe to real-time message updates
+  useEffect(() => {
     if (!userId) return;
 
-    try {
-      const sentMessagesQuery = query(
-        collection(db, "messages"),
-        where("fromId", "==", userId),
-      );
+    // Create query for both sent and received messages
+    const sentMessagesQuery = query(
+      collection(db, "messages"),
+      where("fromId", "==", userId),
+      orderBy("createdAt", "desc")
+    );
 
-      const receivedMessagesQuery = query(
-        collection(db, "messages"),
-        where("toId", "==", userId),
-      );
+    const receivedMessagesQuery = query(
+      collection(db, "messages"),
+      where("toId", "==", userId),
+      orderBy("createdAt", "desc")
+    );
 
-      const [sentSnapshot, receivedSnapshot] = await Promise.all([
-        getDocs(sentMessagesQuery),
-        getDocs(receivedMessagesQuery),
-      ]);
+    // Subscribe to both queries
+    const unsubscribeSent = onSnapshot(sentMessagesQuery, (snapshot) => {
+      const newMessages = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Message));
+      updateMessages(newMessages, "sent");
+    });
 
-      const loadedMessages: Message[] = [];
-      const groupedMessages: { [key: string]: Message[] } = {};
+    const unsubscribeReceived = onSnapshot(receivedMessagesQuery, (snapshot) => {
+      const newMessages = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Message));
+      updateMessages(newMessages, "received");
+    });
 
-      [sentSnapshot, receivedSnapshot].forEach((snapshot) => {
-        snapshot.forEach((doc) => {
-          const message = { id: doc.id, ...doc.data() } as Message;
-          loadedMessages.push(message);
+    return () => {
+      unsubscribeSent();
+      unsubscribeReceived();
+    };
+  }, [userId]);
 
-          if (!groupedMessages[message.requestId]) {
-            groupedMessages[message.requestId] = [];
-          }
-          groupedMessages[message.requestId].push(message);
-        });
-      });
-
-      const groups: MessageGroup[] = [];
-      for (const [requestId, messages] of Object.entries(groupedMessages)) {
-        try {
-          const requestDoc = await getDoc(doc(db, "requests", requestId));
-          if (requestDoc.exists()) {
-            const requestData = requestDoc.data();
-            messages.sort(
-              (a, b) =>
-                new Date(b.createdAt).getTime() -
-                new Date(a.createdAt).getTime(),
-            );
-
-            groups.push({
-              requestId,
-              requestTitle: requestData.title,
-              lastMessage: messages[0],
-              unreadCount: messages.filter(
-                (m) => !m.read && m.toId === userId,
-              ).length,
-            });
-          }
-        } catch (error) {
-          console.error(`Error fetching request ${requestId}:`, error);
+  const updateMessages = useCallback(async (newMessages: Message[], type: 'sent' | 'received') => {
+    setMessages(prev => {
+      // Combine messages, removing duplicates
+      const combined = [...prev];
+      newMessages.forEach(message => {
+        const index = combined.findIndex(m => m.id === message.id);
+        if (index === -1) {
+          combined.push(message);
+        } else {
+          combined[index] = message;
         }
-      }
-
-      groups.sort(
-        (a, b) =>
-          new Date(b.lastMessage.createdAt).getTime() -
-          new Date(a.lastMessage.createdAt).getTime(),
-      );
-
-      setMessageGroups(groups);
-      setMessages(loadedMessages);
-    } catch (error) {
-      console.error("Error loading messages:", error);
-      toast({
-        variant: "destructive",
-        title: "Eroare",
-        description: "Nu s-au putut încărca mesajele.",
       });
+
+      // Sort by date
+      return combined.sort((a, b) => 
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+    });
+
+    // Update message groups
+    const groupedMessages: { [key: string]: Message[] } = {};
+    newMessages.forEach(message => {
+      if (!groupedMessages[message.requestId]) {
+        groupedMessages[message.requestId] = [];
+      }
+      groupedMessages[message.requestId].push(message);
+    });
+
+    // Fetch request data for each group
+    const groups: MessageGroup[] = [];
+    for (const [requestId, messages] of Object.entries(groupedMessages)) {
+      try {
+        const requestDoc = await getDoc(doc(db, "requests", requestId));
+        if (requestDoc.exists()) {
+          const requestData = requestDoc.data();
+          messages.sort((a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
+
+          groups.push({
+            requestId,
+            requestTitle: requestData.title,
+            lastMessage: messages[0],
+            unreadCount: messages.filter(m => !m.read && m.toId === userId).length,
+          });
+        }
+      } catch (error) {
+        console.error(`Error fetching request ${requestId}:`, error);
+      }
     }
-  };
+
+    setMessageGroups(prev => {
+      const combined = [...prev];
+      groups.forEach(group => {
+        const index = combined.findIndex(g => g.requestId === group.requestId);
+        if (index === -1) {
+          combined.push(group);
+        } else {
+          combined[index] = group;
+        }
+      });
+      return combined.sort((a, b) =>
+        new Date(b.lastMessage.createdAt).getTime() -
+        new Date(a.lastMessage.createdAt).getTime()
+      );
+    });
+  }, [userId]);
 
   const sendMessage = async () => {
     if (!userId || !messageContent.trim() || !selectedMessageRequest) return;
@@ -107,7 +141,6 @@ export function useServiceMessages(userId: string) {
       };
 
       await addDoc(messageRef, newMessage);
-      await fetchMessages();
 
       toast({
         title: "Succes",
@@ -127,11 +160,23 @@ export function useServiceMessages(userId: string) {
     }
   };
 
-  const handleSelectConversation = (requestId: string, request: Request) => {
-    setSelectedMessageRequest(request);
-    setIsViewingConversation(true);
-    localStorage.setItem("selectedMessageRequestId", requestId);
-  };
+  const handleSelectConversation = useCallback(async (requestId: string) => {
+    try {
+      const requestDoc = await getDoc(doc(db, "requests", requestId));
+      if (requestDoc.exists()) {
+        setSelectedMessageRequest({ id: requestId, ...requestDoc.data() } as Request);
+        setIsViewingConversation(true);
+        localStorage.setItem("selectedMessageRequestId", requestId);
+      }
+    } catch (error) {
+      console.error("Error fetching request:", error);
+      toast({
+        variant: "destructive",
+        title: "Eroare",
+        description: "Nu s-a putut încărca conversația. Încercați din nou.",
+      });
+    }
+  }, [toast]);
 
   const handleBackToList = () => {
     setIsViewingConversation(false);
@@ -146,7 +191,6 @@ export function useServiceMessages(userId: string) {
     isViewingConversation,
     messageContent,
     sendingMessage,
-    fetchMessages,
     sendMessage,
     handleSelectConversation,
     handleBackToList,

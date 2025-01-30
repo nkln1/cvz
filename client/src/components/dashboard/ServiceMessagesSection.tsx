@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Card,
   CardContent,
@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { MessageSquare, SendHorizontal, Loader2, Eye, ArrowLeft } from "lucide-react";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
-import type { Request, Message } from "@/types/dashboard";
+import type { Request, Message } from "@/types/service";
 
 interface MessageGroup {
   requestId: string;
@@ -49,6 +49,20 @@ export function ServiceMessagesSection({
   onViewRequestDetails,
   userId,
 }: ServiceMessagesSectionProps) {
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [isScrolledToBottom, setIsScrolledToBottom] = useState(true);
+
+  useEffect(() => {
+    if (isScrolledToBottom && messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages, isScrolledToBottom]);
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const { scrollHeight, scrollTop, clientHeight } = e.currentTarget;
+    setIsScrolledToBottom(scrollHeight - scrollTop === clientHeight);
+  };
+
   const renderMessagesList = () => (
     <div className="space-y-4">
       {messageGroups.length === 0 ? (
@@ -60,13 +74,11 @@ export function ServiceMessagesSection({
           <Card
             key={group.requestId}
             className="cursor-pointer hover:bg-gray-50 transition-colors"
+            onClick={() => onSelectConversation(group.requestId)}
           >
             <CardContent className="p-4">
               <div className="flex justify-between items-start">
-                <div
-                  className="flex-1"
-                  onClick={() => onSelectConversation(group.requestId)}
-                >
+                <div className="flex-1">
                   <h4 className="font-medium">{group.requestTitle}</h4>
                   <p className="text-sm text-muted-foreground truncate">
                     {group.lastMessage.content}
@@ -74,10 +86,7 @@ export function ServiceMessagesSection({
                 </div>
                 <div className="flex flex-col items-end ml-4">
                   <span className="text-xs text-muted-foreground">
-                    {format(
-                      new Date(group.lastMessage.createdAt),
-                      "dd.MM.yyyy HH:mm"
-                    )}
+                    {format(new Date(group.lastMessage.createdAt), "dd.MM.yyyy HH:mm")}
                   </span>
                   {group.unreadCount > 0 && (
                     <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded-full mt-1">
@@ -111,14 +120,17 @@ export function ServiceMessagesSection({
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => onViewRequestDetails(selectedMessageRequest?.id || "")}
+          onClick={() => selectedMessageRequest && onViewRequestDetails(selectedMessageRequest.id)}
           className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 flex items-center gap-1"
         >
           <Eye className="h-4 w-4" />
           Detalii cerere
         </Button>
       </div>
-      <div className="space-y-4 max-h-[400px] overflow-y-auto mb-4">
+      <div 
+        className="space-y-4 max-h-[400px] overflow-y-auto mb-4 p-4"
+        onScroll={handleScroll}
+      >
         {messages
           .filter((msg) => msg.requestId === selectedMessageRequest?.id)
           .sort(
@@ -134,12 +146,13 @@ export function ServiceMessagesSection({
                   : "bg-gray-100"
               }`}
             >
-              <p className="text-sm">{message.content}</p>
-              <span className="text-xs opacity-70">
+              <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
+              <span className="text-xs opacity-70 block mt-1">
                 {format(new Date(message.createdAt), "dd.MM.yyyy HH:mm")}
               </span>
             </div>
           ))}
+        <div ref={messagesEndRef} />
       </div>
       <div className="flex gap-2">
         <Textarea
@@ -147,6 +160,14 @@ export function ServiceMessagesSection({
           onChange={(e) => onMessageContentChange(e.target.value)}
           placeholder="Scrie un mesaj..."
           className="flex-1"
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault();
+              if (messageContent.trim()) {
+                onSendMessage();
+              }
+            }
+          }}
         />
         <Button
           onClick={onSendMessage}
