@@ -63,6 +63,7 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { ServiceProfileSection } from "@/components/dashboard/ServiceProfileSection";
 
 interface Car {
   id: string;
@@ -164,11 +165,7 @@ export default function ServiceDashboard() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [serviceData, setServiceData] = useState<ServiceData | null>(null);
-  const [editedData, setEditedData] = useState<ServiceData | null>(null);
-  const [editingFields, setEditingFields] = useState<Record<string, boolean>>({});
-  const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState(() => {
     if (window.location.pathname.endsWith("/service-dashboard")) {
       localStorage.setItem("activeTab", "requests");
@@ -252,7 +249,6 @@ export default function ServiceDashboard() {
         if (serviceDoc.exists()) {
           const data = serviceDoc.data() as ServiceData;
           setServiceData(data);
-          setEditedData(data);
           if (data.county) {
             setAvailableCities(
               romanianCitiesData[
@@ -319,8 +315,8 @@ export default function ServiceDashboard() {
   };
 
   const handleChange = (field: keyof ServiceData, value: string) => {
-    if (editedData) {
-      const newData = { ...editedData, [field]: value };
+    if (serviceData) {
+      const newData = { ...serviceData, [field]: value };
 
       if (field === "county") {
         setAvailableCities(
@@ -329,19 +325,19 @@ export default function ServiceDashboard() {
         newData.city = "";
       }
 
-      setEditedData(newData);
+      setServiceData(newData);
       validateField(field, value);
     }
   };
 
   const handleSave = async () => {
-    if (!user || !editedData) return;
+    if (!user || !serviceData) return;
 
     let isValid = true;
     const newErrors: ValidationErrors = {};
 
     fields.forEach(({ key, editable }) => {
-      if (editable && editingFields[key]) {
+      if (editable) {
         try {
           const schema = z.object({
             [key]:
@@ -349,7 +345,7 @@ export default function ServiceDashboard() {
                 key as keyof typeof serviceDataSchema.shape
               ],
           });
-          schema.parse({ [key]: editedData[key] });
+          schema.parse({ [key]: serviceData[key] });
         } catch (error) {
           if (error instanceof z.ZodError) {
             isValid = false;
@@ -370,12 +366,10 @@ export default function ServiceDashboard() {
       return;
     }
 
-    setSaving(true);
+    setLoading(true);
     try {
       const serviceRef = doc(db, "services", user.uid);
-      await updateDoc(serviceRef, editedData);
-      setServiceData(editedData);
-      setEditingFields({});
+      await updateDoc(serviceRef, serviceData);
       toast({
         title: "Succes",
         description: "Datele au fost actualizate cu succes.",
@@ -389,11 +383,9 @@ export default function ServiceDashboard() {
           "Nu am putut actualiza datele. Vă rugăm încercați din nou.",
       });
     } finally {
-      setSaving(false);
+      setLoading(false);
     }
   };
-
-  const hasChanges = JSON.stringify(serviceData) !== JSON.stringify(editedData);
 
   const fetchClientRequests = async () => {
     if (!user || !serviceData) return;
@@ -1260,6 +1252,206 @@ export default function ServiceDashboard() {
     );
   }
 
+  const renderContent = () => {
+    switch (activeTab) {
+      case "profile":
+        return (
+          <ServiceProfileSection
+            userId={user?.uid || ""}
+            serviceData={serviceData}
+            setServiceData={setServiceData}
+            romanianCities={romanianCitiesData}
+          />
+        );
+      case "requests":
+        return renderRequestsContent();
+      case "offers":
+        return (
+          <TabsContent value="offers">
+            <Card className="border-[#00aff5]/20">
+              <CardHeader>
+                <CardTitle className="text-[#00aff5] flex items-center gap-2">
+                  <SendHorizontal className="h-5 w-5" />
+                  Oferte Trimise
+                </CardTitle>
+                <CardDescription>
+                  Urmărește și gestionează ofertele trimise către clienți
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  Lista ofertelor va apărea aici
+                </p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        );
+      case "messages":
+        return renderMessages();
+      case "appointments":
+        return (
+          <TabsContent value="appointments">
+            <Card className="border-[#00aff5]/20">
+              <CardHeader>
+                <CardTitle className="text-[#00aff5] flex items-center gap-2">
+                  <Calendar className="h-5 w-5" />
+                  Programări
+                </CardTitle>
+                <CardDescription>
+                  Gestionează programările și disponibilitatea serviciului
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  Calendar și programări vor apărea aici
+                </p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        );
+      case "reviews":
+        return (
+          <TabsContent value="reviews">
+            <Card className="border-[#00aff5]/20">
+              <CardHeader>
+                <CardTitle className="text-[#00aff5] flex items-center gap-2">
+                  <Star className="h-5 w-5" />
+                  Recenzii
+                </CardTitle>
+                <CardDescription>
+                  Vezi și răspunde la recenziile primite de la clienți
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  Lista recenziilor va apărea aici
+                </p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        );
+      case "account":
+        return (
+          <TabsContent value="account">
+            <Card className="border-[#00aff5]/20">
+              <CardHeader>
+                <CardTitle className="text-[#00aff5] flex items-center gap-2">
+                  <UserCog className="h-5 w-5" />
+                  Cont
+                </CardTitle>
+                <CardDescription>
+                  Gestionează informațiile contului și setările
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {fields.map(({ label, key, editable, type, options }) => (
+                    <div key={key} className="relative">
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="text-sm font-medium text-gray-700">
+                          {label}
+                        </label>
+                        {editable && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEdit(key)}
+                            className="h-6 w-6 p-0 absolute right-2 top-0"
+                          >
+                            <Pen className="h-3.5 w-3.5 text-gray-400 hover:text-gray-600" />
+                          </Button>
+                        )}
+                      </div>
+                      <div className="space-y-1">
+                        {type === "select" && options ? (
+                          <Select
+                            value={serviceData?.[key]}
+                            onValueChange={(value) => handleChange(key, value)}
+                            disabled={!editable}
+                          >
+                            <SelectTrigger
+                              className={`${
+                                !editable
+                                  ? "bg-gray-50"
+                                  : "bg-white"
+                              } ${validationErrors[key] ? "border-red-500" : ""}`}
+                            >
+                              <SelectValue
+                                placeholder={`Selectează ${label.toLowerCase()}`}
+                              />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {options.map((option) => (
+                                <SelectItem key={option} value={option}>
+                                  {option}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <Input
+                            value={serviceData?.[key] || ""}
+                            onChange={(e) => handleChange(key, e.target.value)}
+                            disabled={!editable}
+                            className={`${
+                              !editable
+                                ? "bg-gray-50"
+                                : "bg-white"
+                            } ${validationErrors[key] ? "border-red-500" : ""} pr-8`}
+                          />
+                        )}
+                        {validationErrors[key] && (
+                          <p className="text-xs text-red-500 mt-1">
+                            {validationErrors[key]}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <Button
+                  onClick={handleSave}
+                  disabled={loading || Object.keys(validationErrors).length > 0}
+                  className="mt-6 bg-[#00aff5] hover:bg-[#0099d6] float-right"
+                >
+                  {loading ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : (
+                    <Save className="h-4 w-4 mr-2" />
+                  )}
+                  Salvează
+                </Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        );
+      case "public-profile":
+        return (
+          <TabsContent value="public-profile">
+            <Card className="border-[#00aff5]/20">
+              <CardHeader>
+                <CardTitle className="text-[#00aff5] flex items-center gap-2">
+                  <Store className="h-5 w-5" />
+                  Profil Public
+                </CardTitle>
+                <CardDescription>
+                  Gestionează informațiile afișate public despre serviciul tău
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  Informațiile profilului public vor apărea aici
+                </p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Navigation />
@@ -1342,7 +1534,7 @@ export default function ServiceDashboard() {
           </Button>
           <Button
             variant={activeTab === "account" ? "default" : "ghost"}
-            onClick={() => setActiveTab("account")}
+            onClick={() => setActiveTab("profile")}
             className={`flex items-center justify-start ${
               activeTab === "account"
                 ? "bg-[#00aff5] text-white hover:bg-[#0099d6]"
@@ -1351,7 +1543,7 @@ export default function ServiceDashboard() {
           >
             <div className="flex items-center gap-2">
               <UserCog className="w-4 h-4" />
-              Cont
+              Profil
             </div>
           </Button>
           <Button
@@ -1371,177 +1563,7 @@ export default function ServiceDashboard() {
         </nav>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          {renderRequestsContent()}
-          <TabsContent value="offers">
-            <Card className="border-[#00aff5]/20">
-              <CardHeader>
-                <CardTitle className="text-[#00aff5] flex items-center gap-2">
-                  <SendHorizontal className="h-5 w-5" />
-                  Oferte Trimise
-                </CardTitle>
-                <CardDescription>
-                  Urmărește și gestionează ofertele trimise către clienți
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">
-                  Lista ofertelor va apărea aici
-                </p>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          {renderMessages()}
-          <TabsContent value="appointments">
-            <Card className="border-[#00aff5]/20">
-              <CardHeader>
-                <CardTitle className="text-[#00aff5] flex items-center gap-2">
-                  <Calendar className="h-5 w-5" />
-                  Programări
-                </CardTitle>
-                <CardDescription>
-                  Gestionează programările și disponibilitatea serviciului
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">
-                  Calendar și programări vor apărea aici
-                </p>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          <TabsContent value="reviews">
-            <Card className="border-[#00aff5]/20">
-              <CardHeader>
-                <CardTitle className="text-[#00aff5] flex items-center gap-2">
-                  <Star className="h-5 w-5" />
-                  Recenzii
-                </CardTitle>
-                <CardDescription>
-                  Vezi și răspunde la recenziile primite de la clienți
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">
-                  Lista recenziilor va apărea aici
-                </p>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          <TabsContent value="account">
-            <Card className="border-[#00aff5]/20">
-              <CardHeader>
-                <CardTitle className="text-[#00aff5] flex items-center gap-2">
-                  <UserCog className="h-5 w-5" />
-                  Cont
-                </CardTitle>
-                <CardDescription>
-                  Gestionează informațiile contului și setările
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {fields.map(({ label, key, editable, type, options }) => (
-                    <div key={key} className="relative">
-                      <div className="flex items-center justify-between mb-1">
-                        <label className="text-sm font-medium text-gray-700">
-                          {label}
-                        </label>
-                        {editable && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEdit(key)}
-                            className="h-6 w-6 p-0 absolute right-2 top-0"
-                          >
-                            <Pen className="h-3.5 w-3.5 text-gray-400 hover:text-gray-600" />
-                          </Button>
-                        )}
-                      </div>
-                      <div className="space-y-1">
-                        {type === "select" && options ? (
-                          <Select
-                            value={editedData?.[key]}
-                            onValueChange={(value) => handleChange(key, value)}
-                            disabled={!editable || !editingFields[key]}
-                          >
-                            <SelectTrigger
-                              className={`${
-                                !editable || !editingFields[key]
-                                  ? "bg-gray-50"
-                                  : "bg-white"
-                              } ${validationErrors[key] ? "border-red-500" : ""}`}
-                            >
-                              <SelectValue
-                                placeholder={`Selectează ${label.toLowerCase()}`}
-                              />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {options.map((option) => (
-                                <SelectItem key={option} value={option}>
-                                  {option}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        ) : (
-                          <Input
-                            value={editedData?.[key] || ""}
-                            onChange={(e) => handleChange(key, e.target.value)}
-                            disabled={!editable || !editingFields[key]}
-                            className={`${
-                              !editable || !editingFields[key]
-                                ? "bg-gray-50"
-                                : "bg-white"
-                            } ${validationErrors[key] ? "border-red-500" : ""} pr-8`}
-                          />
-                        )}
-                        {validationErrors[key] && (
-                          <p className="text-xs text-red-500 mt-1">
-                            {validationErrors[key]}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {hasChanges && (
-                  <Button
-                    onClick={handleSave}
-                    disabled={
-                      saving || Object.keys(validationErrors).length > 0
-                    }
-                    className="mt-6 bg-[#00aff5] hover:bg-[#0099d6] float-right"
-                  >
-                    {saving ? (
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    ) : (
-                      <Save className="h-4 w-4 mr-2" />
-                    )}
-                    Salvează
-                  </Button>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-          <TabsContent value="public-profile">
-            <Card className="border-[#00aff5]/20">
-              <CardHeader>
-                <CardTitle className="text-[#00aff5] flex items-center gap-2">
-                  <Store className="h-5 w-5" />
-                  Profil Public
-                </CardTitle>
-                <CardDescription>
-                  Gestionează informațiile afișate public despre serviciul tău
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">
-                  Informațiile profilului public vor apărea aici
-                </p>
-              </CardContent>
-            </Card>
-          </TabsContent>
+          {renderContent()}
         </Tabs>
       </div>
       <Footer />
