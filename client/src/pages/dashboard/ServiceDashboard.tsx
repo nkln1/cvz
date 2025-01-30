@@ -147,7 +147,7 @@ export default function ServiceDashboard() {
       <div className="mx-auto max-w-7xl">
         <div className="border-b bg-white">
           <div className="px-4 py-3">
-            <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="inline-flex h-9 items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground">
                 <TabsTrigger value="requests" className="rounded-md px-3 py-1 text-sm font-medium">
                   Cereri
@@ -168,63 +168,63 @@ export default function ServiceDashboard() {
                   Cont
                 </TabsTrigger>
               </TabsList>
+
+              <div className="mt-4">
+                <TabsContent value="requests">
+                  <ClientRequests
+                    clientRequests={clientRequests}
+                    viewedRequests={viewedRequests}
+                    onViewDetails={handleViewDetails}
+                    onMessage={handleMessage}
+                    onSendOffer={handleSendOffer}
+                    onRejectRequest={handleRejectRequest}
+                    selectedRequest={selectedRequest}
+                    requestClient={requestClient}
+                    cars={cars}
+                  />
+                </TabsContent>
+                <TabsContent value="offers">
+                  <SentOffers
+                    requests={[]}
+                    cars={cars}
+                    refreshRequests={fetchMessages}
+                  />
+                </TabsContent>
+                <TabsContent value="messages">
+                  <ServiceMessagesSection
+                    messageGroups={messageGroups}
+                    messages={messages}
+                    selectedMessageRequest={selectedMessageRequest}
+                    isViewingConversation={isViewingConversation}
+                    messageContent={messageContent}
+                    sendingMessage={sendingMessage}
+                    onMessageContentChange={setMessageContent}
+                    onSendMessage={sendMessage}
+                    onSelectConversation={handleSelectConversation}
+                    onBackToList={handleBackToList}
+                    onViewRequestDetails={handleViewDetails}
+                    userId={user?.uid || ""}
+                  />
+                </TabsContent>
+                <TabsContent value="appointments">
+                  <AppointmentsSection />
+                </TabsContent>
+                <TabsContent value="reviews">
+                  <ReviewsSection />
+                </TabsContent>
+                <TabsContent value="account">
+                  <ServiceAccountSection
+                    userId={user?.uid || ""}
+                    serviceData={serviceData}
+                    fields={fields}
+                    validationErrors={{}}
+                  />
+                </TabsContent>
+              </div>
             </Tabs>
           </div>
         </div>
-
-        <main className="px-4 py-8">
-          <TabsContent value="requests">
-            <ClientRequests
-              clientRequests={clientRequests}
-              viewedRequests={viewedRequests}
-              onViewDetails={handleViewDetails}
-              onMessage={handleMessage}
-              onSendOffer={handleSendOffer}
-              onRejectRequest={handleRejectRequest}
-              selectedRequest={selectedRequest}
-              requestClient={requestClient}
-              cars={cars}
-            />
-          </TabsContent>
-          <TabsContent value="offers">
-            <SentOffers
-              requests={[]}
-              cars={cars}
-              refreshRequests={fetchMessages}
-            />
-          </TabsContent>
-          <TabsContent value="messages">
-            <ServiceMessagesSection
-              messageGroups={messageGroups}
-              messages={messages}
-              selectedMessageRequest={selectedMessageRequest}
-              isViewingConversation={isViewingConversation}
-              messageContent={messageContent}
-              sendingMessage={sendingMessage}
-              onMessageContentChange={setMessageContent}
-              onSendMessage={sendMessage}
-              onSelectConversation={handleSelectConversation}
-              onBackToList={handleBackToList}
-              onViewRequestDetails={handleViewDetails}
-              userId={user?.uid || ""}
-            />
-          </TabsContent>
-          <TabsContent value="appointments">
-            <AppointmentsSection />
-          </TabsContent>
-          <TabsContent value="reviews">
-            <ReviewsSection />
-          </TabsContent>
-          <TabsContent value="account">
-            <ServiceAccountSection
-              userId={user?.uid || ""}
-              serviceData={serviceData}
-              fields={fields}
-              validationErrors={{}}
-            />
-          </TabsContent>
-        </main>
-      </div>
+        </div>
       <Footer />
     </div>
   );
