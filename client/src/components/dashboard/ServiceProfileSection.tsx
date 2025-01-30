@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { z } from "zod";
-import { doc, updateDoc } from "firebase/firestore";
+import { doc, updateDoc, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -59,6 +59,41 @@ export function ServiceProfileSection({
 
   const romanianCounties = Object.keys(romanianCities);
 
+  // Set up real-time listener for profile changes
+  useEffect(() => {
+    if (!userId) return;
+
+    const serviceRef = doc(db, "services", userId);
+    const unsubscribe = onSnapshot(
+      serviceRef,
+      (doc) => {
+        if (doc.exists()) {
+          const data = doc.data() as ServiceData;
+          setFormData(data);
+          setServiceData(data);
+        }
+      },
+      (error) => {
+        console.error("Error in real-time profile sync:", error);
+        toast({
+          variant: "destructive",
+          title: "Eroare de sincronizare",
+          description: "Nu s-au putut sincroniza datele profilului în timp real.",
+        });
+      }
+    );
+
+    // Cleanup listener on component unmount
+    return () => unsubscribe();
+  }, [userId, setServiceData]);
+
+  // Update formData when serviceData prop changes
+  useEffect(() => {
+    if (serviceData) {
+      setFormData(serviceData);
+    }
+  }, [serviceData]);
+
   const validateForm = () => {
     try {
       serviceDataSchema.parse(formData);
@@ -101,7 +136,6 @@ export function ServiceProfileSection({
     try {
       const serviceRef = doc(db, "services", userId);
       await updateDoc(serviceRef, formData);
-      setServiceData(formData);
       toast({
         title: "Succes",
         description: "Datele au fost actualizate cu succes.",
