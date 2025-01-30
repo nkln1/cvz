@@ -287,7 +287,7 @@ export function ClientRequests({
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          <div className="max-h-[600px] overflow-y-auto pr-2">
+          <div className="max-h-[2000px] overflow-y-auto pr-2">
             <Table>
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
