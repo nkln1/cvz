@@ -1,6 +1,4 @@
 import { useState } from "react";
-import { doc, updateDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { User, Pencil, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -15,39 +13,38 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { romanianCounties, getCitiesForCounty } from "@/lib/romaniaData";
 import type { UserProfile } from "@/types/dashboard";
-import { useAppDispatch } from "@/hooks/useAppDispatch";
-import { useAppSelector } from "@/hooks/useAppSelector";
-import { setProfile, updateProfile } from "@/store/slices/profileSlice";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useProfile } from "@/hooks/useProfile";
 
 interface ProfileSectionProps {
   userId: string;
 }
 
 function ProfileSectionContent({ userId }: ProfileSectionProps) {
-  const dispatch = useAppDispatch();
-  const userProfile = useAppSelector((state) => state.profile.profile);
+  const { profile, updateUserProfile } = useProfile(userId);
   const [isEditing, setIsEditing] = useState(false);
-  const [editedProfile, setEditedProfile] = useState<UserProfile>(userProfile);
-  const [selectedCounty, setSelectedCounty] = useState<string>(userProfile.county || "");
+  const [editedProfile, setEditedProfile] = useState<UserProfile>(profile);
+  const [selectedCounty, setSelectedCounty] = useState<string>(profile.county || "");
   const { toast } = useToast();
 
-  const handleEditClick = () => setIsEditing(true);
+  const handleEditClick = () => {
+    setIsEditing(true);
+    setEditedProfile(profile);
+    setSelectedCounty(profile.county || "");
+  };
 
   const handleSave = async () => {
     if (!userId) return;
 
-    try {
-      await updateDoc(doc(db, "clients", userId), editedProfile);
-      dispatch(setProfile(editedProfile));
+    const success = await updateUserProfile(editedProfile);
+    if (success) {
       setIsEditing(false);
       toast({
         title: "Succes",
         description: "Profilul a fost actualizat cu succes!",
       });
-    } catch (error) {
-      console.error("Error updating profile:", error);
+    } else {
       toast({
         variant: "destructive",
         title: "Error",
@@ -96,7 +93,7 @@ function ProfileSectionContent({ userId }: ProfileSectionProps) {
                   />
                 ) : (
                   <p className="text-gray-900">
-                    {userProfile.name || "Nespecificat"}
+                    {profile.name || "Nespecificat"}
                   </p>
                 )}
                 {!isEditing && (
@@ -115,7 +112,7 @@ function ProfileSectionContent({ userId }: ProfileSectionProps) {
             {/* Email Field */}
             <div className="space-y-2">
               <label className="text-sm font-medium text-[#00aff5]">Email</label>
-              <p className="text-gray-900">{userProfile.email}</p>
+              <p className="text-gray-900">{profile.email}</p>
             </div>
 
             {/* Phone Field */}
@@ -131,7 +128,7 @@ function ProfileSectionContent({ userId }: ProfileSectionProps) {
                   />
                 ) : (
                   <p className="text-gray-900">
-                    {userProfile.phone || "Nespecificat"}
+                    {profile.phone || "Nespecificat"}
                   </p>
                 )}
                 {!isEditing && (
@@ -169,7 +166,7 @@ function ProfileSectionContent({ userId }: ProfileSectionProps) {
                   </Select>
                 ) : (
                   <p className="text-gray-900">
-                    {userProfile.county || "Nespecificat"}
+                    {profile.county || "Nespecificat"}
                   </p>
                 )}
                 {!isEditing && (
@@ -211,7 +208,7 @@ function ProfileSectionContent({ userId }: ProfileSectionProps) {
                   </Select>
                 ) : (
                   <p className="text-gray-900">
-                    {userProfile.city || "Nespecificat"}
+                    {profile.city || "Nespecificat"}
                   </p>
                 )}
                 {!isEditing && (
@@ -235,7 +232,7 @@ function ProfileSectionContent({ userId }: ProfileSectionProps) {
                 variant="outline"
                 onClick={() => {
                   setIsEditing(false);
-                  setEditedProfile(userProfile);
+                  setEditedProfile(profile);
                 }}
                 className="hover:bg-gray-100"
               >
