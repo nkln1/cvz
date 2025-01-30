@@ -95,7 +95,6 @@ export default function ServiceDashboard() {
     messages,
     messageGroups,
     selectedMessageRequest,
-    clientDetails: messageClientDetails,
     isViewingConversation,
     messageContent,
     sendingMessage,
@@ -189,7 +188,6 @@ export default function ServiceDashboard() {
       handleViewDetails(request);
     }
   };
-
 
   if (loading) {
     return (
@@ -306,7 +304,6 @@ export default function ServiceDashboard() {
             messageGroups={messageGroups}
             messages={messages}
             selectedMessageRequest={selectedMessageRequest as ServiceRequest}
-            clientDetails={messageClientDetails}
             isViewingConversation={isViewingConversation}
             messageContent={messageContent}
             sendingMessage={sendingMessage}
