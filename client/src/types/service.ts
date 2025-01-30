@@ -48,6 +48,7 @@ export interface MessageGroup {
   requestTitle: string;
   lastMessage: Message;
   unreadCount: number;
+  clientName: string;
 }
 
 export interface ServiceData {

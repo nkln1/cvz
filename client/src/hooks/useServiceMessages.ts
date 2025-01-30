@@ -98,14 +98,13 @@ export function useServiceMessages(userId: string) {
         const requestData = requestDoc.data();
         const clientDoc = await getDoc(doc(db, "users", requestData.userId));
         const clientName = clientDoc.exists() 
-          ? clientDoc.data().numeComplet || clientDoc.data().name || `${clientDoc.data().nume || ''} ${clientDoc.data().prenume || ''}`.trim()
+          ? requestData.clientName || clientDoc.data().numeComplet || clientDoc.data().name || `${clientDoc.data().nume || ''} ${clientDoc.data().prenume || ''}`.trim()
           : "Client necunoscut";
 
         const requestMessages = currentMessages.filter(
           (m) => m.requestId === requestId,
         );
 
-        // Sort messages by timestamp
         requestMessages.sort((a, b) => {
           const aTime = (a.createdAt as unknown as Timestamp).toMillis();
           const bTime = (b.createdAt as unknown as Timestamp).toMillis();
@@ -147,9 +146,9 @@ export function useServiceMessages(userId: string) {
         if (requestDoc.exists()) {
           const requestData = requestDoc.data();
           const clientDoc = await getDoc(doc(db, "users", requestData.userId));
-          const clientName = clientDoc.exists()
+          const clientName = requestData.clientName || (clientDoc.exists()
             ? clientDoc.data().numeComplet || clientDoc.data().name || `${clientDoc.data().nume || ''} ${clientDoc.data().prenume || ''}`.trim()
-            : "Client necunoscut";
+            : "Client necunoscut");
 
           setSelectedMessageRequest({
             id: requestId,
