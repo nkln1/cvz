@@ -181,6 +181,14 @@ export default function ServiceDashboard() {
     }
   };
 
+  const switchToRequestsAndShowDetails = (requestId: string) => {
+    setActiveTab("requests");
+    const request = clientRequests.find(req => req.id === requestId);
+    if (request) {
+      handleViewDetails(request);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -303,7 +311,7 @@ export default function ServiceDashboard() {
             onSendMessage={sendMessage}
             onSelectConversation={handleSelectConversation}
             onBackToList={handleBackToList}
-            onViewRequestDetails={(requestId: string) => handleViewDetails(requestId as any)}
+            onViewRequestDetails={switchToRequestsAndShowDetails}
             userId={user?.uid || ""}
           />
         )}
