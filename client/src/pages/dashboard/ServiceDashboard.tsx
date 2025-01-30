@@ -29,7 +29,8 @@ import { ServiceAccountSection } from "@/components/dashboard/ServiceAccountSect
 import { useServiceMessages } from "@/hooks/useServiceMessages";
 import { useServiceRequests } from "@/hooks/useServiceRequests";
 import { useNotifications } from "@/hooks/useNotifications";
-import type { ServiceData } from "@/types/service";
+import type { ServiceData, Request as ServiceRequest } from "@/types/service";
+import type { Request as DashboardRequest } from "@/types/dashboard";
 
 type TabType = "requests" | "offers" | "messages" | "appointments" | "reviews" | "account";
 
@@ -140,6 +141,8 @@ export default function ServiceDashboard() {
         const serviceDoc = await getDoc(doc(db, "services", user.uid));
         if (serviceDoc.exists()) {
           setServiceData(serviceDoc.data() as ServiceData);
+          // Fetch messages after service data is loaded
+          await fetchMessages();
         } else {
           setError("Nu s-au găsit date pentru acest service");
         }
@@ -157,7 +160,7 @@ export default function ServiceDashboard() {
     }
 
     fetchServiceData();
-  }, [user]);
+  }, [user, fetchMessages]);
 
   if (loading) {
     return (
@@ -269,52 +272,54 @@ export default function ServiceDashboard() {
           />
         )}
         {activeTab === "offers" && <SentOffers requests={[]} cars={cars} refreshRequests={fetchMessages} />}
-        {activeTab === "messages" && <ServiceMessagesSection
-              messageGroups={messageGroups}
-              messages={messages}
-              selectedMessageRequest={selectedMessageRequest}
-              isViewingConversation={isViewingConversation}
-              messageContent={messageContent}
-              sendingMessage={sendingMessage}
-              onMessageContentChange={setMessageContent}
-              onSendMessage={sendMessage}
-              onSelectConversation={handleSelectConversation}
-              onBackToList={handleBackToList}
-              onViewRequestDetails={handleViewDetails}
-              userId={user?.uid || ""}
-            />}
+        {activeTab === "messages" && (
+          <ServiceMessagesSection
+            messageGroups={messageGroups}
+            messages={messages}
+            selectedMessageRequest={selectedMessageRequest as ServiceRequest}
+            isViewingConversation={isViewingConversation}
+            messageContent={messageContent}
+            sendingMessage={sendingMessage}
+            onMessageContentChange={setMessageContent}
+            onSendMessage={sendMessage}
+            onSelectConversation={handleSelectConversation}
+            onBackToList={handleBackToList}
+            onViewRequestDetails={(requestId: string) => handleViewDetails(requestId as any)}
+            userId={user?.uid || ""}
+          />
+        )}
         {activeTab === "appointments" && <AppointmentsSection />}
         {activeTab === "reviews" && <ReviewsSection />}
         {activeTab === "account" && (
-            <ServiceAccountSection
-              userId={user?.uid || ""}
-              serviceData={serviceData || ({} as ServiceData)}
-              fields={[
-                { label: "Nume Companie", key: "companyName", editable: true },
-                { label: "Nume Reprezentant", key: "representativeName", editable: true },
-                { label: "Email", key: "email", editable: false },
-                { label: "Telefon", key: "phone", editable: true },
-                { label: "CUI", key: "cui", editable: false },
-                { label: "Nr. Înregistrare", key: "tradeRegNumber", editable: false },
-                { label: "Adresă", key: "address", editable: true },
-                {
-                  label: "Județ",
-                  key: "county",
-                  editable: true,
-                  type: "select",
-                  options: Object.keys(romanianCitiesData),
-                },
-                {
-                  label: "Oraș",
-                  key: "city",
-                  editable: true,
-                  type: "select",
-                  options: serviceData?.county ? romanianCitiesData[serviceData.county] : [],
-                },
-              ]}
-              validationErrors={{}}
-            />
-          )}
+          <ServiceAccountSection
+            userId={user?.uid || ""}
+            serviceData={serviceData || ({} as ServiceData)}
+            fields={[
+              { label: "Nume Companie", key: "companyName", editable: true },
+              { label: "Nume Reprezentant", key: "representativeName", editable: true },
+              { label: "Email", key: "email", editable: false },
+              { label: "Telefon", key: "phone", editable: true },
+              { label: "CUI", key: "cui", editable: false },
+              { label: "Nr. Înregistrare", key: "tradeRegNumber", editable: false },
+              { label: "Adresă", key: "address", editable: true },
+              {
+                label: "Județ",
+                key: "county",
+                editable: true,
+                type: "select",
+                options: Object.keys(romanianCitiesData),
+              },
+              {
+                label: "Oraș",
+                key: "city",
+                editable: true,
+                type: "select",
+                options: serviceData?.county ? romanianCitiesData[serviceData.county] : [],
+              },
+            ]}
+            validationErrors={{}}
+          />
+        )}
       </div>
       <Footer />
     </div>

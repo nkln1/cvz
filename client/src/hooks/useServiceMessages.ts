@@ -184,6 +184,40 @@ export function useServiceMessages(userId: string) {
     localStorage.removeItem("selectedMessageRequestId");
   };
 
+  const fetchMessages = useCallback(async () => {
+    if (!userId) return;
+    try {
+      const sentMessagesQuery = query(
+        collection(db, "messages"),
+        where("fromId", "==", userId),
+        orderBy("createdAt", "desc")
+      );
+      const receivedMessagesQuery = query(
+        collection(db, "messages"),
+        where("toId", "==", userId),
+        orderBy("createdAt", "desc")
+      );
+
+      const [sentSnapshot, receivedSnapshot] = await Promise.all([
+        getDocs(sentMessagesQuery),
+        getDocs(receivedMessagesQuery)
+      ]);
+
+      const sentMessages = sentSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Message));
+      const receivedMessages = receivedSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Message));
+
+      updateMessages(sentMessages, "sent");
+      updateMessages(receivedMessages, "received");
+    } catch (error) {
+      console.error("Error fetching messages:", error);
+      toast({
+        variant: "destructive",
+        title: "Eroare",
+        description: "Nu s-au putut încărca mesajele. Încercați din nou.",
+      });
+    }
+  }, [userId, toast, updateMessages]);
+
   return {
     messages,
     messageGroups,
@@ -196,5 +230,6 @@ export function useServiceMessages(userId: string) {
     handleBackToList,
     setMessageContent,
     setSelectedMessageRequest,
+    fetchMessages,
   };
 }
