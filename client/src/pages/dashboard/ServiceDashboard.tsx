@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, FileText, MailOpen, MessageSquare, Calendar, User, Star, Bell, BellOff } from "lucide-react";
+import { Clock, Eye, MessageSquare, SendHorizontal, X, ArrowUpDown, Loader2, Bell, BellOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import romanianCitiesData from "../../../../attached_assets/municipii_orase_romania.json";
 import Navigation from "@/components/Navigation";
@@ -20,6 +20,7 @@ import { ReviewsSection } from "@/components/dashboard/ReviewsSection";
 import { ServiceAccountSection } from "@/components/dashboard/ServiceAccountSection";
 import { useServiceMessages } from "@/hooks/useServiceMessages";
 import { useServiceRequests } from "@/hooks/useServiceRequests";
+import { useNotifications } from "@/hooks/useNotifications";
 import type { ServiceData } from "@/types/service";
 
 type TabType = "requests" | "offers" | "messages" | "appointments" | "reviews" | "account";
