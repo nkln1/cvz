@@ -65,7 +65,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { MessageList } from "@/components/dashboard/service/messages/MessageList";
 import { type Message, type MessageGroup } from "@/components/dashboard/service/messages/types";
-
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 interface Car {
   id: string;
@@ -99,7 +99,6 @@ interface User {
   nume?: string;
   prenume?: string;
 }
-
 
 interface ServiceData {
   companyName: string;
@@ -717,328 +716,331 @@ export default function ServiceDashboard() {
     );
 
     return (
-      <TabsContent value="requests">
-        <Card className="border-[#00aff5]/20">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <CardTitle className="text-[#00aff5] flex items-center gap-2">
-                  <Clock className="h-5 w-5" />
-                  Cererile Clienților
-                </CardTitle>
-                {clientRequests.filter(req => !viewedRequests.has(req.id)).length > 0 && (
-                  <Badge variant="secondary" className="bg-[#00aff5] text-white text-lg font-bold px-3 py-1">
-                    {clientRequests.filter(req => !viewedRequests.has(req.id)).length}
-                  </Badge>
-                )}
-              </div>
-              <div className="flex items-center gap-4">
+      <ErrorBoundary>
+        <TabsContent value="requests">
+          <Card className="border-[#00aff5]/20">
+            <CardHeader>
+              <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground">Afișează:</span>
+                  <CardTitle className="text-[#00aff5] flex items-center gap-2">
+                    <Clock className="h-5 w-5" />
+                    Cererile Clienților
+                  </CardTitle>
+                  {clientRequests.filter(req => !viewedRequests.has(req.id)).length > 0 && (
+                    <Badge variant="secondary" className="bg-[#00aff5] text-white text-lg font-bold px-3 py-1">
+                      {clientRequests.filter(req => !viewedRequests.has(req.id)).length}
+                    </Badge>
+                  )}
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground">Afișează:</span>
+                    <Select
+                      value={itemsPerPage.toString()}
+                      onValueChange={(value) => {
+                        setItemsPerPage(Number(value));
+                        setCurrentPage(1); // Reset to first page when changing items per page
+                      }}
+                    >
+                      <SelectTrigger className="w-[100px]">
+                        <SelectValue placeholder="10 pe pagină" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="10">10 pe pagină</SelectItem>
+                        <SelectItem value="20">20 pe pagină</SelectItem>
+                        <SelectItem value="50">50 pe pagină</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Input
+                    placeholder="Caută cereri..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="max-w-[300px]"
+                    icon={<Search className="h-4 w-4" />}
+                  />
+                </div>
+              </div>
+              <CardDescription>
+                Vezi și gestionează toate cererile primite de la clienți
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="max-h-[600px] overflow-y-auto pr-2">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="hover:bg-transparent">
+                      <TableHead>Titlu</TableHead>
+                      <TableHead>
+                        <button
+                          onClick={() => {
+                            setSortField("createdAt");
+                            setSortDirection((prev) =>
+                              prev === "asc" ? "desc" : "asc",
+                            );
+                          }}
+                          className="flex items-center hover:text-[#00aff5]"
+                        >
+                          Data primirii
+                          <ArrowUpDown className="ml-2 h-4 w-4" />
+                        </button>
+                      </TableHead>
+                      <TableHead>
+                        <button
+                          onClick={() => {
+                            setSortField("preferredDate");
+                            setSortDirection((prev) =>
+                              prev === "asc" ? "desc" : "asc",
+                            );
+                          }}
+                          className="flex items-center hover:text-[#00aff5]"
+                        >
+                          Data preferată
+                          <ArrowUpDown className="ml-2 h-4 w-4" />
+                        </button>
+                      </TableHead>
+                      <TableHead>Județ</TableHead>
+                      <TableHead>Localități</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Acțiuni</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody className="[&_tr:not(:last-child)]:mb-2">
+                    {paginatedRequests.map((request) => (
+                      <Fragment key={request.id}>
+                        <TableRow className="hover:bg-blue-50/80 transition-colors relative mb-2">
+                          <TableCell className="font-medium">
+                            <div className="flex items-center gap-2">
+                              {!viewedRequests.has(request.id) && (
+                                <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full font-bold">
+                                  NEW
+                                </span>
+                              )}
+                              <span
+                                className={
+                                  !viewedRequests.has(request.id)
+                                    ? "font-bold"
+                                    : ""
+                                }
+                              >
+                                {request.title}
+                              </span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            {format(
+                              new Date(request.createdAt),
+                              "dd.MM.yyyy HH:mm",
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {format(
+                              new Date(request.preferredDate),
+                              "dd.MM.yyyy",
+                            )}
+                          </TableCell>
+                          <TableCell>{request.county}</TableCell>
+                          <TableCell>{request.cities.join(", ")}</TableCell>
+                          <TableCell>
+                            <span
+                              className={`px-2 py-1 rounded-full text-sm ${
+                                request.status === "Active"
+                                  ? "bg-yellow-100 text-yellow-800"
+                                  : request.status === "Rezolvat"
+                                    ? "bg-green-100 text-green-800"
+                                    : "bg-red-100 text-red-800"
+                              }`}
+                            >
+                              {request.status}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleViewDetails(request)}
+                                className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 flex items-center gap-1"
+                              >
+                                <Eye className="h-4 w-4" />
+                                Detalii
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleMessage(request)}
+                                className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 flex items-center gap-1"
+                              >
+                                <MessageSquare className="h-4 w-4" />
+                                Mesaj
+                              </Button>
+                              {request.status === "Active" && (
+                                <>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleSendOffer(request)}
+                                    className="text-green-500 hover:text-green-700 hover:bg-green-50 flex items-center gap-1"
+                                  >
+                                    <SendHorizontal className="h-4 w-4" />
+                                    Trimite ofertă
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() =>
+                                      handleRejectRequest(request.id)
+                                    }
+                                    className="text-red-500 hover:text-red-700 hover:bg-red-50 flex items-center gap-1"
+                                  >
+                                    <X className="h-4 w-4" />
+                                    Respinge
+                                  </Button>
+                                </>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                        {selectedRequest?.id === request.id && (
+                          <TableRow className="hover:bg-transparent">
+                            <TableCell colSpan={7} className="p-0">
+                              <div className="bg-gray-50 p-4 border-t border-b">
+                                <div className="grid grid-cols-3 gap-4">
+                                  <div>
+                                    <h3 className="text-xs font-medium text-muted-foreground">
+                                      Client
+                                    </h3>
+                                    <p className="text-sm mt-1">
+                                      {request.clientName}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">
+                                      {requestClient?.email}
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <h3 className="text-xs font-medium text-muted-foreground">
+                                      Mașină
+                                    </h3>
+                                    <p className="text-sm mt-1">
+                                      {request.car ? (
+                                        <>
+                                          {request.car.brand} {request.car.model}{" "}
+                                          ({request.car.year})
+                                          {request.car.licensePlate && (
+                                            <span className="text-xs text-muted-foreground ml-1">
+                                              Nr. {request.car.licensePlate}
+                                            </span>
+                                          )}
+                                          {request.car.vin && (
+                                            <span className="block text-xs text-muted-foreground">                                            VIN: {request.car.vin}
+                                            </span>
+                                          )}
+                                        </>
+                                      ) : (
+                                        "Detalii indisponibile"
+                                      )}
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <h3 className="text-xs font-medium text-muted-foreground">
+                                      Data preferată
+                                    </h3>
+                                    <p className="text-sm mt-1">
+                                      {format(
+                                        new Date(request.preferredDate),
+                                        "dd.MM.yyyy",
+                                      )}
+                                    </p>
+                                  </div>
+                                  <div className="col-span-2">
+                                    <h3 className="text-xs font-medium text-muted-foreground">
+                                      Descriere
+                                    </h3>
+                                    <p className="text-sm mt-1 whitespace-pre-wrap">
+                                      {request.description}
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <h3 className="text-xs font-medium text-muted-foreground">
+                                      Locație
+                                    </h3>
+                                    <p className="text-sm mt-1">
+                                      {request.cities.join(", ")} -{" "}
+                                      {request.county}
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </Fragment>
+                    ))}
+                    {paginatedRequests.length === 0 && (
+                      <TableRow>
+                        <TableCell
+                          colSpan={7}
+                          className="text-center text-muted-foreground"
+                        >
+                          {searchQuery
+                            ? "Nu s-au găsit cereri care să corespundă căutării"
+                            : "Nu există cereri active în zona ta"}
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between space-x-2 py-4">
+                  <div className="flex w-[100px] items-center justify-center text-sm font-medium">
+                    Pagina {currentPage} din {totalPages}
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        setCurrentPage((prev) => Math.max(1, prev - 1))
+                      }
+                      disabled={currentPage === 1}
+                    >
+                      Anterior
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        setCurrentPage((prev) => Math.min(totalPages, prev + 1))
+                      }
+                      disabled={currentPage === totalPages}
+                    >
+                      Următor
+                    </Button>
+                  </div>
                   <Select
                     value={itemsPerPage.toString()}
                     onValueChange={(value) => {
-                      setItemsPerPage(Number(value));
-                      setCurrentPage(1); // Reset to first page when changing items per page
+                      setCurrentPage(1);
+                      setItemsPerPage(parseInt(value));
                     }}
                   >
-                    <SelectTrigger className="w-[100px]">
-                      <SelectValue placeholder="10 pe pagină" />
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Selectează numărul de rezultate" />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="5">5 pe pagină</SelectItem>
                       <SelectItem value="10">10 pe pagină</SelectItem>
                       <SelectItem value="20">20 pe pagină</SelectItem>
                       <SelectItem value="50">50 pe pagină</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-                <Input
-                  placeholder="Caută cereri..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="max-w-[300px]"
-                  icon={<Search className="h-4 w-4" />}
-                />
-              </div>
-            </div>
-            <CardDescription>
-              Vezi și gestionează toate cererile primite de la clienți
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="max-h-[600px] overflow-y-auto pr-2">
-              <Table>
-                <TableHeader>
-                  <TableRow className="hover:bg-transparent">
-                    <TableHead>Titlu</TableHead>
-                    <TableHead>
-                      <button
-                        onClick={() => {
-                          setSortField("createdAt");
-                          setSortDirection((prev) =>
-                            prev === "asc" ? "desc" : "asc",
-                          );
-                        }}
-                        className="flex items-center hover:text-[#00aff5]"
-                      >
-                        Data primirii
-                        <ArrowUpDown className="ml-2 h-4 w-4" />
-                      </button>
-                    </TableHead>
-                    <TableHead>
-                      <button
-                        onClick={() => {
-                          setSortField("preferredDate");
-                          setSortDirection((prev) =>
-                            prev === "asc" ? "desc" : "asc",
-                          );
-                        }}
-                        className="flex items-center hover:text-[#00aff5]"
-                      >
-                        Data preferată
-                        <ArrowUpDown className="ml-2 h-4 w-4" />
-                      </button>
-                    </TableHead>
-                    <TableHead>Județ</TableHead>
-                    <TableHead>Localități</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Acțiuni</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody className="[&_tr:not(:last-child)]:mb-2">
-                  {paginatedRequests.map((request) => (
-                    <Fragment key={request.id}>
-                      <TableRow className="hover:bg-blue-50/80 transition-colors relative mb-2">
-                        <TableCell className="font-medium">
-                          <div className="flex items-center gap-2">
-                            {!viewedRequests.has(request.id) && (
-                              <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full font-bold">
-                                NEW
-                              </span>
-                            )}
-                            <span
-                              className={
-                                !viewedRequests.has(request.id)
-                                  ? "font-bold"
-                                  : ""
-                              }
-                            >
-                              {request.title}
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {format(
-                            new Date(request.createdAt),
-                            "dd.MM.yyyy HH:mm",
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {format(
-                            new Date(request.preferredDate),
-                            "dd.MM.yyyy",
-                          )}
-                        </TableCell>
-                        <TableCell>{request.county}</TableCell>
-                        <TableCell>{request.cities.join(", ")}</TableCell>
-                        <TableCell>
-                          <span
-                            className={`px-2 py-1 rounded-full text-sm ${
-                              request.status === "Active"
-                                ? "bg-yellow-100 text-yellow-800"
-                                : request.status === "Rezolvat"
-                                  ? "bg-green-100 text-green-800"
-                                  : "bg-red-100 text-red-800"
-                            }`}
-                          >
-                            {request.status}
-                          </span>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleViewDetails(request)}
-                              className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 flex items-center gap-1"
-                            >
-                              <Eye className="h-4 w-4" />
-                              Detalii
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleMessage(request)}
-                              className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 flex items-center gap-1"
-                            >
-                              <MessageSquare className="h-4 w-4" />
-                              Mesaj
-                            </Button>
-                            {request.status === "Active" && (
-                              <>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleSendOffer(request)}
-                                  className="text-green-500 hover:text-green-700 hover:bg-green-50 flex items-center gap-1"
-                                >
-                                  <SendHorizontal className="h-4 w-4" />
-                                  Trimite ofertă
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() =>
-                                    handleRejectRequest(request.id)
-                                  }
-                                  className="text-red-500 hover:text-red-700 hover:bg-red-50 flex items-center gap-1"
-                                >
-                                  <X className="h-4 w-4" />
-                                  Respinge
-                                </Button>
-                              </>
-                            )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                      {selectedRequest?.id === request.id && (
-                        <TableRow className="hover:bg-transparent">
-                          <TableCell colSpan={7} className="p-0">
-                            <div className="bg-gray-50 p-4 border-t border-b">
-                              <div className="grid grid-cols-3 gap-4">
-                                <div>
-                                  <h3 className="text-xs font-medium text-muted-foreground">
-                                    Client
-                                  </h3>
-                                  <p className="text-sm mt-1">
-                                    {request.clientName}
-                                  </p>
-                                  <p className="text-xs text-muted-foreground">
-                                    {requestClient?.email}
-                                  </p>
-                                </div>
-                                <div>
-                                  <h3 className="text-xs font-medium text-muted-foreground">
-                                    Mașină
-                                  </h3>
-                                  <p className="text-sm mt-1">
-                                    {request.car ? (
-                                      <>
-                                        {request.car.brand} {request.car.model}{" "}
-                                        ({request.car.year})
-                                        {request.car.licensePlate && (
-                                          <span className="text-xs text-muted-foreground ml-1">
-                                            Nr. {request.car.licensePlate}
-                                          </span>
-                                        )}
-                                        {request.car.vin && (
-                                          <span className="block text-xs text-muted-foreground">                                            VIN: {request.car.vin}
-                                          </span>
-                                        )}
-                                      </>
-                                    ) : (
-                                      "Detalii indisponibile"
-                                    )}
-                                  </p>
-                                </div>
-                                <div>
-                                  <h3 className="text-xs font-medium text-muted-foreground">
-                                    Data preferată
-                                  </h3>
-                                  <p className="text-sm mt-1">
-                                    {format(
-                                      new Date(request.preferredDate),
-                                      "dd.MM.yyyy",
-                                    )}
-                                  </p>
-                                </div>
-                                <div className="col-span-2">
-                                  <h3 className="text-xs font-medium text-muted-foreground">
-                                    Descriere
-                                  </h3>
-                                  <p className="text-sm mt-1 whitespace-pre-wrap">
-                                    {request.description}
-                                  </p>
-                                </div>
-                                <div>
-                                  <h3 className="text-xs font-medium text-muted-foreground">
-                                    Locație
-                                  </h3>
-                                  <p className="text-sm mt-1">
-                                    {request.cities.join(", ")} -{" "}
-                                    {request.county}
-                                  </p>
-                                </div>
-                              </div>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </Fragment>                  ))}
-                  {paginatedRequests.length === 0 && (
-                    <TableRow>
-                      <TableCell
-                        colSpan={7}
-                        className="text-center text-muted-foreground"
-                      >
-                        {searchQuery
-                          ? "Nu s-au găsit cereri care să corespundă căutării"
-                          : "Nu există cereri active în zona ta"}
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-            {totalPages > 1 && (
-              <div className="flex items-center justify-between space-x-2 py-4">
-                <div className="flex w-[100px] items-center justify-center text-sm font-medium">
-                  Pagina {currentPage} din {totalPages}
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() =>
-                      setCurrentPage((prev) => Math.max(1, prev - 1))
-                    }
-                    disabled={currentPage === 1}
-                  >
-                    Anterior
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() =>
-                      setCurrentPage((prev) => Math.min(totalPages, prev + 1))
-                    }
-                    disabled={currentPage === totalPages}
-                  >
-                    Următor
-                  </Button>
-                </div>
-                <Select
-                  value={itemsPerPage.toString()}
-                  onValueChange={(value) => {
-                    setCurrentPage(1);
-                    setItemsPerPage(parseInt(value));
-                  }}
-                >
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Selectează numărul de rezultate" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="5">5 pe pagină</SelectItem>
-                    <SelectItem value="10">10 pe pagină</SelectItem>
-                    <SelectItem value="20">20 pe pagină</SelectItem>
-                    <SelectItem value="50">50 pe pagină</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </TabsContent>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </ErrorBoundary>
     );
   };
 
@@ -1176,25 +1178,97 @@ export default function ServiceDashboard() {
   };
 
   const renderMessages = () => (
-    <Card className="shadow-lg">
-      <CardHeader className="border-b bg-gray-50">
-        <CardTitle className="text-[#00aff5] flex items-center gap-2">
-          <MessageSquare className="h-5 w-5" />
-          Mesaje
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="p-6">
-        <MessageList
-          messages={messages}
-          messageGroups={messageGroups}
-          onMarkAsRead={markMessageAsRead}
-          selectedMessageRequest={selectedMessageRequest}
-          setSelectedMessageRequest={setSelectedMessageRequest}
-          setActiveTab={setActiveTab}
-          setIsViewingConversation={setIsViewingConversation}
-        />
-      </CardContent>
-    </Card>
+    <ErrorBoundary>
+      <TabsContent value="messages">
+        <Card className="shadow-lg">
+          <CardHeader className="border-b bg-gray-50">
+            <CardTitle className="text-[#00aff5] flex items-center gap-2">
+              <MessageSquare className="h-5 w-5" />
+              Mesaje
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            {isViewingConversation ? (
+              <div className="space-y-4">
+                <Button
+                  variant="ghost"
+                  onClick={handleBackToList}
+                  className="mb-4 text-[#00aff5] hover:text-[#0099d6] hover:bg-blue-50"
+                >
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Înapoi la lista de mesaje
+                </Button>
+                <div className="space-y-4">
+                  {messages
+                    .filter((m) => m.requestId === selectedMessageRequest?.id)
+                    .map((message) => (
+                      <Card
+                        key={message.id}
+                        className={`transition-colors ${
+                          !message.read ? "bg-blue-50" : ""
+                        }`}
+                      >
+                        <CardContent className="p-4">
+                          <div className="flex justify-between items-start">
+                            <p className="text-sm text-muted-foreground">
+                              Pentru cererea: {selectedMessageRequest?.title}
+                            </p>
+                            <span className="text-sm text-muted-foreground">
+                              {format(
+                                new Date(message.createdAt),
+                                "dd.MM.yyyy HH:mm"
+                              )}
+                            </span>
+                          </div>
+                          <p className="text-sm mt-2">{message.content}</p>
+                          {!message.read && (
+                            <Button
+                              variant="ghost"
+                              className="self-end mt-2"
+                              onClick={() => markMessageAsRead(message.id)}
+                            >
+                              Marchează ca citit
+                            </Button>
+                          )}
+                        </CardContent>
+                      </Card>
+                    ))}
+                </div>
+                <div className="mt-4">
+                  <Textarea
+                    placeholder="Scrie un mesaj..."
+                    value={messageContent}
+                    onChange={(e) => setMessageContent(e.target.value)}
+                    className="min-h-[100px]"
+                  />
+                  <Button
+                    className="mt-2"
+                    onClick={sendMessage}
+                    disabled={sendingMessage || !messageContent.trim()}
+                  >
+                    {sendingMessage ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      "Trimite mesaj"
+                    )}
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <MessageList
+                messages={messages}
+                messageGroups={messageGroups}
+                onMarkAsRead={markMessageAsRead}
+                selectedMessageRequest={selectedMessageRequest}
+                setSelectedMessageRequest={setSelectedMessageRequest}
+                setActiveTab={setActiveTab}
+                setIsViewingConversation={setIsViewingConversation}
+              />
+            )}
+          </CardContent>
+        </Card>
+      </TabsContent>
+    </ErrorBoundary>
   );
 
   const handleSelectConversation = (requestId: string) => {
@@ -1227,6 +1301,108 @@ export default function ServiceDashboard() {
     }
   };
 
+  const renderProfile = () => (
+    <ErrorBoundary>
+      <TabsContent value="account">
+        <Card className="border-[#00aff5]/20">
+          <CardHeader>
+            <CardTitle className="text-[#00aff5] flex items-center gap-2">
+              <UserCog className="h-5 w-5" />
+              Cont
+            </CardTitle>
+            <CardDescription>
+              Gestionează informațiile contului și setările
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {fields.map(({ label, key, editable, type, options }) => (
+                <div key={key} className="relative">
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-sm font-medium text-gray-700">
+                      {label}
+                    </label>
+                    {editable && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEdit(key)}
+                        className="h-6 w-6 p-0 absolute right-2 top-0"
+                      >
+                        <Pen className="h-3.5 w-3.5 text-gray-400 hover:text-gray-600" />
+                      </Button>
+                    )}
+                  </div>
+                  <div className="space-y-1">
+                    {type === "select" && options ? (
+                      <Select
+                        value={editedData?.[key]}
+                        onValueChange={(value) => handleChange(key, value)}
+                        disabled={!editable || !editingFields[key]}
+                      >
+                        <SelectTrigger
+                          className={`${
+                            !editable || !editingFields[key]
+                              ? "bg-gray-50"
+                              : "bg-white"
+                          } ${validationErrors[key] ? "border-red-500" : ""}`}
+                        >
+                          <SelectValue
+                            placeholder={`Selectează ${label.toLowerCase()}`}
+                          />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {options.map((option) => (
+                            <SelectItem key={option} value={option}>
+                              {option}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <Input
+                        value={editedData?.[key] || ""}
+                        onChange={(e) => handleChange(key, e.target.value)}
+                        disabled={!editable || !editingFields[key]}
+                        className={`${
+                          !editable || !editingFields[key]
+                            ? "bg-gray-50"
+                            : "bg-white"
+                        } ${validationErrors[key] ? "border-red-500" : ""} pr-8`}
+                      />
+                    )}
+                    {validationErrors[key] && (
+                      <p className="text-xs text-red-500 mt-1">
+                        {validationErrors[key]}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {hasChanges && (
+              <Button
+                onClick={handleSave}
+                disabled={
+                  saving || Object.keys(validationErrors).length > 0
+                }
+                className="mt-6 bg-[#00aff5] hover:bg-[#0099d6] float-right"
+              >
+                {saving ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : (
+                  <Save className="h-4 w-4 mr-2" />
+                )}
+                Salvează
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+      </TabsContent>
+    </ErrorBoundary>
+  );
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -1244,288 +1420,28 @@ export default function ServiceDashboard() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div className="min-h-screen bg-gray-50/40">
       <Navigation />
-      <div className="container mx-auto p-4 md:p-6 space-y-4 md:space-y-6">
-        <nav className="flex flex-col sm:flex-row gap-2 border-b pb-4 overflow-x-auto">
-          <Button
-            variant={activeTab === "requests" ? "default" : "ghost"}
-            onClick={() => setActiveTab("requests")}
-            className={`flex items-center justify-start ${
-              activeTab === "requests"
-                ? "bg-[#00aff5] text-white hover:bg-[#0099d6]"
-                : "hover:text-[#00aff5]"
-            }`}
-          >
-            <div className="flex items-center gap-2">
-              <Clock className="w-4 h-4" />
-              Cereri Clienți
-              {clientRequests.filter(req => !viewedRequests.has(req.id)).length > 0 && (
-                <Badge variant="secondary" className="bg-white text-[#00aff5]">
-                  {clientRequests.filter(req => !viewedRequests.has(req.id)).length}
-                </Badge>
-              )}
-            </div>
-          </Button>
-          <Button
-            variant={activeTab === "offers" ? "default" : "ghost"}
-            onClick={() => setActiveTab("offers")}
-            className={`flex items-center justify-start ${
-              activeTab === "offers"
-                ? "bg-[#00aff5] text-white hover:bg-[#0099d6]"
-                : "hover:text-[#00aff5]"
-            }`}
-          >
-            <div className="flex items-center gap-2">
-              <SendHorizontal className="w-4 h-4" />
-              Oferte
-            </div>
-          </Button>
-          <Button
-            variant={activeTab === "messages" ? "default" : "ghost"}
-            onClick={() => setActiveTab("messages")}
-            className={`flex items-center justify-start ${
-              activeTab === "messages"
-                ? "bg-[#00aff5] text-white hover:bg-[#0099d6]"
-                : "hover:text-[#00aff5]"
-            }`}
-          >
-            <div className="flex items-center gap-2">
-              <MessageSquare className="w-4 h-4" />
+      <div className="container mx-auto py-8">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList>
+            <TabsTrigger value="requests" className="flex items-center gap-2">
+              <Clock className="h-4 w-4" />
+              Cereri
+            </TabsTrigger>
+            <TabsTrigger value="messages" className="flex items-center gap-2">
+              <MessageSquare className="h-4 w-4" />
               Mesaje
-            </div>
-          </Button>
-          <Button
-            variant={activeTab === "appointments" ? "default" : "ghost"}
-            onClick={() => setActiveTab("appointments")}
-            className={`flex items-center justify-start ${
-              activeTab === "appointments"
-                ? "bg-[#00aff5] text-white hover:bg-[#0099d6]"
-                : "hover:text-[#00aff5]"
-            }`}
-          >
-            <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4" />
-              Programări
-            </div>
-          </Button>
-          <Button
-            variant={activeTab === "reviews" ? "default" : "ghost"}
-            onClick={() => setActiveTab("reviews")}
-            className={`flex items-center justify-start ${
-              activeTab === "reviews"
-                ? "bg-[#00aff5] text-white hover:bg-[#0099d6]"
-                : "hover:text-[#00aff5]"
-            }`}
-          >
-            <div className="flex items-center gap-2">
-              <Star className="w-4 h-4" />
-              Recenzii
-            </div>
-          </Button>
-          <Button
-            variant={activeTab === "account" ? "default" : "ghost"}
-            onClick={() => setActiveTab("account")}
-            className={`flex items-center justify-start ${
-              activeTab === "account"
-                ? "bg-[#00aff5] text-white hover:bg-[#0099d6]"
-                : "hover:text-[#00aff5]"
-            }`}
-          >
-            <div className="flex items-center gap-2">
-              <UserCog className="w-4 h-4" />
-              Cont
-            </div>
-          </Button>
-          <Button
-            variant={activeTab === "public-profile" ? "default" : "ghost"}
-            onClick={() => setActiveTab("public-profile")}
-            className={`flex items-center justify-start ${
-              activeTab === "public-profile"
-                ? "bg-[#00aff5] text-white hover:bg-[#0099d6]"
-                : "hover:text-[#00aff5]"
-            }`}
-          >
-            <div className="flex items-center gap-2">
-              <Store className="w-4 h-4" />
-              Profil Public
-            </div>
-          </Button>
-        </nav>
-
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          {renderRequestsContent()}
-          <TabsContent value="offers">
-            <Card className="border-[#00aff5]/20">
-              <CardHeader>
-                <CardTitle className="text-[#00aff5] flex items-center gap-2">
-                  <SendHorizontal className="h-5 w-5" />
-                  Oferte Trimise
-                </CardTitle>
-                <CardDescription>
-                  Urmărește și gestionează ofertele trimise către clienți
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">
-                  Lista ofertelor va apărea aici
-                </p>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          {renderMessages()}
-          <TabsContent value="appointments">
-            <Card className="border-[#00aff5]/20">
-              <CardHeader>
-                <CardTitle className="text-[#00aff5] flex items-center gap-2">
-                  <Calendar className="h-5 w-5" />
-                  Programări
-                </CardTitle>
-                <CardDescription>
-                  Gestionează programările și disponibilitatea serviciului
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">
-                  Calendar și programări vor apărea aici
-                </p>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          <TabsContent value="reviews">
-            <Card className="border-[#00aff5]/20">
-              <CardHeader>
-                <CardTitle className="text-[#00aff5] flex items-center gap-2">
-                  <Star className="h-5 w-5" />
-                  Recenzii
-                </CardTitle>
-                <CardDescription>
-                  Vezi și răspunde la recenziile primite de la clienți
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">
-                  Lista recenziilor va apărea aici
-                </p>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          <TabsContent value="account">
-            <Card className="border-[#00aff5]/20">
-              <CardHeader>
-                <CardTitle className="text-[#00aff5] flex items-center gap-2">
-                  <UserCog className="h-5 w-5" />
-                  Cont
-                </CardTitle>
-                <CardDescription>
-                  Gestionează informațiile contului și setările
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {fields.map(({ label, key, editable, type, options }) => (
-                    <div key={key} className="relative">
-                      <div className="flex items-center justify-between mb-1">
-                        <label className="text-sm font-medium text-gray-700">
-                          {label}
-                        </label>
-                        {editable && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEdit(key)}
-                            className="h-6 w-6 p-0 absolute right-2 top-0"
-                          >
-                            <Pen className="h-3.5 w-3.5 text-gray-400 hover:text-gray-600" />
-                          </Button>
-                        )}
-                      </div>
-                      <div className="space-y-1">
-                        {type === "select" && options ? (
-                          <Select
-                            value={editedData?.[key]}
-                            onValueChange={(value) => handleChange(key, value)}
-                            disabled={!editable || !editingFields[key]}
-                          >
-                            <SelectTrigger
-                              className={`${
-                                !editable || !editingFields[key]
-                                  ? "bg-gray-50"
-                                  : "bg-white"
-                              } ${validationErrors[key] ? "border-red-500" : ""}`}
-                            >
-                              <SelectValue
-                                placeholder={`Selectează ${label.toLowerCase()}`}
-                              />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {options.map((option) => (
-                                <SelectItem key={option} value={option}>
-                                  {option}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        ) : (
-                          <Input
-                            value={editedData?.[key] || ""}
-                            onChange={(e) => handleChange(key, e.target.value)}
-                            disabled={!editable || !editingFields[key]}
-                            className={`${
-                              !editable || !editingFields[key]
-                                ? "bg-gray-50"
-                                : "bg-white"
-                            } ${validationErrors[key] ? "border-red-500" : ""} pr-8`}
-                          />
-                        )}
-                        {validationErrors[key] && (
-                          <p className="text-xs text-red-500 mt-1">
-                            {validationErrors[key]}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {hasChanges && (
-                  <Button
-                    onClick={handleSave}
-                    disabled={
-                      saving || Object.keys(validationErrors).length > 0
-                    }
-                    className="mt-6 bg-[#00aff5] hover:bg-[#0099d6] float-right"
-                  >
-                    {saving ? (
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    ) : (
-                      <Save className="h-4 w-4 mr-2" />
-                    )}
-                    Salvează
-                  </Button>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-          <TabsContent value="public-profile">
-            <Card className="border-[#00aff5]/20">
-              <CardHeader>
-                <CardTitle className="text-[#00aff5] flex items-center gap-2">
-                  <Store className="h-5 w-5" />
-                  Profil Public
-                </CardTitle>
-                <CardDescription>
-                  Gestionează informațiile afișate public despre serviciul tău
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">
-                  Informațiile profilului public vor apărea aici
-                </p>
-              </CardContent>
-            </Card>
-          </TabsContent>
+            </TabsTrigger>
+            <TabsTrigger value="account" className="flex items-center gap-2">
+              <UserCog className="h-4 w-4" />
+              Profil Service
+            </TabsTrigger>
+          </TabsList>
         </Tabs>
+        {renderRequests()}
+        {renderMessages()}
+        {renderProfile()}
       </div>
       <Footer />
     </div>
