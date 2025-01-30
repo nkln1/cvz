@@ -8,11 +8,12 @@ export function useNotifications(userId: string) {
   const { toast } = useToast();
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>("default");
   const [fcmToken, setFcmToken] = useState<string | null>(null);
+  const [isRegistering, setIsRegistering] = useState(false);
 
   useEffect(() => {
     // Check if the browser supports notifications
     if (!("Notification" in window)) {
-      console.log("This browser does not support desktop notification");
+      console.error("This browser does not support desktop notification");
       return;
     }
 
@@ -21,57 +22,82 @@ export function useNotifications(userId: string) {
   }, []);
 
   const requestNotificationPermission = async () => {
+    if (isRegistering) return;
+    setIsRegistering(true);
+
     try {
+      // First request notification permission
+      console.log("Requesting notification permission...");
       const permission = await Notification.requestPermission();
       setNotificationPermission(permission);
+      console.log("Permission granted:", permission);
 
       if (permission === "granted") {
+        // Then get FCM token
+        console.log("Getting FCM token...");
         const messaging = getMessaging(app);
-        const token = await getToken(messaging, {
+
+        const currentToken = await getToken(messaging, {
           vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY,
         });
 
-        if (token) {
-          setFcmToken(token);
-          // Save the token to the user's document in Firestore
+        if (currentToken) {
+          console.log("FCM Token obtained:", currentToken);
+          setFcmToken(currentToken);
+
+          // Save the token to Firestore
+          console.log("Saving token to Firestore...");
           const userDoc = doc(db, "services", userId);
           await updateDoc(userDoc, {
-            fcmToken: token,
+            fcmToken: currentToken,
           });
 
           toast({
             title: "Notifications Enabled",
             description: "You will now receive notifications for new offers.",
           });
+        } else {
+          throw new Error("No registration token available");
         }
+      } else {
+        throw new Error(`Permission denied: ${permission}`);
       }
     } catch (error) {
       console.error("Error requesting notification permission:", error);
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "Could not enable notifications. Please try again.",
+        title: "Notification Error",
+        description: error instanceof Error 
+          ? error.message 
+          : "Could not enable notifications. Please try again.",
       });
+    } finally {
+      setIsRegistering(false);
     }
   };
 
   useEffect(() => {
     if (notificationPermission === "granted") {
-      const messaging = getMessaging(app);
+      try {
+        const messaging = getMessaging(app);
+        const unsubscribe = onMessage(messaging, (payload) => {
+          // Handle foreground messages
+          console.log("Received foreground message:", payload);
 
-      const unsubscribe = onMessage(messaging, (payload) => {
-        // Handle foreground messages
-        toast({
-          title: payload.notification?.title || "New Notification",
-          description: payload.notification?.body,
+          toast({
+            title: payload.notification?.title || "New Notification",
+            description: payload.notification?.body,
+          });
+
+          // Play a notification sound
+          const audio = new Audio("/notification.mp3");
+          audio.play().catch(console.error);
         });
 
-        // Play a notification sound
-        const audio = new Audio("/notification.mp3");
-        audio.play().catch(console.error);
-      });
-
-      return () => unsubscribe();
+        return () => unsubscribe();
+      } catch (error) {
+        console.error("Error setting up message listener:", error);
+      }
     }
   }, [notificationPermission]);
 
@@ -79,5 +105,6 @@ export function useNotifications(userId: string) {
     notificationPermission,
     requestNotificationPermission,
     fcmToken,
+    isRegistering,
   };
 }

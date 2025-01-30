@@ -16,12 +16,13 @@ const messaging = firebase.messaging();
 messaging.onBackgroundMessage((payload) => {
   console.log('Received background message:', payload);
 
-  const notificationTitle = payload.notification.title;
+  const notificationTitle = payload.notification?.title || 'New Notification';
   const notificationOptions = {
-    body: payload.notification.body,
+    body: payload.notification?.body || '',
     icon: '/notification-icon.png',
     badge: '/badge-icon.png',
     data: payload.data,
+    requireInteraction: true,
     actions: [
       {
         action: 'open',
@@ -35,27 +36,31 @@ messaging.onBackgroundMessage((payload) => {
 
 // Handle notification clicks
 self.addEventListener('notificationclick', (event) => {
+  console.log('Notification clicked:', event);
+
   const notification = event.notification;
   const action = event.action;
-  const data = notification.data;
+  const data = notification.data || {};
 
   notification.close();
 
-  if (action === 'open' && data.click_action) {
-    const urlToOpen = new URL('/', self.location.origin).href;
+  if (action === 'open' || !action) {
+    const urlToOpen = new URL('/dashboard', self.location.origin).href;
+
     event.waitUntil(
-      clients.matchAll({ type: 'window' }).then((windowClients) => {
-        // Check if there is already a window/tab open with the target URL
-        for (const client of windowClients) {
-          if (client.url === urlToOpen && 'focus' in client) {
-            return client.focus();
+      clients.matchAll({ type: 'window', includeUncontrolled: true })
+        .then((windowClients) => {
+          // Check if there is already a window/tab open
+          for (const client of windowClients) {
+            if (client.url === urlToOpen && 'focus' in client) {
+              return client.focus();
+            }
           }
-        }
-        // If no window/tab is open, open a new one
-        if (clients.openWindow) {
-          return clients.openWindow(urlToOpen);
-        }
-      })
+          // If no window/tab is open, open a new one
+          if (clients.openWindow) {
+            return clients.openWindow(urlToOpen);
+          }
+        })
     );
   }
 });
