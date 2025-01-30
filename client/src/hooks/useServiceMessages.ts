@@ -33,9 +33,7 @@ export function useServiceMessages(userId: string) {
       return;
     }
 
-    console.log("Setting up message listener for user:", userId);
     setIsLoading(true);
-
     const unsubscribeMessages = onSnapshot(
       query(
         collection(db, "messages"),
@@ -44,13 +42,11 @@ export function useServiceMessages(userId: string) {
       ),
       async (snapshot) => {
         try {
+          console.log("Received messages update:", snapshot.docs.length, "messages");
           const newMessages = snapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data()
           } as Message));
-
-          console.log("Fetched messages:", newMessages);
-          console.log("Message createdAt values:", newMessages.map(msg => msg.createdAt));
 
           const requestIds = Array.from(new Set(newMessages.map(m => m.requestId)));
           console.log("Found request IDs:", requestIds);
@@ -79,7 +75,6 @@ export function useServiceMessages(userId: string) {
           });
 
           const groups = (await Promise.all(groupsPromises)).filter((group): group is MessageGroup => group !== null);
-          console.log("Message groups:", groups);
 
           setMessages(newMessages);
           setMessageGroups(groups);
@@ -123,16 +118,10 @@ export function useServiceMessages(userId: string) {
       }
 
       const requestData = requestDoc.data();
-      console.log("Request data:", requestData);
-
       setSelectedMessageRequest({ id: requestId, ...requestData } as Request);
       setIsViewingConversation(true);
 
-      console.log("Selected conversation updated:", { id: requestId, ...requestData });
-
       const conversationMessages = messages.filter(m => m.requestId === requestId);
-      console.log("Conversation messages:", conversationMessages);
-
       if (conversationMessages.length === 0) {
         console.log("Creating new conversation");
         const initialMessage = {
@@ -179,8 +168,6 @@ export function useServiceMessages(userId: string) {
         createdAt: serverTimestamp(),
         read: false,
       };
-
-      console.log("Message data to send:", messageData);
 
       await addDoc(collection(db, "messages"), messageData);
       setMessageContent("");
