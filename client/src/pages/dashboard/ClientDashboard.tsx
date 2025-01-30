@@ -32,13 +32,23 @@ import { db } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import MainLayout from "@/components/layout/MainLayout";
 import type { UserProfile, Request, Message, RequestFormData, TabType } from "@/types/dashboard";
+import { useAppDispatch } from "@/hooks/useAppDispatch";
+import { useAppSelector } from "@/hooks/useAppSelector";
+import { setProfile } from "@/store/slices/profileSlice";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
+interface Car {
+  id: string;
+  userId: string;
+  [key: string]: any;
+}
 
 export default function ClientDashboard() {
   const [activeTab, setActiveTab] = useState<TabType>("requests");
   const { user } = useAuth();
   const { toast } = useToast();
-  const [userProfile, setUserProfile] = useState<UserProfile>({});
+  const dispatch = useAppDispatch();
+  const userProfile = useAppSelector((state) => state.profile.profile);
   const [isRequestDialogOpen, setIsRequestDialogOpen] = useState(false);
   const [isCarDialogOpen, setIsCarDialogOpen] = useState(false);
   const [requestFormData, setRequestFormData] = useState<Partial<RequestFormData>>({});
@@ -47,7 +57,6 @@ export default function ClientDashboard() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [messageServices, setMessageServices] = useState<{ [key: string]: any }>({});
   const [isResendingVerification, setIsResendingVerification] = useState(false);
-
 
   useEffect(() => {
     if (user) {
@@ -58,12 +67,6 @@ export default function ClientDashboard() {
     }
   }, [user]);
 
-  useEffect(() => {
-    if (userProfile.county) {
-      setSelectedCounty(userProfile.county);
-    }
-  }, [userProfile.county]);
-
   const fetchUserProfile = async () => {
     if (!user?.uid) return;
 
@@ -71,7 +74,7 @@ export default function ClientDashboard() {
       const userDoc = await getDoc(doc(db, "clients", user.uid));
       if (userDoc.exists()) {
         const userData = userDoc.data() as UserProfile;
-        setUserProfile(userData);
+        dispatch(setProfile(userData));
       }
     } catch (error) {
       console.error("Error fetching user profile:", error);
@@ -220,11 +223,7 @@ export default function ClientDashboard() {
   };
 
   const renderProfile = () => (
-    <ProfileSection
-      userProfile={userProfile}
-      userId={user?.uid || ""}
-      onProfileUpdate={setUserProfile}
-    />
+    <ProfileSection userId={user?.uid || ""} />
   );
 
   const renderRequests = () => (

@@ -9,6 +9,8 @@ import { AuthProvider } from "@/context/AuthContext";
 import ClientDashboard from "@/pages/dashboard/ClientDashboard";
 import ServiceDashboard from "@/pages/dashboard/ServiceDashboard";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
+import { Provider } from 'react-redux';
+import { store } from '@/store/store';
 
 function Router() {
   return (
@@ -36,12 +38,14 @@ function Router() {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <Router />
-        <Toaster />
-      </AuthProvider>
-    </QueryClientProvider>
+    <Provider store={store}>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <Router />
+          <Toaster />
+        </AuthProvider>
+      </QueryClientProvider>
+    </Provider>
   );
 }
 

@@ -15,14 +15,17 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { romanianCounties, getCitiesForCounty } from "@/lib/romaniaData";
 import type { UserProfile } from "@/types/dashboard";
+import { useAppDispatch } from "@/hooks/useAppDispatch";
+import { useAppSelector } from "@/hooks/useAppSelector";
+import { setProfile, updateProfile } from "@/store/slices/profileSlice";
 
 interface ProfileSectionProps {
-  userProfile: UserProfile;
   userId: string;
-  onProfileUpdate: (profile: UserProfile) => void;
 }
 
-export function ProfileSection({ userProfile, userId, onProfileUpdate }: ProfileSectionProps) {
+export function ProfileSection({ userId }: ProfileSectionProps) {
+  const dispatch = useAppDispatch();
+  const userProfile = useAppSelector((state) => state.profile.profile);
   const [isEditing, setIsEditing] = useState(false);
   const [editedProfile, setEditedProfile] = useState<UserProfile>(userProfile);
   const [selectedCounty, setSelectedCounty] = useState<string>(userProfile.county || "");
@@ -35,7 +38,7 @@ export function ProfileSection({ userProfile, userId, onProfileUpdate }: Profile
 
     try {
       await updateDoc(doc(db, "clients", userId), editedProfile);
-      onProfileUpdate(editedProfile);
+      dispatch(setProfile(editedProfile));
       setIsEditing(false);
       toast({
         title: "Succes",
