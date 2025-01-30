@@ -43,6 +43,7 @@ interface ServiceMessagesSectionProps {
   onBackToList: () => void;
   onViewRequestDetails: (requestId: string) => void;
   userId: string;
+  serviceName: string; // Add this prop
 }
 
 export function ServiceMessagesSection({
@@ -58,6 +59,7 @@ export function ServiceMessagesSection({
   onBackToList,
   onViewRequestDetails,
   userId,
+  serviceName, // Add this prop
 }: ServiceMessagesSectionProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [isScrolledToBottom, setIsScrolledToBottom] = useState(true);
@@ -199,7 +201,7 @@ export function ServiceMessagesSection({
             </Avatar>
             <div>
               <h3 className="font-medium text-sm">
-                {currentGroup?.clientName || "Client"}
+                {currentGroup?.clientName || "Client necunoscut"}
                 <span className="text-muted-foreground ml-2 text-xs">
                   ({currentGroup?.requestTitle})
                 </span>
@@ -243,7 +245,7 @@ export function ServiceMessagesSection({
                     } p-3 relative`}
                   >
                     <div className="text-xs mb-1 font-medium">
-                      {message.fromId === userId ? "Service" : currentGroup?.clientName || "Client"}
+                      {message.fromId === userId ? serviceName : currentGroup?.clientName || "Client necunoscut"}
                     </div>
                     <p className="text-sm whitespace-pre-wrap break-words">
                       {message.content}

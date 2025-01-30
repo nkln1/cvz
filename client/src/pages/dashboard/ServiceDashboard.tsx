@@ -316,6 +316,7 @@ export default function ServiceDashboard() {
             onBackToList={handleBackToList}
             onViewRequestDetails={switchToRequestsAndShowDetails}
             userId={user?.uid || ""}
+            serviceName={serviceData?.companyName || "Service Auto"}
           />
         )}
         {activeTab === "appointments" && <AppointmentsSection />}
