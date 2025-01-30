@@ -3,6 +3,8 @@ import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { Loader2, FileText, MailOpen, MessageSquare, Calendar, User, Star } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import romanianCitiesData from "../../../../attached_assets/municipii_orase_romania.json";
@@ -24,6 +26,7 @@ export default function ServiceDashboard() {
   const { toast } = useToast();
   const [serviceData, setServiceData] = useState<ServiceData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showOnlyNew, setShowOnlyNew] = useState(false);
   const [activeTab, setActiveTab] = useState(() => {
     if (window.location.pathname.endsWith("/service-dashboard")) {
       localStorage.setItem("activeTab", "requests");
@@ -57,6 +60,10 @@ export default function ServiceDashboard() {
     handleRejectRequest,
     markRequestAsViewed,
   } = useServiceRequests(user?.uid || "", serviceData);
+
+  const filteredRequests = showOnlyNew
+    ? clientRequests.filter((request) => !viewedRequests.has(request.id))
+    : clientRequests;
 
   const fields: EditableField[] = [
     { label: "Nume Companie", key: "companyName", editable: true },
@@ -216,17 +223,30 @@ export default function ServiceDashboard() {
 
         <div className="bg-white rounded-lg border shadow-sm p-6">
           {activeTab === "requests" && (
-            <ClientRequests
-              clientRequests={clientRequests}
-              viewedRequests={viewedRequests}
-              onViewDetails={handleViewDetails}
-              onMessage={handleMessage}
-              onSendOffer={handleSendOffer}
-              onRejectRequest={handleRejectRequest}
-              selectedRequest={selectedRequest}
-              requestClient={requestClient}
-              cars={cars}
-            />
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold">Cererile Clienților</h2>
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="show-new"
+                    checked={showOnlyNew}
+                    onCheckedChange={setShowOnlyNew}
+                  />
+                  <Label htmlFor="show-new">Doar cereri noi</Label>
+                </div>
+              </div>
+              <ClientRequests
+                clientRequests={filteredRequests}
+                viewedRequests={viewedRequests}
+                onViewDetails={handleViewDetails}
+                onMessage={handleMessage}
+                onSendOffer={handleSendOffer}
+                onRejectRequest={handleRejectRequest}
+                selectedRequest={selectedRequest}
+                requestClient={requestClient}
+                cars={cars}
+              />
+            </div>
           )}
           {activeTab === "offers" && (
             <SentOffers
