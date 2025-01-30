@@ -33,6 +33,7 @@ import { useRequests } from "@/hooks/useRequests";
 import { useMessages } from "@/hooks/useMessages";
 import { useCars } from "@/hooks/useCars";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ReceivedOffers } from "@/components/dashboard/ReceivedOffers";
 
 export default function ClientDashboard() {
   const [activeTab, setActiveTab] = useState<TabType>("requests");
@@ -120,19 +121,19 @@ export default function ClientDashboard() {
       <CardContent className="p-6">
         <Tabs defaultValue="active" className="w-full">
           <TabsList className="w-full grid grid-cols-3 mb-4 bg-slate-100 p-1">
-            <TabsTrigger 
+            <TabsTrigger
               value="active"
               className="data-[state=active]:bg-[#00aff5] data-[state=active]:text-white transition-colors"
             >
               Active
             </TabsTrigger>
-            <TabsTrigger 
+            <TabsTrigger
               value="solved"
               className="data-[state=active]:bg-[#00aff5] data-[state=active]:text-white transition-colors"
             >
               Rezolvate
             </TabsTrigger>
-            <TabsTrigger 
+            <TabsTrigger
               value="canceled"
               className="data-[state=active]:bg-[#00aff5] data-[state=active]:text-white transition-colors"
             >
@@ -169,22 +170,11 @@ export default function ClientDashboard() {
   );
 
   const renderOffers = () => (
-    <Card className="shadow-lg">
-      <CardHeader className="border-b bg-gray-50">
-        <CardTitle className="text-[#00aff5] flex items-center gap-2">
-          <MailOpen className="h-5 w-5" />
-          Oferte Primite
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="p-6">
-        <RequestsTable
-          requests={requests}
-          cars={cars}
-          hideDeleteButton={true}
-          refreshRequests={fetchRequests}
-        />
-      </CardContent>
-    </Card>
+    <ReceivedOffers
+      requests={requests}
+      cars={cars}
+      refreshRequests={fetchRequests}
+    />
   );
 
   const renderMessages = () => (
