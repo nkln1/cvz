@@ -20,8 +20,7 @@ import { ReviewsSection } from "@/components/dashboard/ReviewsSection";
 import { ServiceAccountSection } from "@/components/dashboard/ServiceAccountSection";
 import { useServiceMessages } from "@/hooks/useServiceMessages";
 import { useServiceRequests } from "@/hooks/useServiceRequests";
-import type { ServiceData, EditableField } from "@/types/service";
-import { useNotifications } from "@/hooks/useNotifications";
+import type { ServiceData } from "@/types/service";
 
 type TabType = "requests" | "offers" | "messages" | "appointments" | "reviews" | "account";
 
@@ -45,14 +44,14 @@ const NavigationButton: React.FC<NavigationButtonProps> = ({
   <Button
     variant={activeTab === tab ? "default" : "ghost"}
     onClick={() => onClick(tab)}
-    className={`flex items-center justify-start w-full sm:w-auto ${
+    className={`flex items-center justify-start w-full sm:w-auto h-auto py-2 px-3 ${
       activeTab === tab
         ? "bg-[#00aff5] hover:bg-[#0099d6] text-white"
         : "hover:text-[#00aff5]"
     }`}
   >
     {icon}
-    <span className="flex items-center gap-2">
+    <span className="flex items-center gap-2 text-sm">
       {label}
       {notificationCount > 0 && (
         <Badge
@@ -116,30 +115,6 @@ export default function ServiceDashboard() {
     ? clientRequests.filter((request) => !viewedRequests.has(request.id))
     : clientRequests;
 
-  const fields: EditableField[] = [
-    { label: "Nume Companie", key: "companyName", editable: true },
-    { label: "Nume Reprezentant", key: "representativeName", editable: true },
-    { label: "Email", key: "email", editable: false },
-    { label: "Telefon", key: "phone", editable: true },
-    { label: "CUI", key: "cui", editable: false },
-    { label: "Nr. Înregistrare", key: "tradeRegNumber", editable: false },
-    { label: "Adresă", key: "address", editable: true },
-    {
-      label: "Județ",
-      key: "county",
-      editable: true,
-      type: "select",
-      options: Object.keys(romanianCitiesData),
-    },
-    {
-      label: "Oraș",
-      key: "city",
-      editable: true,
-      type: "select",
-      options: serviceData?.county ? romanianCitiesData[serviceData.county] : [],
-    },
-  ];
-
   useEffect(() => {
     localStorage.setItem("activeTab", activeTab);
   }, [activeTab]);
@@ -174,24 +149,6 @@ export default function ServiceDashboard() {
     fetchServiceData();
   }, [user]);
 
-  const handleMessage = (request: any) => {
-    markRequestAsViewed(request.id);
-    setSelectedMessageRequest(request);
-    localStorage.setItem("selectedMessageRequestId", request.id);
-    setActiveTab("messages");
-  };
-
-  const handleSendOffer = async (request: any) => {
-    markRequestAsViewed(request.id);
-    toast({
-      description: "Funcționalitatea de trimitere oferte va fi disponibilă în curând.",
-    });
-  };
-
-  const newRequestsCount = clientRequests.filter(
-    (request) => !viewedRequests.has(request.id)
-  ).length;
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -216,14 +173,14 @@ export default function ServiceDashboard() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Navigation />
-      <div className="container mx-auto p-4 md:p-6 space-y-4 md:space-y-6">
-        <div className="flex items-center justify-between mb-4">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-6 space-y-4 md:space-y-6 max-w-[1400px]">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
           <h1 className="text-2xl font-bold">Service Dashboard</h1>
           {notificationPermission !== "granted" ? (
             <Button
               variant="outline"
               onClick={requestNotificationPermission}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 w-full sm:w-auto"
             >
               <BellOff className="w-4 h-4" />
               Enable Notifications
@@ -235,58 +192,59 @@ export default function ServiceDashboard() {
             </div>
           )}
         </div>
-        <nav className="flex flex-col sm:flex-row gap-2 border-b pb-4 overflow-x-auto">
-          <div className="flex flex-col sm:flex-row gap-2 w-full">
+
+        <nav className="flex flex-col sm:flex-row gap-2 border-b pb-4 overflow-x-auto scrollbar-hide">
+          <div className="grid grid-cols-2 sm:flex sm:flex-row gap-2 w-full">
             <NavigationButton
               tab="requests"
               activeTab={activeTab}
-              icon={<FileText className="w-4 h-4 mr-2" />}
+              icon={<FileText className="w-4 h-4 mr-2 flex-shrink-0" />}
               label="Cereri"
               onClick={setActiveTab}
-              notificationCount={newRequestsCount}
+              notificationCount={filteredRequests.length}
             />
             <NavigationButton
               tab="offers"
               activeTab={activeTab}
-              icon={<MailOpen className="w-4 h-4 mr-2" />}
+              icon={<MailOpen className="w-4 h-4 mr-2 flex-shrink-0" />}
               label="Oferte"
               onClick={setActiveTab}
             />
             <NavigationButton
               tab="messages"
               activeTab={activeTab}
-              icon={<MessageSquare className="w-4 h-4 mr-2" />}
+              icon={<MessageSquare className="w-4 h-4 mr-2 flex-shrink-0" />}
               label="Mesaje"
               onClick={setActiveTab}
             />
             <NavigationButton
               tab="appointments"
               activeTab={activeTab}
-              icon={<Calendar className="w-4 h-4 mr-2" />}
+              icon={<Calendar className="w-4 h-4 mr-2 flex-shrink-0" />}
               label="Programări"
               onClick={setActiveTab}
             />
             <NavigationButton
               tab="reviews"
               activeTab={activeTab}
-              icon={<Star className="w-4 h-4 mr-2" />}
+              icon={<Star className="w-4 h-4 mr-2 flex-shrink-0" />}
               label="Recenzii"
               onClick={setActiveTab}
             />
             <NavigationButton
               tab="account"
               activeTab={activeTab}
-              icon={<User className="w-4 h-4 mr-2" />}
+              icon={<User className="w-4 h-4 mr-2 flex-shrink-0" />}
               label="Cont"
               onClick={setActiveTab}
             />
           </div>
         </nav>
 
-        <div className="bg-white rounded-lg border shadow-sm p-6">
+        <div className="bg-white rounded-lg border shadow-sm p-4 sm:p-6">
           {activeTab === "requests" && (
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <h2 className="text-xl font-semibold">Cererile Clienților</h2>
                 <div className="flex items-center space-x-2">
                   <Switch
@@ -301,8 +259,12 @@ export default function ServiceDashboard() {
                 clientRequests={filteredRequests}
                 viewedRequests={viewedRequests}
                 onViewDetails={handleViewDetails}
-                onMessage={handleMessage}
-                onSendOffer={handleSendOffer}
+                onMessage={setSelectedMessageRequest}
+                onSendOffer={() => {
+                  toast({
+                    description: "Funcționalitatea de trimitere oferte va fi disponibilă în curând.",
+                  });
+                }}
                 onRejectRequest={handleRejectRequest}
                 selectedRequest={selectedRequest}
                 requestClient={requestClient}
@@ -339,7 +301,29 @@ export default function ServiceDashboard() {
             <ServiceAccountSection
               userId={user?.uid || ""}
               serviceData={serviceData || ({} as ServiceData)}
-              fields={fields}
+              fields={[
+                { label: "Nume Companie", key: "companyName", editable: true },
+                { label: "Nume Reprezentant", key: "representativeName", editable: true },
+                { label: "Email", key: "email", editable: false },
+                { label: "Telefon", key: "phone", editable: true },
+                { label: "CUI", key: "cui", editable: false },
+                { label: "Nr. Înregistrare", key: "tradeRegNumber", editable: false },
+                { label: "Adresă", key: "address", editable: true },
+                {
+                  label: "Județ",
+                  key: "county",
+                  editable: true,
+                  type: "select",
+                  options: Object.keys(romanianCitiesData),
+                },
+                {
+                  label: "Oraș",
+                  key: "city",
+                  editable: true,
+                  type: "select",
+                  options: serviceData?.county ? romanianCitiesData[serviceData.county] : [],
+                },
+              ]}
               validationErrors={{}}
             />
           )}

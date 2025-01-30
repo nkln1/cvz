@@ -80,138 +80,117 @@ export default function ClientDashboard() {
     }
   };
 
-  const renderRequests = () => (
-    <MyRequests
-      requests={requests}
-      cars={cars}
-      onDelete={handleDeleteRequest}
-      refreshRequests={fetchRequests}
-    />
-  );
-
-  const renderOffers = () => (
-    <ReceivedOffers
-      requests={requests}
-      cars={cars}
-      refreshRequests={fetchRequests}
-    />
-  );
-
-  const renderMessages = () => {
-    const requestTitles = requests.reduce((acc, request) => {
-      acc[request.id] = request.title;
-      return acc;
-    }, {} as Record<string, string>);
-
-    return (
-      <MessagesSection
-        messages={messages}
-        messageServices={messageServices}
-        markMessageAsRead={markMessageAsRead}
-        requestTitles={requestTitles}
-      />
-    );
-  };
-
-  const renderContent = () => {
-    switch (activeTab) {
-      case "requests":
-        return renderRequests();
-      case "offers":
-        return renderOffers();
-      case "messages":
-        return renderMessages();
-      case "car":
-        return <CarManagement />;
-      case "profile":
-        return <ProfileSection userId={user?.uid || ""} />;
-      default:
-        return null;
-    }
-  };
-
   if (!user?.emailVerified) {
     return <EmailVerificationView />;
   }
 
   return (
     <MainLayout>
-      <div className="container mx-auto p-4 md:p-6 space-y-4 md:space-y-6">
-        <nav className="flex flex-col sm:flex-row gap-2 border-b pb-4 overflow-x-auto">
-          <div className="flex flex-col sm:flex-row gap-2 w-full">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-6 space-y-4 md:space-y-6 max-w-[1400px]">
+        <nav className="flex flex-col lg:flex-row gap-4 border-b pb-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:flex lg:flex-row gap-2 w-full">
             <Button
               variant={activeTab === "requests" ? "default" : "ghost"}
               onClick={() => setActiveTab("requests")}
-              className={`flex items-center justify-start w-full sm:w-auto ${
+              className={`flex items-center justify-start h-auto py-2 px-3 ${
                 activeTab === "requests"
                   ? "bg-[#00aff5] hover:bg-[#0099d6] text-white"
                   : "hover:text-[#00aff5]"
               }`}
             >
-              <FileText className="w-4 h-4 mr-2" />
-              Cererile mele
+              <FileText className="w-4 h-4 mr-2 flex-shrink-0" />
+              <span className="text-sm">Cererile mele</span>
             </Button>
             <Button
               variant={activeTab === "offers" ? "default" : "ghost"}
               onClick={() => setActiveTab("offers")}
-              className={`flex items-center justify-start w-full sm:w-auto ${
+              className={`flex items-center justify-start h-auto py-2 px-3 ${
                 activeTab === "offers"
                   ? "bg-[#00aff5] hover:bg-[#0099d6] text-white"
                   : "hover:text-[#00aff5]"
               }`}
             >
-              <MailOpen className="w-4 h-4 mr-2" />
-              Oferte Primite
+              <MailOpen className="w-4 h-4 mr-2 flex-shrink-0" />
+              <span className="text-sm">Oferte Primite</span>
             </Button>
             <Button
               variant={activeTab === "messages" ? "default" : "ghost"}
               onClick={() => setActiveTab("messages")}
-              className={`flex items-center justify-start w-full sm:w-auto ${
+              className={`flex items-center justify-start h-auto py-2 px-3 ${
                 activeTab === "messages"
                   ? "bg-[#00aff5] hover:bg-[#0099d6] text-white"
                   : "hover:text-[#00aff5]"
               }`}
             >
-              <MessageSquare className="w-4 h-4 mr-2" />
-              Mesaje
+              <MessageSquare className="w-4 h-4 mr-2 flex-shrink-0" />
+              <span className="text-sm">Mesaje</span>
             </Button>
             <Button
               variant={activeTab === "car" ? "default" : "ghost"}
               onClick={() => setActiveTab("car")}
-              className={`flex items-center justify-start w-full sm:w-auto ${
+              className={`flex items-center justify-start h-auto py-2 px-3 ${
                 activeTab === "car"
                   ? "bg-[#00aff5] hover:bg-[#0099d6] text-white"
                   : "hover:text-[#00aff5]"
               }`}
             >
-              <CarIcon className="w-4 h-4 mr-2" />
-              Mașina Mea
+              <CarIcon className="w-4 h-4 mr-2 flex-shrink-0" />
+              <span className="text-sm">Mașina Mea</span>
             </Button>
             <Button
               variant={activeTab === "profile" ? "default" : "ghost"}
               onClick={() => setActiveTab("profile")}
-              className={`flex items-center justify-start w-full sm:w-auto ${
+              className={`flex items-center justify-start h-auto py-2 px-3 ${
                 activeTab === "profile"
                   ? "bg-[#00aff5] hover:bg-[#0099d6] text-white"
                   : "hover:text-[#00aff5]"
               }`}
             >
-              <User className="w-4 h-4 mr-2" />
-              Cont
+              <User className="w-4 h-4 mr-2 flex-shrink-0" />
+              <span className="text-sm">Cont</span>
             </Button>
           </div>
-          <div className="mt-4 sm:mt-0 sm:ml-auto">
+          <div className="w-full lg:w-auto">
             <Button
               onClick={() => setIsRequestDialogOpen(true)}
-              className="w-full sm:w-auto bg-[#00aff5] hover:bg-[#0099d6] text-white"
+              className="w-full lg:w-auto bg-[#00aff5] hover:bg-[#0099d6] text-white h-auto py-2 px-3"
             >
-              <Plus className="w-5 h-5 mr-2" />
-              <span className="font-semibold">Adaugă cerere</span>
+              <Plus className="w-5 h-5 mr-2 flex-shrink-0" />
+              <span className="font-semibold text-sm">Adaugă cerere</span>
             </Button>
           </div>
         </nav>
 
-        {renderContent()}
+        <div className="bg-white rounded-lg border shadow-sm p-4 sm:p-6">
+          {activeTab === "requests" && (
+            <MyRequests
+              requests={requests}
+              cars={cars}
+              onDelete={handleDeleteRequest}
+              refreshRequests={fetchRequests}
+            />
+          )}
+          {activeTab === "offers" && (
+            <ReceivedOffers
+              requests={requests}
+              cars={cars}
+              refreshRequests={fetchRequests}
+            />
+          )}
+          {activeTab === "messages" && (
+            <MessagesSection
+              messages={messages}
+              messageServices={messageServices}
+              markMessageAsRead={markMessageAsRead}
+              requestTitles={requests.reduce((acc, request) => {
+                acc[request.id] = request.title;
+                return acc;
+              }, {} as Record<string, string>)}
+            />
+          )}
+          {activeTab === "car" && <CarManagement />}
+          {activeTab === "profile" && <ProfileSection userId={user?.uid || ""} />}
+        </div>
 
         <Dialog open={isRequestDialogOpen} onOpenChange={setIsRequestDialogOpen}>
           <DialogContent className="sm:max-w-[600px]">
