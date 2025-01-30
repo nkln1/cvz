@@ -27,7 +27,6 @@ export function useServiceMessages(userId: string) {
   const [sendingMessage, setSendingMessage] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Subscribe to real-time message updates
   useEffect(() => {
     if (!userId) return;
 
@@ -35,39 +34,30 @@ export function useServiceMessages(userId: string) {
     console.log("Setting up message listeners for user:", userId);
 
     try {
-      // Subscribe to sent messages
-      const sentQuery = query(
+      // Subscribe to messages where the user is either sender or receiver
+      const messagesQuery = query(
         collection(db, "messages"),
-        where("fromId", "==", userId),
+        where("participants", "array-contains", userId),
         orderBy("createdAt", "desc")
       );
 
-      // Subscribe to received messages
-      const receivedQuery = query(
-        collection(db, "messages"),
-        where("toId", "==", userId),
-        orderBy("createdAt", "desc")
-      );
-
-      const unsubscribeSent = onSnapshot(sentQuery, async (snapshot) => {
-        console.log("Received sent messages update:", snapshot.docs.length, "messages");
+      const unsubscribeMessages = onSnapshot(messagesQuery, async (snapshot) => {
+        console.log("Received messages update:", snapshot.docs.length, "messages");
         const newMessages = snapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data()
         } as Message));
         await processMessages(newMessages);
+      }, (error) => {
+        console.error("Error in messages listener:", error);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Could not load messages. Please refresh the page.",
+        });
       });
 
-      const unsubscribeReceived = onSnapshot(receivedQuery, async (snapshot) => {
-        console.log("Received received messages update:", snapshot.docs.length, "messages");
-        const newMessages = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        } as Message));
-        await processMessages(newMessages);
-      });
-
-      unsubscribes = [unsubscribeSent, unsubscribeReceived];
+      unsubscribes.push(unsubscribeMessages);
     } catch (error) {
       console.error("Error setting up message subscriptions:", error);
       toast({
@@ -87,22 +77,7 @@ export function useServiceMessages(userId: string) {
     try {
       console.log("Processing", newMessages.length, "messages");
       // Update messages state
-      setMessages(prev => {
-        const combined = [...prev];
-        newMessages.forEach(message => {
-          const index = combined.findIndex(m => m.id === message.id);
-          if (index === -1) {
-            combined.push(message);
-          } else {
-            combined[index] = message;
-          }
-        });
-        return combined.sort((a, b) => {
-          const dateA = a.createdAt instanceof Timestamp ? a.createdAt.toDate() : new Date(a.createdAt);
-          const dateB = b.createdAt instanceof Timestamp ? b.createdAt.toDate() : new Date(b.createdAt);
-          return dateB.getTime() - dateA.getTime();
-        });
-      });
+      setMessages(newMessages);
 
       // Process message groups
       const requestIds = Array.from(new Set(newMessages.map(m => m.requestId)));
@@ -112,11 +87,6 @@ export function useServiceMessages(userId: string) {
 
         const requestData = requestDoc.data();
         const requestMessages = newMessages.filter(m => m.requestId === requestId);
-        requestMessages.sort((a, b) => {
-          const dateA = a.createdAt instanceof Timestamp ? a.createdAt.toDate() : new Date(a.createdAt);
-          const dateB = b.createdAt instanceof Timestamp ? b.createdAt.toDate() : new Date(b.createdAt);
-          return dateB.getTime() - dateA.getTime();
-        });
 
         return {
           requestId,
@@ -127,24 +97,7 @@ export function useServiceMessages(userId: string) {
       });
 
       const groups = (await Promise.all(groupPromises)).filter((group): group is MessageGroup => group !== null);
-
-      setMessageGroups(prev => {
-        const combined = [...prev];
-        groups.forEach(group => {
-          const index = combined.findIndex(g => g.requestId === group.requestId);
-          if (index === -1) {
-            combined.push(group);
-          } else {
-            combined[index] = group;
-          }
-        });
-        return combined.sort((a, b) => {
-          const dateA = a.lastMessage.createdAt instanceof Timestamp ? a.lastMessage.createdAt.toDate() : new Date(a.lastMessage.createdAt);
-          const dateB = b.lastMessage.createdAt instanceof Timestamp ? b.lastMessage.createdAt.toDate() : new Date(b.lastMessage.createdAt);
-          return dateB.getTime() - dateA.getTime();
-        });
-      });
-
+      setMessageGroups(groups);
       setIsLoading(false);
     } catch (error) {
       console.error("Error processing messages:", error);
@@ -170,6 +123,7 @@ export function useServiceMessages(userId: string) {
             requestId,
             fromId: userId,
             toId: requestData.userId,
+            participants: [userId, requestData.userId],
             content: `Bună ziua! Sunt reprezentantul service-ului auto și am primit cererea dumneavoastră pentru ${requestData.title}. Cum vă pot ajuta?`,
             createdAt: serverTimestamp(),
             read: false,
@@ -205,6 +159,7 @@ export function useServiceMessages(userId: string) {
         requestId: selectedMessageRequest.id,
         fromId: userId,
         toId: selectedMessageRequest.userId,
+        participants: [userId, selectedMessageRequest.userId],
         content: messageContent.trim(),
         createdAt: serverTimestamp(),
         read: false,

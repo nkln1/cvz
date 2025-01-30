@@ -27,6 +27,7 @@ interface ServiceMessagesSectionProps {
   isViewingConversation: boolean;
   messageContent: string;
   sendingMessage: boolean;
+  isLoading: boolean; // Added isLoading prop
   onMessageContentChange: (content: string) => void;
   onSendMessage: () => Promise<void>;
   onSelectConversation: (requestId: string) => void;
@@ -42,6 +43,7 @@ export function ServiceMessagesSection({
   isViewingConversation,
   messageContent,
   sendingMessage,
+  isLoading, // Using isLoading prop
   onMessageContentChange,
   onSendMessage,
   onSelectConversation,
@@ -86,7 +88,11 @@ export function ServiceMessagesSection({
 
   const renderMessagesList = () => (
     <div className="space-y-4">
-      {messageGroups.length === 0 ? (
+      {isLoading ? ( // Added loading indicator
+        <div className="flex justify-center items-center py-8">
+          <Loader2 className="h-8 w-8 animate-spin text-[#00aff5]" />
+        </div>
+      ) : messageGroups.length === 0 ? (
         <p className="text-center text-muted-foreground py-4">
           Nu există conversații active
         </p>
@@ -148,66 +154,81 @@ export function ServiceMessagesSection({
           Detalii cerere
         </Button>
       </div>
-      <div
-        className="space-y-4 max-h-[400px] overflow-y-auto mb-4 p-4"
-        onScroll={handleScroll}
-      >
-        {messages
-          .filter((msg) => msg.requestId === selectedMessageRequest?.id)
-          .sort(
-            (a, b) =>
-              new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-          )
-          .map((message) => (
-            <div
-              key={message.id}
-              className={`p-3 rounded-lg max-w-[80%] ${
-                message.fromId === userId
-                  ? "ml-auto bg-blue-500 text-white"
-                  : "bg-gray-100"
-              }`}
+      {isLoading ? ( // Added loading indicator
+        <div className="flex justify-center items-center py-8">
+          <Loader2 className="h-8 w-8 animate-spin text-[#00aff5]" />
+        </div>
+      ) : (
+        <>
+          <div
+            className="space-y-4 max-h-[400px] overflow-y-auto mb-4 p-4"
+            onScroll={handleScroll}
+          >
+            {messages
+              .filter((msg) => msg.requestId === selectedMessageRequest?.id)
+              .sort(
+                (a, b) => {
+                  const dateA = a.createdAt && typeof a.createdAt.toDate === 'function' 
+                    ? a.createdAt.toDate().getTime() 
+                    : new Date(a.createdAt).getTime();
+                  const dateB = b.createdAt && typeof b.createdAt.toDate === 'function'
+                    ? b.createdAt.toDate().getTime()
+                    : new Date(b.createdAt).getTime();
+                  return dateA - dateB;
+                }
+              )
+              .map((message) => (
+                <div
+                  key={message.id}
+                  className={`p-3 rounded-lg max-w-[80%] ${
+                    message.fromId === userId
+                      ? "ml-auto bg-blue-500 text-white"
+                      : "bg-gray-100"
+                  }`}
+                >
+                  <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
+                  <span className="text-xs opacity-70 block mt-1">
+                    {formatTimestamp(message.createdAt)}
+                  </span>
+                </div>
+              ))}
+            <div ref={messagesEndRef} />
+          </div>
+          <div className="flex gap-2">
+            <Textarea
+              value={messageContent}
+              onChange={(e) => onMessageContentChange(e.target.value)}
+              placeholder="Scrie un mesaj..."
+              className="flex-1"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  if (messageContent.trim()) {
+                    onSendMessage();
+                  }
+                }
+              }}
+            />
+            <Button
+              onClick={onSendMessage}
+              disabled={!messageContent.trim() || sendingMessage}
+              className="bg-[#00aff5] hover:bg-[#0099d6]"
             >
-              <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
-              <span className="text-xs opacity-70 block mt-1">
-                {formatTimestamp(message.createdAt)}
-              </span>
-            </div>
-          ))}
-        <div ref={messagesEndRef} />
-      </div>
-      <div className="flex gap-2">
-        <Textarea
-          value={messageContent}
-          onChange={(e) => onMessageContentChange(e.target.value)}
-          placeholder="Scrie un mesaj..."
-          className="flex-1"
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-              e.preventDefault();
-              if (messageContent.trim()) {
-                onSendMessage();
-              }
-            }
-          }}
-        />
-        <Button
-          onClick={onSendMessage}
-          disabled={!messageContent.trim() || sendingMessage}
-          className="bg-[#00aff5] hover:bg-[#0099d6]"
-        >
-          {sendingMessage ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Se trimite...
-            </>
-          ) : (
-            <>
-              <SendHorizontal className="mr-2 h-4 w-4" />
-              Trimite
-            </>
-          )}
-        </Button>
-      </div>
+              {sendingMessage ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Se trimite...
+                </>
+              ) : (
+                <>
+                  <SendHorizontal className="mr-2 h-4 w-4" />
+                  Trimite
+                </>
+              )}
+            </Button>
+          </div>
+        </>
+      )}
     </div>
   );
 
