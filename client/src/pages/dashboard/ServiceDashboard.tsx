@@ -717,7 +717,7 @@ export default function ServiceDashboard() {
   const renderOffers = () => (
     <TabsContent value="offers">
       <ReceivedOffers
-        requests={clientRequests}
+        requests={[]} // Updated to show empty state
         cars={cars}
         refreshRequests={fetchClientRequests}
       />
@@ -1082,8 +1082,8 @@ export default function ServiceDashboard() {
         );
       default:
         return null;
-      }
-    };
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -1112,7 +1112,7 @@ export default function ServiceDashboard() {
                 }`}
               >
                 <SendHorizontal className="w-4 h-4 mr-2" />
-                Oferte
+                Oferte trimise
               </TabsTrigger>
               <TabsTrigger
                 value="messages"
