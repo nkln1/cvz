@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, FileText, MailOpen, MessageSquare, Calendar, User, Star } from "lucide-react";
+import { Loader2, FileText, MailOpen, MessageSquare, Calendar, User, Star, Bell, BellOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import romanianCitiesData from "../../../../attached_assets/municipii_orase_romania.json";
 import Navigation from "@/components/Navigation";
@@ -21,6 +21,7 @@ import { ServiceAccountSection } from "@/components/dashboard/ServiceAccountSect
 import { useServiceMessages } from "@/hooks/useServiceMessages";
 import { useServiceRequests } from "@/hooks/useServiceRequests";
 import type { ServiceData, EditableField } from "@/types/service";
+import { useNotifications } from "@/hooks/useNotifications";
 
 type TabType = "requests" | "offers" | "messages" | "appointments" | "reviews" | "account";
 
@@ -54,8 +55,8 @@ const NavigationButton: React.FC<NavigationButtonProps> = ({
     <span className="flex items-center gap-2">
       {label}
       {notificationCount > 0 && (
-        <Badge 
-          variant="secondary" 
+        <Badge
+          variant="secondary"
           className="bg-[#00aff5] text-white text-xs px-2 py-0.5 rounded-full"
         >
           {notificationCount}
@@ -105,6 +106,11 @@ export default function ServiceDashboard() {
     handleRejectRequest,
     markRequestAsViewed,
   } = useServiceRequests(user?.uid || "", serviceData);
+
+  const {
+    notificationPermission,
+    requestNotificationPermission,
+  } = useNotifications(user?.uid || "");
 
   const filteredRequests = showOnlyNew
     ? clientRequests.filter((request) => !viewedRequests.has(request.id))
@@ -211,6 +217,24 @@ export default function ServiceDashboard() {
     <div className="min-h-screen bg-gray-50">
       <Navigation />
       <div className="container mx-auto p-4 md:p-6 space-y-4 md:space-y-6">
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="text-2xl font-bold">Service Dashboard</h1>
+          {notificationPermission !== "granted" ? (
+            <Button
+              variant="outline"
+              onClick={requestNotificationPermission}
+              className="flex items-center gap-2"
+            >
+              <BellOff className="w-4 h-4" />
+              Enable Notifications
+            </Button>
+          ) : (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Bell className="w-4 h-4" />
+              Notifications enabled
+            </div>
+          )}
+        </div>
         <nav className="flex flex-col sm:flex-row gap-2 border-b pb-4 overflow-x-auto">
           <div className="flex flex-col sm:flex-row gap-2 w-full">
             <NavigationButton
