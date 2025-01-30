@@ -65,6 +65,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { ServiceProfileSection } from "@/components/dashboard/ServiceProfileSection";
 import { ClientRequests } from "@/components/dashboard/ClientRequests";
+import { ReceivedOffers } from "@/components/dashboard/ReceivedOffers"; // Changed to named import
 
 interface Car {
   id: string;
@@ -713,6 +714,16 @@ export default function ServiceDashboard() {
     </TabsContent>
   );
 
+  const renderOffers = () => (
+    <TabsContent value="offers">
+      <ReceivedOffers
+        requests={clientRequests}
+        cars={cars}
+        refreshRequests={fetchClientRequests}
+      />
+    </TabsContent>
+  );
+
   const renderMessagesList = () => (
     <div className="space-y-4">
       {messageGroups.length === 0 ? (
@@ -910,26 +921,7 @@ export default function ServiceDashboard() {
       case "requests":
         return renderRequestsContent();
       case "offers":
-        return (
-          <TabsContent value="offers">
-            <Card className="border-[#00aff5]/20">
-              <CardHeader>
-                <CardTitle className="text-[#00aff5] flex items-center gap-2">
-                  <SendHorizontal className="h-5 w-5" />
-                  Oferte Trimise
-                </CardTitle>
-                <CardDescription>
-                  Urmărește și gestionează ofertele trimise către clienți
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">
-                  Lista ofertelor va apărea aici
-                </p>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        );
+        return renderOffers();
       case "messages":
         return renderMessages();
       case "appointments":
@@ -1007,25 +999,23 @@ export default function ServiceDashboard() {
                         )}
                       </div>
                       <div className="space-y-1">
-                        {type === "select" && options ? (
+                        {type === "select" ? (
                           <Select
-                            value={serviceData?.[key]}
+                            value={serviceData[key]}
                             onValueChange={(value) => handleChange(key, value)}
                             disabled={!editable}
                           >
                             <SelectTrigger
-                              className={`${
-                                !editable
-                                  ? "bg-gray-50"
-                                  : "bg-white"
+                              className={`w-full ${
+                                !editable ? "bg-gray-50" : "bg-white"
                               } ${validationErrors[key] ? "border-red-500" : ""}`}
                             >
-                              <SelectValue
+                              <SelectValue 
                                 placeholder={`Selectează ${label.toLowerCase()}`}
                               />
                             </SelectTrigger>
                             <SelectContent>
-                              {options.map((option) => (
+                              {options?.map((option) => (
                                 <SelectItem key={option} value={option}>
                                   {option}
                                 </SelectItem>
@@ -1034,14 +1024,13 @@ export default function ServiceDashboard() {
                           </Select>
                         ) : (
                           <Input
-                            value={serviceData?.[key] || ""}
+                            type="text"
+                            value={serviceData[key]}
                             onChange={(e) => handleChange(key, e.target.value)}
                             disabled={!editable}
                             className={`${
-                              !editable
-                                ? "bg-gray-50"
-                                : "bg-white"
-                            } ${validationErrors[key] ? "border-red-500" : ""} pr-8`}
+                              !editable ? "bg-gray-50" : "bg-white"
+                            } ${validationErrors[key] ? "border-red-500" : ""}`}
                           />
                         )}
                         {validationErrors[key] && (
@@ -1093,123 +1082,87 @@ export default function ServiceDashboard() {
         );
       default:
         return null;
-    }
-  };
+      }
+    };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div className="min-h-screen bg-gray-50">
       <Navigation />
-      <div className="container mx-auto p-4 md:p-6 space-y-4 md:space-y-6">
-        <nav className="flex flex-col sm:flex-row gap-2 border-b pb-4 overflow-x-auto">
-          <Button
-            variant={activeTab === "requests" ? "default" : "ghost"}
-            onClick={() => setActiveTab("requests")}
-            className={`flex items-center justify-start ${
-              activeTab === "requests"
-                ? "bg-[#00aff5] text-white hover:bg-[#0099d6]"
-                : "hover:text-[#00aff5]"
-            }`}
-          >
-            <div className="flex items-center gap-2">
-              <Clock className="w-4 h-4" />
-              Cereri Clienți
-              {clientRequests.filter(req => !viewedRequests.has(req.id)).length > 0 && (
-                <Badge variant="secondary" className="bg-white text-[#00aff5]">
-                  {clientRequests.filter(req => !viewedRequests.has(req.id)).length}
-                </Badge>
-              )}
-            </div>
-          </Button>
-          <Button
-            variant={activeTab === "offers" ? "default" : "ghost"}
-            onClick={() => setActiveTab("offers")}
-            className={`flex items-center justify-start ${
-              activeTab === "offers"
-                ? "bg-[#00aff5] text-white hover:bg-[#0099d6]"
-                : "hover:text-[#00aff5]"
-            }`}
-          >
-            <div className="flex items-center gap-2">
-              <SendHorizontal className="w-4 h-4" />
-              Oferte
-            </div>
-          </Button>
-          <Button
-            variant={activeTab === "messages" ? "default" : "ghost"}
-            onClick={() => setActiveTab("messages")}
-            className={`flex items-center justify-start ${
-              activeTab === "messages"
-                ? "bg-[#00aff5] text-white hover:bg-[#0099d6]"
-                : "hover:text-[#00aff5]"
-            }`}
-          >
-            <div className="flex items-center gap-2">
-              <MessageSquare className="w-4 h-4" />
-              Mesaje
-            </div>
-          </Button>
-          <Button
-            variant={activeTab === "appointments" ? "default" : "ghost"}
-            onClick={() => setActiveTab("appointments")}
-            className={`flex items-center justify-start ${
-              activeTab === "appointments"
-                ? "bg-[#00aff5] text-white hover:bg-[#0099d6]"
-                : "hover:text-[#00aff5]"
-            }`}
-          >
-            <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4" />
-              Programări
-            </div>
-          </Button>
-          <Button
-            variant={activeTab === "reviews" ? "default" : "ghost"}
-            onClick={() => setActiveTab("reviews")}
-            className={`flex items-center justify-start ${
-              activeTab === "reviews"
-                ? "bg-[#00aff5] text-white hover:bg-[#0099d6]"
-                : "hover:text-[#00aff5]"
-            }`}
-          >
-            <div className="flex items-center gap-2">
-              <Star className="w-4 h-4" />
-              Recenzii
-            </div>
-          </Button>
-          <Button
-            variant={activeTab === "account" ? "default" : "ghost"}
-            onClick={() => setActiveTab("profile")}
-            className={`flex items-center justify-start ${
-              activeTab === "account"
-                ? "bg-[#00aff5] text-white hover:bg-[#0099d6]"
-                : "hover:text-[#00aff5]"
-            }`}
-          >
-            <div className="flex items-center gap-2">
-              <UserCog className="w-4 h-4" />
-              Profil
-            </div>
-          </Button>
-          <Button
-            variant={activeTab === "public-profile" ? "default" : "ghost"}
-            onClick={() => setActiveTab("public-profile")}
-            className={`flex items-center justify-start ${
-              activeTab === "public-profile"
-                ? "bg-[#00aff5] text-white hover:bg-[#0099d6]"
-                : "hover:text-[#00aff5]"
-            }`}
-          >
-            <div className="flex items-center gap-2">
-              <Store className="w-4 h-4" />
-              Profil Public
-            </div>
-          </Button>
-        </nav>
-
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+      <main className="container mx-auto py-6 px-4">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <div className="mb-6 border-b">
+            <TabsList className="w-full justify-start gap-2">
+              <TabsTrigger
+                value="requests"
+                className={`${
+                  activeTab === "requests"
+                    ? "bg-[#00aff5] text-white"
+                    : "hover:text-[#00aff5]"
+                }`}
+              >
+                <Clock className="w-4 h-4 mr-2" />
+                Cereri clienți
+              </TabsTrigger>
+              <TabsTrigger
+                value="offers"
+                className={`${
+                  activeTab === "offers"
+                    ? "bg-[#00aff5] text-white"
+                    : "hover:text-[#00aff5]"
+                }`}
+              >
+                <SendHorizontal className="w-4 h-4 mr-2" />
+                Oferte
+              </TabsTrigger>
+              <TabsTrigger
+                value="messages"
+                className={`${
+                  activeTab === "messages"
+                    ? "bg-[#00aff5] text-white"
+                    : "hover:text-[#00aff5]"
+                }`}
+              >
+                <MessageSquare className="w-4 h-4 mr-2" />
+                Mesaje
+              </TabsTrigger>
+              <TabsTrigger
+                value="appointments"
+                className={`${
+                  activeTab === "appointments"
+                    ? "bg-[#00aff5] text-white"
+                    : "hover:text-[#00aff5]"
+                }`}
+              >
+                <Calendar className="w-4 h-4 mr-2" />
+                Programări
+              </TabsTrigger>
+              <TabsTrigger
+                value="reviews"
+                className={`${
+                  activeTab === "reviews"
+                    ? "bg-[#00aff5] text-white"
+                    : "hover:text-[#00aff5]"
+                }`}
+              >
+                <Star className="w-4 h-4 mr-2" />
+                Recenzii
+              </TabsTrigger>
+              <TabsTrigger
+                value="account"
+                className={`${
+                  activeTab === "account"
+                    ? "bg-[#00aff5] text-white"
+                    : "hover:text-[#00aff5]"
+                }`}
+              >
+                <UserCog className="w-4 h-4 mr-2" />
+                Cont
+              </TabsTrigger>
+            </TabsList>
+          </div>
           {renderContent()}
         </Tabs>
-      </div>
+      </main>
       <Footer />
     </div>
   );
