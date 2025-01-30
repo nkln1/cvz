@@ -32,7 +32,13 @@ import { useServiceRequests } from "@/hooks/useServiceRequests";
 import { useNotifications } from "@/hooks/useNotifications";
 import type { ServiceData, Request as ServiceRequest } from "@/types/service";
 
-type TabType = "requests" | "offers" | "messages" | "appointments" | "reviews" | "account";
+type TabType =
+  | "requests"
+  | "offers"
+  | "messages"
+  | "appointments"
+  | "reviews"
+  | "account";
 
 interface NavigationButtonProps {
   tab: TabType;
@@ -63,7 +69,7 @@ const NavigationButton: React.FC<NavigationButtonProps> = ({
     {icon}
     <span className="flex items-center gap-2 text-sm">
       {label}
-      {notificationCount && notificationCount > 0 && (
+      {notificationCount > 0 && (
         <Badge
           variant="secondary"
           className="bg-[#00aff5] text-white text-xs px-2 py-0.5 rounded-full"
@@ -116,13 +122,11 @@ export default function ServiceDashboard() {
     markRequestAsViewed,
   } = useServiceRequests(user?.uid || "", serviceData);
 
-  const {
-    notificationPermission,
-    requestNotificationPermission,
-  } = useNotifications(user?.uid || "");
+  const { notificationPermission, requestNotificationPermission } =
+    useNotifications(user?.uid || "");
 
   const newRequestsCount = clientRequests.filter(
-    (request) => !viewedRequests.has(request.id)
+    (request) => !viewedRequests.has(request.id),
   ).length;
 
   useEffect(() => {
@@ -150,19 +154,21 @@ export default function ServiceDashboard() {
           setServiceData(data);
         } else {
           console.error("No service document found for user:", user.uid);
-          setError("Nu s-au găsit date pentru acest service. Vă rugăm să vă autentificați din nou.");
+          setError(
+            "Nu s-au găsit date pentru acest service. Vă rugăm să vă autentificați din nou.",
+          );
           setLocation("/login");
         }
       } catch (error) {
         console.error("Error fetching service data:", error);
-        const errorMessage = error instanceof Error
-          ? error.message
-          : "Eroare necunoscută";
+        const errorMessage =
+          error instanceof Error ? error.message : "Eroare necunoscută";
         setError(`Nu am putut încărca datele serviciului: ${errorMessage}`);
         toast({
           variant: "destructive",
           title: "Eroare",
-          description: "Nu am putut încărca datele serviciului. Vă rugăm să încercați din nou.",
+          description:
+            "Nu am putut încărca datele serviciului. Vă rugăm să încercați din nou.",
         });
       } finally {
         setLoading(false);
@@ -181,7 +187,7 @@ export default function ServiceDashboard() {
 
   const switchToRequestsAndShowDetails = (requestId: string) => {
     setActiveTab("requests");
-    const request = clientRequests.find(req => req.id === requestId);
+    const request = clientRequests.find((req) => req.id === requestId);
     if (request) {
       handleViewDetails(request);
     }
@@ -288,7 +294,8 @@ export default function ServiceDashboard() {
             onMessage={switchToMessagesAndOpenConversation}
             onSendOffer={() => {
               toast({
-                description: "Funcționalitatea de trimitere oferte va fi disponibilă în curând.",
+                description:
+                  "Funcționalitatea de trimitere oferte va fi disponibilă în curând.",
               });
             }}
             onRejectRequest={handleRejectRequest}
@@ -329,11 +336,19 @@ export default function ServiceDashboard() {
             serviceData={serviceData || ({} as ServiceData)}
             fields={[
               { label: "Nume Companie", key: "companyName", editable: true },
-              { label: "Nume Reprezentant", key: "representativeName", editable: true },
+              {
+                label: "Nume Reprezentant",
+                key: "representativeName",
+                editable: true,
+              },
               { label: "Email", key: "email", editable: false },
               { label: "Telefon", key: "phone", editable: true },
               { label: "CUI", key: "cui", editable: false },
-              { label: "Nr. Înregistrare", key: "tradeRegNumber", editable: false },
+              {
+                label: "Nr. Înregistrare",
+                key: "tradeRegNumber",
+                editable: false,
+              },
               { label: "Adresă", key: "address", editable: true },
               {
                 label: "Județ",
@@ -347,7 +362,11 @@ export default function ServiceDashboard() {
                 key: "city",
                 editable: true,
                 type: "select",
-                options: serviceData?.county ? romanianCitiesData[serviceData.county as keyof typeof romanianCitiesData] : [],
+                options: serviceData?.county
+                  ? romanianCitiesData[
+                      serviceData.county as keyof typeof romanianCitiesData
+                    ]
+                  : [],
               },
             ]}
             validationErrors={{}}

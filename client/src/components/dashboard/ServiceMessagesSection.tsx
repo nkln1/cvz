@@ -18,7 +18,7 @@ import {
   ArrowLeft,
   CheckCircle2,
 } from "lucide-react";
-import { format } from "date-fns";
+import { format, isToday, isYesterday, isSameDay } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Request, Message } from "@/types/service";
 
@@ -66,36 +66,44 @@ export function ServiceMessagesSection({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [isScrolledToBottom, setIsScrolledToBottom] = useState(true);
 
-  const formatTimestamp = (timestamp: any) => {
+  const formatMessageDate = (timestamp: any) => {
     if (!timestamp) return "";
     try {
       const date = timestamp && typeof timestamp.toDate === 'function'
         ? timestamp.toDate()
         : new Date(timestamp);
 
-      const now = new Date();
-      const diff = now.getTime() - date.getTime();
-      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-
-      if (days === 0) {
-        return format(date, "HH:mm");
-      } else if (days === 1) {
-        return "Ieri " + format(date, "HH:mm");
-      } else if (days < 7) {
-        return format(date, "EEEE HH:mm");
+      if (isToday(date)) {
+        return "Astăzi";
+      } else if (isYesterday(date)) {
+        return "Ieri";
       }
-      return format(date, "dd.MM.yyyy HH:mm");
+      return format(date, "dd.MM.yyyy");
     } catch (error) {
-      console.error("Error formatting timestamp:", error);
+      console.error("Error formatting date:", error);
+      return "";
+    }
+  };
+
+  const formatMessageTime = (timestamp: any) => {
+    if (!timestamp) return "";
+    try {
+      const date = timestamp && typeof timestamp.toDate === 'function'
+        ? timestamp.toDate()
+        : new Date(timestamp);
+
+      return format(date, "HH:mm");
+    } catch (error) {
+      console.error("Error formatting time:", error);
       return "";
     }
   };
 
   const getInitials = (name: string) => {
     return name
-      .split(' ')
-      .map(part => part[0])
-      .join('')
+      .split(" ")
+      .map((part) => part[0])
+      .join("")
       .toUpperCase()
       .slice(0, 2);
   };
@@ -144,11 +152,11 @@ export function ServiceMessagesSection({
                           <p className="text-sm text-muted-foreground">{group.requestTitle}</p>
                         </div>
                         <span className="text-xs text-muted-foreground whitespace-nowrap ml-2">
-                          {formatTimestamp(group.lastMessage?.createdAt)}
+                          {formatMessageDate(group.lastMessage?.createdAt)} {formatMessageTime(group.lastMessage?.createdAt)}
                         </span>
                       </div>
                       <p className="text-sm text-muted-foreground truncate mt-1">
-                        {group.lastMessage?.content || 'No messages'}
+                        {group.lastMessage?.content || "No messages"}
                       </p>
                     </div>
                     {group.unreadCount > 0 && (
@@ -184,11 +192,14 @@ export function ServiceMessagesSection({
       });
 
     // Mark messages as read
-    conversationMessages.forEach(message => {
+    conversationMessages.forEach((message) => {
       if (message.toId === userId && !message.read && markMessageAsRead) {
         markMessageAsRead(message.id);
       }
     });
+
+    // Track current date for separators
+    let currentDate: Date | null = null;
 
     return (
       <div className="space-y-4 h-full flex flex-col">
@@ -223,7 +234,9 @@ export function ServiceMessagesSection({
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => selectedMessageRequest && onViewRequestDetails(selectedMessageRequest.id)}
+            onClick={() =>
+              selectedMessageRequest && onViewRequestDetails(selectedMessageRequest.id)
+            }
             className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 flex items-center gap-1"
           >
             <Eye className="h-4 w-4" />
@@ -238,38 +251,29 @@ export function ServiceMessagesSection({
         >
           <div className="space-y-4">
             <AnimatePresence>
-              {conversationMessages.map((message) => (
-                <motion.div
-                  key={message.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className={`flex ${message.fromId === userId ? "justify-end" : "justify-start"}`}
-                >
-                  <div
-                    className={`max-w-[80%] ${
-                      message.fromId === userId
-                        ? "bg-blue-500 text-white rounded-t-2xl rounded-l-2xl"
-                        : "bg-gray-100 rounded-t-2xl rounded-r-2xl"
-                    } p-3 relative`}
-                  >
-                    <div className="text-xs mb-1 font-medium">
-                      {message.fromId === userId ? serviceName : currentGroup?.clientName}
+              {conversationMessages.map((message) => {
+                const messageDate = message.createdAt && typeof message.createdAt.toDate === 'function'
+                  ? message.createdAt.toDate()
+                  : new Date(message.createdAt);
+
+                const showDateSeparator = !currentDate || !isSameDay(currentDate, messageDate);
+
+                if (showDateSeparator) {
+                  currentDate = messageDate;
+                  return (
+                    <div key={`date-${message.id}`}>
+                      <div className="flex items-center justify-center my-4">
+                        <div className="bg-gray-100 px-3 py-1 rounded-full text-sm text-gray-600">
+                          {formatMessageDate(message.createdAt)}
+                        </div>
+                      </div>
+                      {renderMessage(message, currentGroup)}
                     </div>
-                    <p className="text-sm whitespace-pre-wrap break-words">
-                      {message.content}
-                    </p>
-                    <div className={`flex items-center gap-1 mt-1 text-xs ${
-                      message.fromId === userId ? "text-blue-100" : "text-gray-500"
-                    }`}>
-                      {formatTimestamp(message.createdAt)}
-                      {message.fromId === userId && (
-                        <CheckCircle2 className="h-3 w-3" />
-                      )}
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
+                  );
+                }
+
+                return renderMessage(message, currentGroup);
+              })}
             </AnimatePresence>
             <div ref={messagesEndRef} />
           </div>
@@ -283,7 +287,7 @@ export function ServiceMessagesSection({
               placeholder="Scrie un mesaj..."
               className="flex-1 min-h-[80px] resize-none rounded-xl"
               onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
+                if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
                   if (messageContent.trim()) {
                     onSendMessage();
@@ -317,6 +321,41 @@ export function ServiceMessagesSection({
     );
   };
 
+  const renderMessage = (message: Message, currentGroup: MessageGroup | undefined) => {
+    return (
+      <motion.div
+        key={message.id}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        className={`flex ${message.fromId === userId ? "justify-end" : "justify-start"}`}
+      >
+        <div
+          className={`max-w-[80%] ${
+            message.fromId === userId
+              ? "bg-blue-500 text-white rounded-t-2xl rounded-l-2xl"
+              : "bg-gray-100 rounded-t-2xl rounded-r-2xl"
+          } p-3 relative`}
+        >
+          <div className="text-xs mb-1 font-medium">
+            {message.fromId === userId ? serviceName : currentGroup?.clientName}
+          </div>
+          <p className="text-sm whitespace-pre-wrap break-words">
+            {message.content}
+          </p>
+          <div className={`flex items-center gap-1 mt-1 text-xs ${
+            message.fromId === userId ? "text-blue-100" : "text-gray-500"
+          }`}>
+            {formatMessageTime(message.createdAt)}
+            {message.fromId === userId && (
+              <CheckCircle2 className="h-3 w-3" />
+            )}
+          </div>
+        </div>
+      </motion.div>
+    );
+  };
+
   return (
     <Card className="border-[#00aff5]/20">
       <CardHeader>
@@ -334,3 +373,5 @@ export function ServiceMessagesSection({
     </Card>
   );
 }
+
+export default ServiceMessagesSection;

@@ -92,13 +92,13 @@ export function ClientRequests({
       (request.description?.toLowerCase() || "").includes(searchLower) ||
       (request.county?.toLowerCase() || "").includes(searchLower) ||
       (request.cities || []).some((city) =>
-        (city?.toLowerCase() || "").includes(searchLower)
+        (city?.toLowerCase() || "").includes(searchLower),
       ) ||
       (request.status?.toLowerCase() || "").includes(searchLower) ||
       (request.clientName?.toLowerCase() || "").includes(searchLower) ||
       (request.preferredDate &&
         format(new Date(request.preferredDate), "dd.MM.yyyy").includes(
-          searchQuery
+          searchQuery,
         )) ||
       (request.createdAt &&
         format(new Date(request.createdAt), "dd.MM.yyyy").includes(searchQuery))
@@ -123,7 +123,7 @@ export function ClientRequests({
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedRequests = sortedRequests.slice(
     startIndex,
-    startIndex + itemsPerPage
+    startIndex + itemsPerPage,
   );
 
   const handlePageChange = (page: number) => {
@@ -147,13 +147,13 @@ export function ClientRequests({
       items.push(
         <PaginationItem key="1">
           <PaginationLink onClick={() => handlePageChange(1)}>1</PaginationLink>
-        </PaginationItem>
+        </PaginationItem>,
       );
       if (startPage > 2) {
         items.push(
           <PaginationItem key="start-ellipsis">
             <PaginationEllipsis />
-          </PaginationItem>
+          </PaginationItem>,
         );
       }
     }
@@ -168,7 +168,7 @@ export function ClientRequests({
           >
             {i}
           </PaginationLink>
-        </PaginationItem>
+        </PaginationItem>,
       );
     }
 
@@ -178,7 +178,7 @@ export function ClientRequests({
         items.push(
           <PaginationItem key="end-ellipsis">
             <PaginationEllipsis />
-          </PaginationItem>
+          </PaginationItem>,
         );
       }
       items.push(
@@ -186,7 +186,7 @@ export function ClientRequests({
           <PaginationLink onClick={() => handlePageChange(totalPages)}>
             {totalPages}
           </PaginationLink>
-        </PaginationItem>
+        </PaginationItem>,
       );
     }
 
@@ -230,27 +230,29 @@ export function ClientRequests({
               <Clock className="h-5 w-5" />
               Cererile Clienților
             </CardTitle>
-            {clientRequests.filter((req) => !viewedRequests.has(req.id)).length >
-              0 && (
-                <Badge
-                  variant="secondary"
-                  className="bg-[#00aff5] text-white text-lg font-bold px-3 py-1"
-                >
-                  {
-                    clientRequests.filter((req) => !viewedRequests.has(req.id))
-                      .length
-                  }
-                </Badge>
-              )}
+            {clientRequests.filter((req) => !viewedRequests.has(req.id))
+              .length > 0 && (
+              <Badge
+                variant="secondary"
+                className="bg-[#00aff5] text-white text-sm font-normal px-2.5 py-1"
+              >
+                {
+                  clientRequests.filter((req) => !viewedRequests.has(req.id))
+                    .length
+                }
+              </Badge>
+            )}
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-10">
             <div className="flex items-center gap-2">
               <Switch
                 id="show-new"
                 checked={showOnlyNew}
                 onCheckedChange={setShowOnlyNew}
               />
-              <Label htmlFor="show-new">Doar cereri noi</Label>
+              <Label htmlFor="show-new" className="whitespace-nowrap">
+                Doar cereri noi
+              </Label>
             </div>
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground">Afișează:</span>
@@ -295,7 +297,7 @@ export function ClientRequests({
                       onClick={() => {
                         setSortField("createdAt");
                         setSortDirection((prev) =>
-                          prev === "asc" ? "desc" : "asc"
+                          prev === "asc" ? "desc" : "asc",
                         );
                       }}
                       className="flex items-center hover:text-[#00aff5]"
@@ -309,7 +311,7 @@ export function ClientRequests({
                       onClick={() => {
                         setSortField("preferredDate");
                         setSortDirection((prev) =>
-                          prev === "asc" ? "desc" : "asc"
+                          prev === "asc" ? "desc" : "asc",
                         );
                       }}
                       className="flex items-center hover:text-[#00aff5]"
@@ -345,7 +347,10 @@ export function ClientRequests({
                         </div>
                       </TableCell>
                       <TableCell>
-                        {format(new Date(request.createdAt), "dd.MM.yyyy HH:mm")}
+                        {format(
+                          new Date(request.createdAt),
+                          "dd.MM.yyyy HH:mm",
+                        )}
                       </TableCell>
                       <TableCell>
                         {format(new Date(request.preferredDate), "dd.MM.yyyy")}
@@ -358,8 +363,8 @@ export function ClientRequests({
                             request.status === "Active"
                               ? "bg-yellow-100 text-yellow-800"
                               : request.status === "Rezolvat"
-                              ? "bg-green-100 text-green-800"
-                              : "bg-red-100 text-red-800"
+                                ? "bg-green-100 text-green-800"
+                                : "bg-red-100 text-red-800"
                           }`}
                         >
                           {request.status}
@@ -459,7 +464,7 @@ export function ClientRequests({
                                 <p className="text-sm mt-1">
                                   {format(
                                     new Date(request.preferredDate),
-                                    "dd.MM.yyyy"
+                                    "dd.MM.yyyy",
                                   )}
                                 </p>
                               </div>

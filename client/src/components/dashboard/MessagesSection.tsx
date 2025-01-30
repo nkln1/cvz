@@ -16,7 +16,7 @@ import {
   ArrowLeft,
   CheckCircle2,
 } from "lucide-react";
-import { format } from "date-fns";
+import { format, isToday, isYesterday, isSameDay } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Message } from "@/types/dashboard";
 
@@ -61,7 +61,7 @@ export function MessagesSection({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [isScrolledToBottom, setIsScrolledToBottom] = useState(true);
 
-  const formatTimestamp = (timestamp: any) => {
+  const formatMessageDate = (timestamp: any) => {
     if (!timestamp) return "";
 
     try {
@@ -69,20 +69,29 @@ export function MessagesSection({
         ? timestamp.toDate()
         : new Date(timestamp);
 
-      const now = new Date();
-      const diff = now.getTime() - date.getTime();
-      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-
-      if (days === 0) {
-        return format(date, "HH:mm");
-      } else if (days === 1) {
-        return "Ieri " + format(date, "HH:mm");
-      } else if (days < 7) {
-        return format(date, "EEEE HH:mm");
+      if (isToday(date)) {
+        return "Astăzi";
+      } else if (isYesterday(date)) {
+        return "Ieri";
       }
-      return format(date, "dd.MM.yyyy HH:mm");
+      return format(date, "dd.MM.yyyy");
     } catch (error) {
-      console.error("Error formatting timestamp:", error);
+      console.error("Error formatting date:", error);
+      return "";
+    }
+  };
+
+  const formatMessageTime = (timestamp: any) => {
+    if (!timestamp) return "";
+
+    try {
+      const date = timestamp && typeof timestamp.toDate === 'function'
+        ? timestamp.toDate()
+        : new Date(timestamp);
+
+      return format(date, "HH:mm");
+    } catch (error) {
+      console.error("Error formatting time:", error);
       return "";
     }
   };
@@ -143,7 +152,7 @@ export function MessagesSection({
                         <div className="flex justify-between items-start">
                           <h4 className="font-medium truncate">{serviceName}</h4>
                           <span className="text-xs text-muted-foreground whitespace-nowrap ml-2">
-                            {formatTimestamp(group.lastMessage?.createdAt)}
+                            {formatMessageDate(group.lastMessage?.createdAt)} {formatMessageTime(group.lastMessage?.createdAt)}
                           </span>
                         </div>
                         <p className="text-sm text-muted-foreground truncate">
@@ -181,11 +190,50 @@ export function MessagesSection({
         return dateA - dateB;
       });
 
-    const currentGroup = messageGroups.find(g => g.requestId === selectedMessageRequest);
-    const serviceId = conversationMessages[0]?.fromId === userId
-      ? conversationMessages[0]?.toId
-      : conversationMessages[0]?.fromId;
-    const serviceName = messageServices[serviceId]?.companyName || "Service Auto";
+    let currentDate: Date | null = null;
+
+    const renderMessage = (message: Message) => {
+      if (message.toId === userId && !message.read) {
+        markMessageAsRead(message.id);
+      }
+
+      const serviceId = message.fromId === userId
+        ? message.toId
+        : message.fromId;
+      const serviceName = messageServices[serviceId]?.companyName || "Service Auto";
+
+      return (
+        <motion.div
+          key={message.id}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className={`flex ${message.fromId === userId ? "justify-end" : "justify-start"}`}
+        >
+          <div
+            className={`max-w-[80%] ${
+              message.fromId === userId
+                ? "bg-blue-500 text-white rounded-t-2xl rounded-l-2xl"
+                : "bg-gray-100 rounded-t-2xl rounded-r-2xl"
+            } p-3 relative`}
+          >
+            <div className="text-xs mb-1 font-medium">
+              {message.fromId === userId ? userName : serviceName}
+            </div>
+            <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
+            <div className={`flex items-center gap-1 mt-1 text-xs ${
+              message.fromId === userId ? "text-blue-100" : "text-gray-500"
+            }`}>
+              {formatMessageTime(message.createdAt)}
+              {message.fromId === userId && (
+                <CheckCircle2 className="h-3 w-3" />
+              )}
+            </div>
+          </div>
+        </motion.div>
+      );
+    };
+
 
     return (
       <div className="space-y-4 h-full flex flex-col">
@@ -221,41 +269,28 @@ export function MessagesSection({
         >
           <div className="space-y-4">
             <AnimatePresence>
-              {conversationMessages.map((message) => {
-                if (message.toId === userId && !message.read) {
-                  markMessageAsRead(message.id);
+              {conversationMessages.map((message, index) => {
+                const messageDate = message.createdAt && typeof message.createdAt.toDate === 'function'
+                  ? message.createdAt.toDate()
+                  : new Date(message.createdAt);
+
+                const showDateSeparator = !currentDate || !isSameDay(currentDate, messageDate);
+
+                if (showDateSeparator) {
+                  currentDate = messageDate;
+                  return (
+                    <div key={`date-${message.id}`}>
+                      <div className="flex items-center justify-center my-4">
+                        <div className="bg-gray-100 px-3 py-1 rounded-full text-sm text-gray-600">
+                          {formatMessageDate(message.createdAt)}
+                        </div>
+                      </div>
+                      {renderMessage(message)}
+                    </div>
+                  );
                 }
 
-                return (
-                  <motion.div
-                    key={message.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className={`flex ${message.fromId === userId ? "justify-end" : "justify-start"}`}
-                  >
-                    <div
-                      className={`max-w-[80%] ${
-                        message.fromId === userId
-                          ? "bg-blue-500 text-white rounded-t-2xl rounded-l-2xl"
-                          : "bg-gray-100 rounded-t-2xl rounded-r-2xl"
-                      } p-3 relative`}
-                    >
-                      <div className="text-xs mb-1 font-medium">
-                        {message.fromId === userId ? userName : serviceName}
-                      </div>
-                      <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
-                      <div className={`flex items-center gap-1 mt-1 text-xs ${
-                        message.fromId === userId ? "text-blue-100" : "text-gray-500"
-                      }`}>
-                        {formatTimestamp(message.createdAt)}
-                        {message.fromId === userId && (
-                          <CheckCircle2 className="h-3 w-3" />
-                        )}
-                      </div>
-                    </div>
-                  </motion.div>
-                );
+                return renderMessage(message);
               })}
             </AnimatePresence>
             <div ref={messagesEndRef} />
@@ -323,6 +358,9 @@ export function MessagesSection({
       </div>
     );
   };
+
+  const currentGroup = messageGroups.find(g => g.requestId === selectedMessageRequest);
+  const serviceName = currentGroup ? (messageServices[currentGroup.lastMessage.fromId === userId ? currentGroup.lastMessage.toId : currentGroup.lastMessage.fromId]?.companyName || "Service Auto") : "Service Auto";
 
   return (
     <Card className="shadow-lg">

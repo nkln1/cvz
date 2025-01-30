@@ -185,7 +185,7 @@ export default function ClientDashboard() {
           </div>
         </nav>
 
-        <div className="bg-white rounded-lg border shadow-sm p-4 sm:p-6">
+        <div className="p-0 sm:p-0">
           {activeTab === "requests" && (
             <MyRequests
               requests={requests}
