@@ -27,7 +27,6 @@ export function useServiceMessages(userId: string) {
   const [sendingMessage, setSendingMessage] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Subscribe to real-time message updates
   useEffect(() => {
     if (!userId) return;
 
@@ -35,22 +34,15 @@ export function useServiceMessages(userId: string) {
     console.log("Setting up message listeners for user:", userId);
 
     try {
-      // Subscribe to sent messages
-      const sentQuery = query(
+      // Subscribe to messages where the user is either sender or receiver
+      const messagesQuery = query(
         collection(db, "messages"),
-        where("fromId", "==", userId),
+        where("participants", "array-contains", userId),
         orderBy("createdAt", "desc")
       );
 
-      // Subscribe to received messages
-      const receivedQuery = query(
-        collection(db, "messages"),
-        where("toId", "==", userId),
-        orderBy("createdAt", "desc")
-      );
-
-      const unsubscribeSent = onSnapshot(sentQuery, async (snapshot) => {
-        console.log("Received sent messages update:", snapshot.docs.length, "messages");
+      const unsubscribeMessages = onSnapshot(messagesQuery, async (snapshot) => {
+        console.log("Received messages update:", snapshot.docs.length, "messages");
         const newMessages = snapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data()
@@ -58,16 +50,7 @@ export function useServiceMessages(userId: string) {
         await processMessages(newMessages);
       });
 
-      const unsubscribeReceived = onSnapshot(receivedQuery, async (snapshot) => {
-        console.log("Received received messages update:", snapshot.docs.length, "messages");
-        const newMessages = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        } as Message));
-        await processMessages(newMessages);
-      });
-
-      unsubscribes = [unsubscribeSent, unsubscribeReceived];
+      unsubscribes.push(unsubscribeMessages);
     } catch (error) {
       console.error("Error setting up message subscriptions:", error);
       toast({
@@ -86,21 +69,17 @@ export function useServiceMessages(userId: string) {
   const processMessages = async (newMessages: Message[]) => {
     try {
       console.log("Processing", newMessages.length, "messages");
-      // Update messages state
+
+      // Update messages state with proper sorting
       setMessages(prev => {
-        const combined = [...prev];
+        const messageMap = new Map(prev.map(m => [m.id, m]));
         newMessages.forEach(message => {
-          const index = combined.findIndex(m => m.id === message.id);
-          if (index === -1) {
-            combined.push(message);
-          } else {
-            combined[index] = message;
-          }
+          messageMap.set(message.id, message);
         });
-        return combined.sort((a, b) => {
+        return Array.from(messageMap.values()).sort((a, b) => {
           const dateA = a.createdAt instanceof Timestamp ? a.createdAt.toDate() : new Date(a.createdAt);
           const dateB = b.createdAt instanceof Timestamp ? b.createdAt.toDate() : new Date(b.createdAt);
-          return dateB.getTime() - dateA.getTime();
+          return dateA.getTime() - dateB.getTime(); // Ascending order for chat display
         });
       });
 
@@ -110,17 +89,17 @@ export function useServiceMessages(userId: string) {
         const requestDoc = await getDoc(doc(db, "requests", requestId));
         if (!requestDoc.exists()) return null;
 
-        const requestData = requestDoc.data();
+        const requestData = { id: requestId, ...requestDoc.data() } as Request;
         const requestMessages = newMessages.filter(m => m.requestId === requestId);
         requestMessages.sort((a, b) => {
           const dateA = a.createdAt instanceof Timestamp ? a.createdAt.toDate() : new Date(a.createdAt);
           const dateB = b.createdAt instanceof Timestamp ? b.createdAt.toDate() : new Date(b.createdAt);
-          return dateB.getTime() - dateA.getTime();
+          return dateB.getTime() - dateA.getTime(); // Descending order for group display
         });
 
         return {
           requestId,
-          requestTitle: requestData.title,
+          requestTitle: requestData.title || 'Untitled Request',
           lastMessage: requestMessages[0],
           unreadCount: requestMessages.filter(m => !m.read && m.toId === userId).length,
         } as MessageGroup;
@@ -129,16 +108,11 @@ export function useServiceMessages(userId: string) {
       const groups = (await Promise.all(groupPromises)).filter((group): group is MessageGroup => group !== null);
 
       setMessageGroups(prev => {
-        const combined = [...prev];
+        const groupMap = new Map(prev.map(g => [g.requestId, g]));
         groups.forEach(group => {
-          const index = combined.findIndex(g => g.requestId === group.requestId);
-          if (index === -1) {
-            combined.push(group);
-          } else {
-            combined[index] = group;
-          }
+          groupMap.set(group.requestId, group);
         });
-        return combined.sort((a, b) => {
+        return Array.from(groupMap.values()).sort((a, b) => {
           const dateA = a.lastMessage.createdAt instanceof Timestamp ? a.lastMessage.createdAt.toDate() : new Date(a.lastMessage.createdAt);
           const dateB = b.lastMessage.createdAt instanceof Timestamp ? b.lastMessage.createdAt.toDate() : new Date(b.lastMessage.createdAt);
           return dateB.getTime() - dateA.getTime();
@@ -173,6 +147,7 @@ export function useServiceMessages(userId: string) {
             content: `Bună ziua! Sunt reprezentantul service-ului auto și am primit cererea dumneavoastră pentru ${requestData.title}. Cum vă pot ajuta?`,
             createdAt: serverTimestamp(),
             read: false,
+            participants: [userId, requestData.userId], // Add participants array
           };
 
           await addDoc(collection(db, "messages"), initialMessage);
@@ -208,6 +183,7 @@ export function useServiceMessages(userId: string) {
         content: messageContent.trim(),
         createdAt: serverTimestamp(),
         read: false,
+        participants: [userId, selectedMessageRequest.userId], // Add participants array
       };
 
       await addDoc(messageRef, newMessage);
@@ -240,5 +216,6 @@ export function useServiceMessages(userId: string) {
     handleSelectConversation,
     handleBackToList,
     setMessageContent,
+    setSelectedMessageRequest,
   };
 }
