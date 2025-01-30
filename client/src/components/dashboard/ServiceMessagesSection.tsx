@@ -27,7 +27,7 @@ interface MessageGroup {
   requestTitle: string;
   lastMessage: Message;
   unreadCount: number;
-  clientName?: string;
+  clientName: string;
 }
 
 interface ServiceMessagesSectionProps {
@@ -44,7 +44,6 @@ interface ServiceMessagesSectionProps {
   onViewRequestDetails: (requestId: string) => void;
   userId: string;
   serviceName: string;
-  requestClient?: { numeComplet?: string; nume?: string; prenume?: string; name?: string; } | null;
 }
 
 export function ServiceMessagesSection({
@@ -61,7 +60,6 @@ export function ServiceMessagesSection({
   onViewRequestDetails,
   userId,
   serviceName,
-  requestClient,
 }: ServiceMessagesSectionProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [isScrolledToBottom, setIsScrolledToBottom] = useState(true);
@@ -100,14 +98,6 @@ export function ServiceMessagesSection({
       .slice(0, 2);
   };
 
-  const getClientName = (clientData?: { numeComplet?: string; nume?: string; prenume?: string; name?: string; } | null) => {
-    if (!clientData) return "Client necunoscut";
-    return clientData.numeComplet || 
-           clientData.name || 
-           `${clientData.nume || ''} ${clientData.prenume || ''}`.trim() ||
-           "Client necunoscut";
-  };
-
   useEffect(() => {
     if (isScrolledToBottom && messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
@@ -142,13 +132,13 @@ export function ServiceMessagesSection({
                   <div className="flex items-start gap-4">
                     <Avatar>
                       <AvatarFallback className="bg-blue-100 text-blue-600">
-                        {getInitials(getClientName(requestClient))}
+                        {getInitials(group.clientName)}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
                       <div className="flex justify-between items-start">
                         <div>
-                          <h4 className="font-medium">{getClientName(requestClient)}</h4>
+                          <h4 className="font-medium">{group.clientName}</h4>
                           <p className="text-sm text-muted-foreground">{group.requestTitle}</p>
                         </div>
                         <span className="text-xs text-muted-foreground whitespace-nowrap ml-2">
@@ -206,12 +196,12 @@ export function ServiceMessagesSection({
             </Button>
             <Avatar className="h-8 w-8">
               <AvatarFallback className="bg-blue-100 text-blue-600">
-                {getInitials(getClientName(requestClient))}
+                {currentGroup ? getInitials(currentGroup.clientName) : "??"}
               </AvatarFallback>
             </Avatar>
             <div>
               <h3 className="font-medium text-sm">
-                {getClientName(requestClient)}
+                {currentGroup?.clientName}
                 <span className="text-muted-foreground ml-2 text-xs">
                   ({currentGroup?.requestTitle})
                 </span>
@@ -255,7 +245,7 @@ export function ServiceMessagesSection({
                     } p-3 relative`}
                   >
                     <div className="text-xs mb-1 font-medium">
-                      {message.fromId === userId ? serviceName : getClientName(requestClient)}
+                      {message.fromId === userId ? serviceName : currentGroup?.clientName}
                     </div>
                     <p className="text-sm whitespace-pre-wrap break-words">
                       {message.content}

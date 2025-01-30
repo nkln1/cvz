@@ -107,7 +107,6 @@ export default function ServiceDashboard() {
   const {
     clientRequests,
     selectedRequest,
-    requestClient,
     cars,
     viewedRequests,
     handleViewDetails,
@@ -291,7 +290,6 @@ export default function ServiceDashboard() {
             }}
             onRejectRequest={handleRejectRequest}
             selectedRequest={selectedRequest}
-            requestClient={requestClient}
             cars={cars}
           />
         )}
@@ -317,7 +315,6 @@ export default function ServiceDashboard() {
             onViewRequestDetails={switchToRequestsAndShowDetails}
             userId={user?.uid || ""}
             serviceName={serviceData?.companyName || "Service Auto"}
-            requestClient={requestClient}
           />
         )}
         {activeTab === "appointments" && <AppointmentsSection />}
