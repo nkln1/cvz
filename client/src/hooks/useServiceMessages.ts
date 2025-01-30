@@ -1,17 +1,17 @@
 import { useState, useEffect, useCallback } from "react";
-import { 
-  collection, 
-  query, 
-  where, 
-  getDocs, 
-  addDoc, 
-  doc, 
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  addDoc,
+  doc,
   getDoc,
   onSnapshot,
   orderBy,
   Unsubscribe,
   serverTimestamp,
-  Timestamp
+  Timestamp,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
@@ -21,7 +21,8 @@ export function useServiceMessages(userId: string) {
   const { toast } = useToast();
   const [messages, setMessages] = useState<Message[]>([]);
   const [messageGroups, setMessageGroups] = useState<MessageGroup[]>([]);
-  const [selectedMessageRequest, setSelectedMessageRequest] = useState<Request | null>(null);
+  const [selectedMessageRequest, setSelectedMessageRequest] =
+    useState<Request | null>(null);
   const [isViewingConversation, setIsViewingConversation] = useState(false);
   const [messageContent, setMessageContent] = useState("");
   const [sendingMessage, setSendingMessage] = useState(false);
@@ -41,11 +42,18 @@ export function useServiceMessages(userId: string) {
 
       unsubscribe = onSnapshot(messagesQuery, {
         next: async (snapshot) => {
-          console.log("Received messages update:", snapshot.docs.length, "messages");
-          const newMessages = snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-          }) as Message);
+          console.log(
+            "Received messages update:",
+            snapshot.docs.length,
+            "messages",
+          );
+          const newMessages = snapshot.docs.map(
+            (doc) =>
+              ({
+                id: doc.id,
+                ...doc.data(),
+              }) as Message,
+          );
 
           setMessages(newMessages);
           await processMessageGroups(newMessages);
@@ -57,7 +65,7 @@ export function useServiceMessages(userId: string) {
             title: "Error",
             description: "Could not load messages. Please try again.",
           });
-        }
+        },
       });
     } catch (error) {
       console.error("Error setting up message subscriptions:", error);
@@ -78,7 +86,9 @@ export function useServiceMessages(userId: string) {
 
   const processMessageGroups = async (currentMessages: Message[]) => {
     try {
-      const requestIds = Array.from(new Set(currentMessages.map(m => m.requestId)));
+      const requestIds = Array.from(
+        new Set(currentMessages.map((m) => m.requestId)),
+      );
       const groups: MessageGroup[] = [];
 
       for (const requestId of requestIds) {
@@ -86,7 +96,9 @@ export function useServiceMessages(userId: string) {
         if (!requestDoc.exists()) continue;
 
         const requestData = requestDoc.data();
-        const requestMessages = currentMessages.filter(m => m.requestId === requestId);
+        const requestMessages = currentMessages.filter(
+          (m) => m.requestId === requestId,
+        );
 
         // Sort messages by timestamp
         requestMessages.sort((a, b) => {
@@ -97,9 +109,11 @@ export function useServiceMessages(userId: string) {
 
         groups.push({
           requestId,
-          requestTitle: requestData.title || 'Untitled Request',
+          requestTitle: requestData.title || "Untitled Request",
           lastMessage: requestMessages[0],
-          unreadCount: requestMessages.filter(m => !m.read && m.toId === userId).length
+          unreadCount: requestMessages.filter(
+            (m) => !m.read && m.toId === userId,
+          ).length,
         });
       }
 
@@ -118,41 +132,49 @@ export function useServiceMessages(userId: string) {
     }
   };
 
-  const handleSelectConversation = useCallback(async (requestId: string) => {
-    try {
-      console.log("Selecting conversation for request:", requestId);
-      const requestDoc = await getDoc(doc(db, "requests", requestId));
+  const handleSelectConversation = useCallback(
+    async (requestId: string) => {
+      try {
+        console.log("Selecting conversation for request:", requestId);
+        const requestDoc = await getDoc(doc(db, "requests", requestId));
 
-      if (requestDoc.exists()) {
-        const requestData = requestDoc.data();
-        setSelectedMessageRequest({ id: requestId, ...requestData } as Request);
-        setIsViewingConversation(true);
+        if (requestDoc.exists()) {
+          const requestData = requestDoc.data();
+          setSelectedMessageRequest({
+            id: requestId,
+            ...requestData,
+          } as Request);
+          setIsViewingConversation(true);
 
-        // Initialize conversation if needed
-        const conversationMessages = messages.filter(m => m.requestId === requestId);
-        if (conversationMessages.length === 0) {
-          const initialMessage = {
-            requestId,
-            fromId: userId,
-            toId: requestData.userId,
-            content: `Bună ziua! Sunt reprezentantul service-ului auto și am primit cererea dumneavoastră pentru ${requestData.title}. Cum vă pot ajuta?`,
-            createdAt: serverTimestamp(),
-            read: false,
-            participants: [userId, requestData.userId]
-          };
+          // Initialize conversation if needed
+          const conversationMessages = messages.filter(
+            (m) => m.requestId === requestId,
+          );
+          if (conversationMessages.length === 0) {
+            const initialMessage = {
+              requestId,
+              fromId: userId,
+              toId: requestData.userId,
+              content: `Bună ziua! Sunt reprezentantul service-ului auto și am primit cererea dumneavoastră pentru ${requestData.title}. Cum vă pot ajuta?`,
+              createdAt: serverTimestamp(),
+              read: false,
+              participants: [userId, requestData.userId],
+            };
 
-          await addDoc(collection(db, "messages"), initialMessage);
+            await addDoc(collection(db, "messages"), initialMessage);
+          }
         }
+      } catch (error) {
+        console.error("Error selecting conversation:", error);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Could not load conversation. Please try again.",
+        });
       }
-    } catch (error) {
-      console.error("Error selecting conversation:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Could not load conversation. Please try again.",
-      });
-    }
-  }, [messages, userId, toast]);
+    },
+    [messages, userId, toast],
+  );
 
   const handleBackToList = () => {
     setIsViewingConversation(false);
@@ -171,7 +193,7 @@ export function useServiceMessages(userId: string) {
         content: messageContent.trim(),
         createdAt: serverTimestamp(),
         read: false,
-        participants: [userId, selectedMessageRequest.userId]
+        participants: [userId, selectedMessageRequest.userId],
       };
 
       await addDoc(collection(db, "messages"), newMessage);
