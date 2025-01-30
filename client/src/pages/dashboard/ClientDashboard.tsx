@@ -16,11 +16,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { auth } from "@/lib/firebase";
 import { sendEmailVerification } from "firebase/auth";
-import CarManagement from "./CarManagement";
+import CarManagement from "@/components/dashboard/CarManagement";
 import { RequestForm } from "@/components/dashboard/RequestForm";
 import { format } from "date-fns";
 import { RequestsTable } from "@/components/dashboard/RequestsTable";

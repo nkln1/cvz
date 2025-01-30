@@ -19,7 +19,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Car } from "@/pages/dashboard/CarManagement";
+import type { Car } from "@/types/dashboard";
 
 const currentYear = new Date().getFullYear();
 
