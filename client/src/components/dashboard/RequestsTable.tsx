@@ -42,7 +42,7 @@ interface Request {
 
 interface RequestsTableProps {
   requests: Request[];
-  cars: Car[];
+  cars: Record<string, Car>;
   onDelete?: (id: string) => Promise<void>;
   refreshRequests: () => Promise<void>;
   hideDeleteButton?: boolean;
@@ -108,8 +108,8 @@ export function RequestsTable({
                 {request.title}
               </TableCell>
               <TableCell>
-                {cars.find((car) => car.id === request.carId)?.brand}{" "}
-                {cars.find((car) => car.id === request.carId)?.model}
+                {cars[request.carId]?.brand}{" "}
+                {cars[request.carId]?.model}
               </TableCell>
               <TableCell>
                 {format(new Date(request.preferredDate), "dd.MM.yyyy")}
@@ -215,8 +215,8 @@ export function RequestsTable({
                   Mașină
                 </h3>
                 <p>
-                  {cars.find((car) => car.id === selectedRequest.carId)?.brand}{" "}
-                  {cars.find((car) => car.id === selectedRequest.carId)?.model}
+                  {cars[selectedRequest.carId]?.brand}{" "}
+                  {cars[selectedRequest.carId]?.model}
                 </p>
               </div>
               <div>
