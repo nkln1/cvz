@@ -66,6 +66,7 @@ import { Badge } from "@/components/ui/badge";
 import { ServiceProfileSection } from "@/components/dashboard/ServiceProfileSection";
 import { ClientRequests } from "@/components/dashboard/ClientRequests";
 import { SentOffers } from "@/components/dashboard/SentOffers"; // Changed import to use new component
+import { ServiceMessagesSection } from "@/components/dashboard/ServiceMessagesSection";
 
 
 interface Car {
@@ -860,20 +861,20 @@ export default function ServiceDashboard() {
 
   const renderMessages = () => (
     <TabsContent value="messages">
-      <Card className="border-[#00aff5]/20">
-        <CardHeader>
-          <CardTitle className="text-[#00aff5] flex items-center gap-2">
-            <MessageSquare className="h-5 w-5" />
-            Mesaje
-          </CardTitle>
-          <CardDescription>
-            Comunicare directă cu clienții și gestionarea conversațiilor
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isViewingConversation ? renderConversation() : renderMessagesList()}
-        </CardContent>
-      </Card>
+      <ServiceMessagesSection
+        messageGroups={messageGroups}
+        messages={messages}
+        selectedMessageRequest={selectedMessageRequest}
+        isViewingConversation={isViewingConversation}
+        messageContent={messageContent}
+        sendingMessage={sendingMessage}
+        onMessageContentChange={(content) => setMessageContent(content)}
+        onSendMessage={sendMessage}
+        onSelectConversation={handleSelectConversation}
+        onBackToList={handleBackToList}
+        onViewRequestDetails={handleViewRequestDetails}
+        userId={user?.uid || ""}
+      />
     </TabsContent>
   );
 
