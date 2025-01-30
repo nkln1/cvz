@@ -44,6 +44,8 @@ import {
 } from "@/components/ui/pagination";
 import { format } from "date-fns";
 import type { Request, Car, User } from "@/types/dashboard";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 interface ClientRequestsProps {
   clientRequests: Request[];
@@ -75,8 +77,13 @@ export function ClientRequests({
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [showOnlyNew, setShowOnlyNew] = useState(false);
 
   const filteredRequests = clientRequests.filter((request) => {
+    if (showOnlyNew && viewedRequests.has(request.id)) {
+      return false;
+    }
+
     if (!searchQuery) return true;
 
     const searchLower = searchQuery.toLowerCase();
@@ -237,6 +244,14 @@ export function ClientRequests({
               )}
           </div>
           <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Switch
+                id="show-new"
+                checked={showOnlyNew}
+                onCheckedChange={setShowOnlyNew}
+              />
+              <Label htmlFor="show-new">Doar cereri noi</Label>
+            </div>
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground">Afișează:</span>
               <Select

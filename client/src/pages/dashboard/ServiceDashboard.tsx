@@ -82,7 +82,6 @@ export default function ServiceDashboard() {
   const [serviceData, setServiceData] = useState<ServiceData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showOnlyNew, setShowOnlyNew] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>(() => {
     if (window.location.pathname.endsWith("/service-dashboard")) {
       localStorage.setItem("activeTab", "requests");
@@ -126,9 +125,7 @@ export default function ServiceDashboard() {
     (request) => !viewedRequests.has(request.id)
   ).length;
 
-  const filteredRequests = showOnlyNew
-    ? clientRequests.filter((request) => !viewedRequests.has(request.id))
-    : clientRequests;
+  const filteredRequests = clientRequests;
 
   useEffect(() => {
     localStorage.setItem("activeTab", activeTab);
@@ -258,34 +255,21 @@ export default function ServiceDashboard() {
 
         <div className="bg-white rounded-lg border shadow-sm p-4 sm:p-6">
           {activeTab === "requests" && (
-            <div className="space-y-4">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <h2 className="text-xl font-semibold">Cererile Clienților</h2>
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="show-new"
-                    checked={showOnlyNew}
-                    onCheckedChange={setShowOnlyNew}
-                  />
-                  <Label htmlFor="show-new">Doar cereri noi</Label>
-                </div>
-              </div>
-              <ClientRequests
-                clientRequests={filteredRequests}
-                viewedRequests={viewedRequests}
-                onViewDetails={handleViewDetails}
-                onMessage={setSelectedMessageRequest}
-                onSendOffer={() => {
-                  toast({
-                    description: "Funcționalitatea de trimitere oferte va fi disponibilă în curând.",
-                  });
-                }}
-                onRejectRequest={handleRejectRequest}
-                selectedRequest={selectedRequest}
-                requestClient={requestClient}
-                cars={cars}
-              />
-            </div>
+            <ClientRequests
+              clientRequests={clientRequests}
+              viewedRequests={viewedRequests}
+              onViewDetails={handleViewDetails}
+              onMessage={setSelectedMessageRequest}
+              onSendOffer={() => {
+                toast({
+                  description: "Funcționalitatea de trimitere oferte va fi disponibilă în curând.",
+                });
+              }}
+              onRejectRequest={handleRejectRequest}
+              selectedRequest={selectedRequest}
+              requestClient={requestClient}
+              cars={cars}
+            />
           )}
           {activeTab === "offers" && (
             <SentOffers
