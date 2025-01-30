@@ -6,7 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { UserCog } from "lucide-react";
+import { UserCog, Save, Loader2 } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -25,35 +25,13 @@ interface ServiceData {
   address: string;
   county: string;
   city: string;
-  [key: string]: string;
-}
-
-interface ValidationErrors {
-  [key: string]: string;
-}
-
-interface EditableField {
-  label: string;
-  key: keyof ServiceData;
-  editable: boolean;
-  type?: "text" | "select";
-  options?: string[];
 }
 
 const serviceDataSchema = z.object({
-  companyName: z
-    .string()
-    .min(3, "Numele companiei trebuie să aibă cel puțin 3 caractere"),
-  representativeName: z
-    .string()
-    .min(3, "Numele reprezentantului trebuie să aibă cel puțin 3 caractere"),
+  companyName: z.string().min(3, "Numele companiei trebuie să aibă cel puțin 3 caractere"),
+  representativeName: z.string().min(3, "Numele reprezentantului trebuie să aibă cel puțin 3 caractere"),
   email: z.string().email("Adresa de email nu este validă"),
-  phone: z
-    .string()
-    .regex(
-      /^(\+4|)?(07[0-8]{1}[0-9]{1}|02[0-9]{2}|03[0-9]{2}){1}?(\s|\.|\-)?([0-9]{3}(\s|\.|\-|)){2}$/,
-      "Numărul de telefon nu este valid",
-    ),
+  phone: z.string().regex(/^(\+4|)?(07[0-8]{1}[0-9]{1}|02[0-9]{2}|03[0-9]{2}){1}?(\s|\.|\-)?([0-9]{3}(\s|\.|\-|)){2}$/, "Numărul de telefon nu este valid"),
   cui: z.string(),
   tradeRegNumber: z.string(),
   address: z.string().min(5, "Adresa trebuie să aibă cel puțin 5 caractere"),
@@ -64,7 +42,7 @@ const serviceDataSchema = z.object({
 interface ServiceProfileSectionProps {
   userId: string;
   serviceData: ServiceData | null;
-  setServiceData: (data: ServiceData | null) => void;
+  setServiceData: (data: ServiceData) => void;
   romanianCities: { [key: string]: string[] };
 }
 
@@ -75,118 +53,42 @@ export function ServiceProfileSection({
   romanianCities,
 }: ServiceProfileSectionProps) {
   const { toast } = useToast();
-  const [editedData, setEditedData] = useState<ServiceData | null>(serviceData);
-  const [editingFields, setEditingFields] = useState<Record<string, boolean>>({});
-  const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
+  const [formData, setFormData] = useState<ServiceData>(serviceData || {} as ServiceData);
   const [saving, setSaving] = useState(false);
-  const [availableCities, setAvailableCities] = useState<string[]>(
-    serviceData?.county ? romanianCities[serviceData.county] || [] : [],
-  );
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const romanianCounties = Object.keys(romanianCities);
 
-  const fields: EditableField[] = [
-    { label: "Nume Companie", key: "companyName", editable: true },
-    { label: "Nume Reprezentant", key: "representativeName", editable: true },
-    { label: "Email", key: "email", editable: false },
-    { label: "Telefon", key: "phone", editable: true },
-    { label: "CUI", key: "cui", editable: false },
-    { label: "Nr. Înregistrare", key: "tradeRegNumber", editable: false },
-    { label: "Adresă", key: "address", editable: true },
-    {
-      label: "Județ",
-      key: "county",
-      editable: true,
-      type: "select",
-      options: romanianCounties,
-    },
-    {
-      label: "Oraș",
-      key: "city",
-      editable: true,
-      type: "select",
-      options: availableCities,
-    },
-  ];
-
-  const validateField = (field: keyof ServiceData, value: string) => {
+  const validateForm = () => {
     try {
-      const schema = z.object({
-        [field]: serviceDataSchema.shape[field as keyof typeof serviceDataSchema.shape],
-      });
-      schema.parse({ [field]: value });
-      setValidationErrors((prev) => {
-        const newErrors = { ...prev };
-        delete newErrors[field];
-        return newErrors;
-      });
+      serviceDataSchema.parse(formData);
+      setErrors({});
       return true;
     } catch (error) {
       if (error instanceof z.ZodError) {
-        const fieldError = error.errors[0]?.message;
-        setValidationErrors((prev) => ({
-          ...prev,
-          [field]: fieldError,
-        }));
-        return false;
+        const newErrors: Record<string, string> = {};
+        error.errors.forEach((err) => {
+          const field = err.path[0] as string;
+          newErrors[field] = err.message;
+        });
+        setErrors(newErrors);
       }
       return false;
     }
   };
 
-  const handleEdit = (field: keyof ServiceData) => {
-    setEditingFields((prev) => ({
-      ...prev,
-      [field]: !prev[field],
-    }));
-    if (validationErrors[field]) {
-      setValidationErrors((prev) => {
-        const newErrors = { ...prev };
-        delete newErrors[field];
-        return newErrors;
-      });
-    }
-  };
-
   const handleChange = (field: keyof ServiceData, value: string) => {
-    if (editedData) {
-      const newData = { ...editedData, [field]: value };
-
-      if (field === "county") {
-        setAvailableCities(romanianCities[value] || []);
-        newData.city = "";
+    setFormData((prev) => {
+      const newData = { ...prev, [field]: value };
+      if (field === 'county') {
+        newData.city = '';
       }
-
-      setEditedData(newData);
-      validateField(field, value);
-    }
+      return newData;
+    });
   };
 
   const handleSave = async () => {
-    if (!userId || !editedData) return;
-
-    let isValid = true;
-    const newErrors: ValidationErrors = {};
-
-    fields.forEach(({ key, editable }) => {
-      if (editable && editingFields[key]) {
-        try {
-          const schema = z.object({
-            [key]: serviceDataSchema.shape[key as keyof typeof serviceDataSchema.shape],
-          });
-          schema.parse({ [key]: editedData[key] });
-        } catch (error) {
-          if (error instanceof z.ZodError) {
-            isValid = false;
-            newErrors[key] = error.errors[0]?.message || `${key} is invalid`;
-          }
-        }
-      }
-    });
-
-    setValidationErrors(newErrors);
-
-    if (!isValid) {
+    if (!validateForm()) {
       toast({
         variant: "destructive",
         title: "Eroare de validare",
@@ -198,9 +100,8 @@ export function ServiceProfileSection({
     setSaving(true);
     try {
       const serviceRef = doc(db, "services", userId);
-      await updateDoc(serviceRef, editedData);
-      setServiceData(editedData);
-      setEditingFields({});
+      await updateDoc(serviceRef, formData);
+      setServiceData(formData);
       toast({
         title: "Succes",
         description: "Datele au fost actualizate cu succes.",
@@ -217,7 +118,7 @@ export function ServiceProfileSection({
     }
   };
 
-  const hasChanges = JSON.stringify(serviceData) !== JSON.stringify(editedData);
+  if (!serviceData) return null;
 
   return (
     <Card className="shadow-lg">
@@ -228,71 +129,132 @@ export function ServiceProfileSection({
         </CardTitle>
       </CardHeader>
       <CardContent className="p-6">
-        <div className="space-y-4">
-          {fields.map(({ label, key, editable, type, options }) => (
-            <div key={key} className="grid grid-cols-1 gap-2">
-              <div className="flex items-center justify-between">
-                <label className="text-sm font-medium">{label}</label>
-                {editable && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleEdit(key)}
-                    className="h-8 px-2 text-[#00aff5]"
-                  >
-                    {editingFields[key] ? "Salvează" : "Editează"}
-                  </Button>
-                )}
-              </div>
-              {type === "select" ? (
-                <Select
-                  disabled={!editingFields[key]}
-                  value={editedData?.[key] || ""}
-                  onValueChange={(value) => handleChange(key, value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {options?.map((option) => (
-                      <SelectItem key={option} value={option}>
-                        {option}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              ) : (
-                <Input
-                  value={editedData?.[key] || ""}
-                  onChange={(e) => handleChange(key, e.target.value)}
-                  disabled={!editingFields[key]}
-                  className={
-                    validationErrors[key] ? "border-red-500" : undefined
-                  }
-                />
-              )}
-              {validationErrors[key] && (
-                <p className="text-sm text-red-500">{validationErrors[key]}</p>
-              )}
-            </div>
-          ))}
-          {hasChanges && Object.keys(editingFields).some((key) => editingFields[key]) && (
-            <div className="flex justify-end space-x-2">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setEditedData(serviceData);
-                  setEditingFields({});
-                  setValidationErrors({});
-                }}
-              >
-                Anulează
-              </Button>
-              <Button onClick={handleSave} disabled={saving}>
-                {saving ? "Se salvează..." : "Salvează toate modificările"}
-              </Button>
-            </div>
-          )}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div>
+            <label className="text-sm font-medium">Nume Companie</label>
+            <Input
+              value={formData.companyName || ''}
+              onChange={(e) => handleChange('companyName', e.target.value)}
+              className={errors.companyName ? "border-red-500" : ""}
+            />
+            {errors.companyName && <p className="text-xs text-red-500 mt-1">{errors.companyName}</p>}
+          </div>
+
+          <div>
+            <label className="text-sm font-medium">Nume Reprezentant</label>
+            <Input
+              value={formData.representativeName || ''}
+              onChange={(e) => handleChange('representativeName', e.target.value)}
+              className={errors.representativeName ? "border-red-500" : ""}
+            />
+            {errors.representativeName && <p className="text-xs text-red-500 mt-1">{errors.representativeName}</p>}
+          </div>
+
+          <div>
+            <label className="text-sm font-medium">Email</label>
+            <Input
+              value={formData.email || ''}
+              onChange={(e) => handleChange('email', e.target.value)}
+              className={errors.email ? "border-red-500" : ""}
+              disabled
+            />
+            {errors.email && <p className="text-xs text-red-500 mt-1">{errors.email}</p>}
+          </div>
+
+          <div>
+            <label className="text-sm font-medium">Telefon</label>
+            <Input
+              value={formData.phone || ''}
+              onChange={(e) => handleChange('phone', e.target.value)}
+              className={errors.phone ? "border-red-500" : ""}
+            />
+            {errors.phone && <p className="text-xs text-red-500 mt-1">{errors.phone}</p>}
+          </div>
+
+          <div>
+            <label className="text-sm font-medium">CUI</label>
+            <Input
+              value={formData.cui || ''}
+              disabled
+              className="bg-gray-50"
+            />
+          </div>
+
+          <div>
+            <label className="text-sm font-medium">Nr. Înregistrare</label>
+            <Input
+              value={formData.tradeRegNumber || ''}
+              disabled
+              className="bg-gray-50"
+            />
+          </div>
+
+          <div>
+            <label className="text-sm font-medium">Adresă</label>
+            <Input
+              value={formData.address || ''}
+              onChange={(e) => handleChange('address', e.target.value)}
+              className={errors.address ? "border-red-500" : ""}
+            />
+            {errors.address && <p className="text-xs text-red-500 mt-1">{errors.address}</p>}
+          </div>
+
+          <div>
+            <label className="text-sm font-medium">Județ</label>
+            <Select
+              value={formData.county}
+              onValueChange={(value) => handleChange('county', value)}
+            >
+              <SelectTrigger className={errors.county ? "border-red-500" : ""}>
+                <SelectValue placeholder="Selectează județul" />
+              </SelectTrigger>
+              <SelectContent>
+                {romanianCounties.map((county) => (
+                  <SelectItem key={county} value={county}>
+                    {county}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {errors.county && <p className="text-xs text-red-500 mt-1">{errors.county}</p>}
+          </div>
+
+          <div>
+            <label className="text-sm font-medium">Oraș</label>
+            <Select
+              value={formData.city}
+              onValueChange={(value) => handleChange('city', value)}
+              disabled={!formData.county}
+            >
+              <SelectTrigger className={errors.city ? "border-red-500" : ""}>
+                <SelectValue placeholder="Selectează orașul" />
+              </SelectTrigger>
+              <SelectContent>
+                {(formData.county ? romanianCities[formData.county] : []).map((city) => (
+                  <SelectItem key={city} value={city}>
+                    {city}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {errors.city && <p className="text-xs text-red-500 mt-1">{errors.city}</p>}
+          </div>
+        </div>
+
+        <div className="mt-6 flex justify-end">
+          <Button onClick={handleSave} disabled={saving}>
+            {saving ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                Se salvează...
+              </>
+            ) : (
+              <>
+                <Save className="h-4 w-4 mr-2" />
+                Salvează modificările
+              </>
+            )}
+          </Button>
         </div>
       </CardContent>
     </Card>
