@@ -14,6 +14,11 @@ export function useNotifications(userId: string) {
     // Check if the browser supports notifications
     if (!("Notification" in window)) {
       console.error("This browser does not support desktop notification");
+      toast({
+        variant: "destructive",
+        title: "Notifications Not Supported",
+        description: "Your browser doesn't support notifications.",
+      });
       return;
     }
 
@@ -26,14 +31,28 @@ export function useNotifications(userId: string) {
     setIsRegistering(true);
 
     try {
-      // First request notification permission
+      // Check if service worker is supported
+      if (!("serviceWorker" in navigator)) {
+        throw new Error("Service Worker is not supported in this browser");
+      }
+
+      // Register service worker if needed
+      try {
+        const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+        console.log('Service Worker registered:', registration);
+      } catch (err) {
+        console.error('Service Worker registration failed:', err);
+        throw new Error("Failed to register service worker");
+      }
+
+      // Request notification permission
       console.log("Requesting notification permission...");
       const permission = await Notification.requestPermission();
       setNotificationPermission(permission);
       console.log("Permission granted:", permission);
 
       if (permission === "granted") {
-        // Then get FCM token
+        // Get FCM token
         console.log("Getting FCM token...");
         const messaging = getMessaging(app);
 
@@ -54,16 +73,16 @@ export function useNotifications(userId: string) {
 
           toast({
             title: "Notifications Enabled",
-            description: "You will now receive notifications for new offers.",
+            description: "You will now receive notifications for new offers and messages.",
           });
         } else {
-          throw new Error("No registration token available");
+          throw new Error("Failed to obtain FCM token");
         }
       } else {
-        throw new Error(`Permission denied: ${permission}`);
+        throw new Error(`Notification permission ${permission}`);
       }
     } catch (error) {
-      console.error("Error requesting notification permission:", error);
+      console.error("Error setting up notifications:", error);
       toast({
         variant: "destructive",
         title: "Notification Error",
@@ -81,15 +100,16 @@ export function useNotifications(userId: string) {
       try {
         const messaging = getMessaging(app);
         const unsubscribe = onMessage(messaging, (payload) => {
-          // Handle foreground messages
           console.log("Received foreground message:", payload);
 
+          // Show toast notification
           toast({
             title: payload.notification?.title || "New Notification",
             description: payload.notification?.body,
+            duration: 5000,
           });
 
-          // Play a notification sound
+          // Play notification sound
           const audio = new Audio("/notification.mp3");
           audio.play().catch(console.error);
         });
@@ -97,6 +117,11 @@ export function useNotifications(userId: string) {
         return () => unsubscribe();
       } catch (error) {
         console.error("Error setting up message listener:", error);
+        toast({
+          variant: "destructive",
+          title: "Notification Error",
+          description: "Failed to set up notification listener",
+        });
       }
     }
   }, [notificationPermission]);
