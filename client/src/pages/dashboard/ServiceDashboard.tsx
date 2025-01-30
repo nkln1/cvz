@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { Loader2, FileText, MailOpen, MessageSquare, Calendar, User, Star } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import romanianCitiesData from "../../../../attached_assets/municipii_orase_romania.json";
@@ -29,6 +30,7 @@ interface NavigationButtonProps {
   icon: React.ReactNode;
   label: string;
   onClick: (tab: TabType) => void;
+  notificationCount?: number;
 }
 
 const NavigationButton: React.FC<NavigationButtonProps> = ({
@@ -37,6 +39,7 @@ const NavigationButton: React.FC<NavigationButtonProps> = ({
   icon,
   label,
   onClick,
+  notificationCount,
 }) => (
   <Button
     variant={activeTab === tab ? "default" : "ghost"}
@@ -48,7 +51,17 @@ const NavigationButton: React.FC<NavigationButtonProps> = ({
     }`}
   >
     {icon}
-    {label}
+    <span className="flex items-center gap-2">
+      {label}
+      {notificationCount > 0 && (
+        <Badge 
+          variant="secondary" 
+          className="bg-[#00aff5] text-white text-xs px-2 py-0.5 rounded-full"
+        >
+          {notificationCount}
+        </Badge>
+      )}
+    </span>
   </Button>
 );
 
@@ -169,6 +182,10 @@ export default function ServiceDashboard() {
     });
   };
 
+  const newRequestsCount = clientRequests.filter(
+    (request) => !viewedRequests.has(request.id)
+  ).length;
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -202,6 +219,7 @@ export default function ServiceDashboard() {
               icon={<FileText className="w-4 h-4 mr-2" />}
               label="Cereri"
               onClick={setActiveTab}
+              notificationCount={newRequestsCount}
             />
             <NavigationButton
               tab="offers"
