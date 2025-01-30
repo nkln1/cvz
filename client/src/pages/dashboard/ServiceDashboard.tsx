@@ -198,7 +198,7 @@ export default function ServiceDashboard() {
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [itemsPerPage, setItemsPerPage] = useState(20);
   const [cars, setCars] = useState<Record<string, Car>>({});
 
 
@@ -429,6 +429,11 @@ export default function ServiceDashboard() {
             ? new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
             : new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
         }
+        if (sortField === "preferredDate") {
+          return sortDirection === "desc"
+            ? new Date(b.preferredDate).getTime() - new Date(a.preferredDate).getTime()
+            : new Date(a.preferredDate).getTime() - new Date(b.preferredDate).getTime();
+        }
         return 0;
       });
 
@@ -490,7 +495,7 @@ export default function ServiceDashboard() {
     if (serviceData) {
       fetchClientRequests();
     }
-  }, [serviceData, sortField, sortDirection]);
+  }, [serviceData, sortField, sortDirection, itemsPerPage]);
 
   const handleAcceptRequest = async (requestId: string) => {
     try {
@@ -756,18 +761,39 @@ export default function ServiceDashboard() {
                   Cererile Clienților
                 </CardTitle>
                 {clientRequests.filter(req => !viewedRequests.has(req.id)).length > 0 && (
-                  <Badge variant="secondary" className="bg-[#00aff5] text-white">
+                  <Badge variant="secondary" className="bg-[#00aff5] text-white text-lg font-bold px-3 py-1">
                     {clientRequests.filter(req => !viewedRequests.has(req.id)).length}
                   </Badge>
                 )}
               </div>
-              <Input
-                placeholder="Caută cereri..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="max-w-[300px]"
-                icon={<Search className="h-4 w-4" />}
-              />
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground">Afișează:</span>
+                  <Select
+                    value={itemsPerPage.toString()}
+                    onValueChange={(value) => {
+                      setItemsPerPage(Number(value));
+                      setCurrentPage(1); // Reset to first page when changing items per page
+                    }}
+                  >
+                    <SelectTrigger className="w-[100px]">
+                      <SelectValue placeholder="20 pe pagină" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="10">10 pe pagină</SelectItem>
+                      <SelectItem value="20">20 pe pagină</SelectItem>
+                      <SelectItem value="50">50 pe pagină</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Input
+                  placeholder="Caută cereri..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="max-w-[300px]"
+                  icon={<Search className="h-4 w-4" />}
+                />
+              </div>
             </div>
             <CardDescription>
               Vezi și gestionează toate cererile primite de la clienți
@@ -940,8 +966,7 @@ export default function ServiceDashboard() {
                                           </span>
                                         )}
                                         {request.car.vin && (
-                                          <span className="block text-xs text-muted-foreground">
-                                            VIN: {request.car.vin}
+                                          <span className="block text-xs text-muted-foreground">                                            VIN: {request.car.vin}
                                           </span>
                                         )}
                                       </>
@@ -1239,106 +1264,111 @@ export default function ServiceDashboard() {
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Navigation />
       <div className="container mx-auto p-4 md:p-6 space-y-4 md:space-y-6">
-      <nav className="flex flex-col sm:flex-row gap-2 border-b pb-4 overflow-x-auto">
-        <Button
-          variant={activeTab === "requests" ? "default" : "ghost"}
-          onClick={() => setActiveTab("requests")}
-          className={`flex items-center justify-start ${
-            activeTab === "requests"
-              ? "bg-[#00aff5] text-white hover:bg-[#0099d6]"
-              : "hover:text-[#00aff5]"
-          }`}
-        >
-          <div className="flex items-center gap-2">
-            <Clock className="w-4 h-4" />
-            Cereri Clienți
-            {clientRequests.filter(req => !viewedRequests.has(req.id)).length > 0 && (
-              <Badge variant="secondary" className="bg-white text-[#00aff5]">
-                {clientRequests.filter(req => !viewedRequests.has(req.id)).length}
-              </Badge>
-            )}
-          </div>
-        </Button>
-        <Button
-          variant={activeTab === "messages" ? "default" : "ghost"}
-          onClick={() => setActiveTab("messages")}
-          className={`flex items-center justify-start ${
-            activeTab === "messages"
-              ? "bg-[#00aff5] text-white hover:bg-[#0099d6]"
-              : "hover:text-[#00aff5]"
-          }`}
-        >
-          <div className="flex items-center gap-2">
-            <MessageSquare className="w-4 h-4" />
-            Mesaje
-            {messageGroups.filter(group => group.unreadCount > 0).length > 0 && (
-              <Badge variant="secondary" className="bg-white text-[#00aff5]">
-                {messageGroups.reduce((sum, group) => sum + group.unreadCount, 0)}
-              </Badge>
-            )}
-          </div>
-        </Button>
-        <Button
-          variant={activeTab === "offers" ? "default" : "ghost"}
-          onClick={() => setActiveTab("offers")}
-          className={`flex items-center justify-start ${
-            activeTab === "offers"
-              ? "bg-[#00aff5] text-white hover:bg-[#0099d6]"
-              : "hover:text-[#00aff5]"
-          }`}
-        >
-          <SendHorizontal className="w-4 h-4 mr-2" />
-          Oferte Trimise
-        </Button>
-        <Button
-          variant={activeTab === "appointments" ? "default" : "ghost"}
-          onClick={() => setActiveTab("appointments")}
-          className={`flex items-center justify-start ${
-            activeTab === "appointments"
-              ? "bg-[#00aff5] text-white hover:bg-[#0099d6]"
-              : "hover:text-[#00aff5]"
-          }`}
-        >
-          <Calendar className="w-4 h-4 mr-2" />
-          Programări
-        </Button>
-        <Button
-          variant={activeTab === "reviews" ? "default" : "ghost"}
-          onClick={() => setActiveTab("reviews")}
-          className={`flex items-center justify-start ${
-            activeTab === "reviews"
-              ? "bg-[#00aff5] text-white hover:bg-[#0099d6]"
-              : "hover:text-[#00aff5]"
-          }`}
-        >
-          <Star className="w-4 h-4 mr-2" />
-          Recenzii
-        </Button>
-        <Button
-          variant={activeTab === "account" ? "default" : "ghost"}
-          onClick={() => setActiveTab("account")}
-          className={`flex items-center justify-start ${
-            activeTab === "account"
-              ? "bg-[#00aff5] text-white hover:bg-[#0099d6]"
-              : "hover:text-[#00aff5]"
-          }`}
-        >
-          <UserCog className="w-4 h-4 mr-2" />
-          Cont
-        </Button>
-        <Button
-          variant={activeTab === "public-profile" ? "default" : "ghost"}
-          onClick={() => setActiveTab("public-profile")}
-          className={`flex items-center justify-start ${
-            activeTab === "public-profile"
-              ? "bg-[#00aff5] text-white hover:bg-[#0099d6]"
-              : "hover:text-[#00aff5]"
-          }`}
-        >
-          <Store className="w-4 h-4 mr-2" />
-          Profil Public
-        </Button>
-      </nav>
+        <nav className="flex flex-col sm:flex-row gap-2 border-b pb-4 overflow-x-auto">
+          <Button
+            variant={activeTab === "requests" ? "default" : "ghost"}
+            onClick={() => setActiveTab("requests")}
+            className={`flex items-center justify-start ${
+              activeTab === "requests"
+                ? "bg-[#00aff5] text-white hover:bg-[#0099d6]"
+                : "hover:text-[#00aff5]"
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <Clock className="w-4 h-4" />
+              Cereri Clienți
+              {clientRequests.filter(req => !viewedRequests.has(req.id)).length > 0 && (
+                <Badge variant="secondary" className="bg-white text-[#00aff5]">
+                  {clientRequests.filter(req => !viewedRequests.has(req.id)).length}
+                </Badge>
+              )}
+            </div>
+          </Button>
+          <Button
+            variant={activeTab === "offers" ? "default" : "ghost"}
+            onClick={() => setActiveTab("offers")}
+            className={`flex items-center justify-start ${
+              activeTab === "offers"
+                ? "bg-[#00aff5] text-white hover:bg-[#0099d6]"
+                : "hover:text-[#00aff5]"
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <SendHorizontal className="w-4 h-4" />
+              Oferte
+            </div>
+          </Button>
+          <Button
+            variant={activeTab === "messages" ? "default" : "ghost"}
+            onClick={() => setActiveTab("messages")}
+            className={`flex items-center justify-start ${
+              activeTab === "messages"
+                ? "bg-[#00aff5] text-white hover:bg-[#0099d6]"
+                : "hover:text-[#00aff5]"
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <MessageSquare className="w-4 h-4" />
+              Mesaje
+            </div>
+          </Button>
+          <Button
+            variant={activeTab === "appointments" ? "default" : "ghost"}
+            onClick={() => setActiveTab("appointments")}
+            className={`flex items-center justify-start ${
+              activeTab === "appointments"
+                ? "bg-[#00aff5] text-white hover:bg-[#0099d6]"
+                : "hover:text-[#00aff5]"
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <Calendar className="w-4 h-4" />
+              Programări
+            </div>
+          </Button>
+          <Button
+            variant={activeTab === "reviews" ? "default" : "ghost"}
+            onClick={() => setActiveTab("reviews")}
+            className={`flex items-center justify-start ${
+              activeTab === "reviews"
+                ? "bg-[#00aff5] text-white hover:bg-[#0099d6]"
+                : "hover:text-[#00aff5]"
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <Star className="w-4 h-4" />
+              Recenzii
+            </div>
+          </Button>
+          <Button
+            variant={activeTab === "account" ? "default" : "ghost"}
+            onClick={() => setActiveTab("account")}
+            className={`flex items-center justify-start ${
+              activeTab === "account"
+                ? "bg-[#00aff5] text-white hover:bg-[#0099d6]"
+                : "hover:text-[#00aff5]"
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <UserCog className="w-4 h-4" />
+              Cont
+            </div>
+          </Button>
+          <Button
+            variant={activeTab === "public-profile" ? "default" : "ghost"}
+            onClick={() => setActiveTab("public-profile")}
+            className={`flex items-center justify-start ${
+              activeTab === "public-profile"
+                ? "bg-[#00aff5] text-white hover:bg-[#0099d6]"
+                : "hover:text-[#00aff5]"
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <Store className="w-4 h-4" />
+              Profil Public
+            </div>
+          </Button>
+        </nav>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
           {renderRequestsContent()}
