@@ -119,10 +119,25 @@ export default function ClientDashboard() {
       </CardHeader>
       <CardContent className="p-6">
         <Tabs defaultValue="active" className="w-full">
-          <TabsList className="w-full grid grid-cols-3 mb-4">
-            <TabsTrigger value="active">Active</TabsTrigger>
-            <TabsTrigger value="solved">Rezolvate</TabsTrigger>
-            <TabsTrigger value="canceled">Anulate</TabsTrigger>
+          <TabsList className="w-full grid grid-cols-3 mb-4 bg-slate-100 p-1">
+            <TabsTrigger 
+              value="active"
+              className="data-[state=active]:bg-[#00aff5] data-[state=active]:text-white transition-colors"
+            >
+              Active
+            </TabsTrigger>
+            <TabsTrigger 
+              value="solved"
+              className="data-[state=active]:bg-[#00aff5] data-[state=active]:text-white transition-colors"
+            >
+              Rezolvate
+            </TabsTrigger>
+            <TabsTrigger 
+              value="canceled"
+              className="data-[state=active]:bg-[#00aff5] data-[state=active]:text-white transition-colors"
+            >
+              Anulate
+            </TabsTrigger>
           </TabsList>
           <TabsContent value="active">
             <RequestsTable
