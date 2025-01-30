@@ -5,10 +5,7 @@ import {
   MailOpen,
   FileText,
   MessageSquare,
-  Phone,
-  MapPin,
-  AlertTriangle,
-  Car as CarIcon,
+  CarIcon,
   Plus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -27,150 +24,33 @@ import { RequestForm } from "@/components/dashboard/RequestForm";
 import { format } from "date-fns";
 import { RequestsTable } from "@/components/dashboard/RequestsTable";
 import { ProfileSection } from "@/components/dashboard/ProfileSection";
-import { doc, getDoc, addDoc, collection, query, where, getDocs, updateDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import MainLayout from "@/components/layout/MainLayout";
-import type { UserProfile, Request, Message, RequestFormData, TabType } from "@/types/dashboard";
-import { useAppDispatch } from "@/hooks/useAppDispatch";
-import { useAppSelector } from "@/hooks/useAppSelector";
-import { setProfile } from "@/store/slices/profileSlice";
+import type { RequestFormData, TabType } from "@/types/dashboard";
+import { useProfile } from "@/hooks/useProfile";
+import { useRequests } from "@/hooks/useRequests";
+import { useMessages } from "@/hooks/useMessages";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
-interface Car {
-  id: string;
-  userId: string;
-  [key: string]: any;
-}
 
 export default function ClientDashboard() {
   const [activeTab, setActiveTab] = useState<TabType>("requests");
   const { user } = useAuth();
   const { toast } = useToast();
-  const dispatch = useAppDispatch();
-  const userProfile = useAppSelector((state) => state.profile.profile);
   const [isRequestDialogOpen, setIsRequestDialogOpen] = useState(false);
   const [isCarDialogOpen, setIsCarDialogOpen] = useState(false);
   const [requestFormData, setRequestFormData] = useState<Partial<RequestFormData>>({});
-  const [requests, setRequests] = useState<Request[]>([]);
-  const [cars, setCars] = useState<Car[]>([]);
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [messageServices, setMessageServices] = useState<{ [key: string]: any }>({});
   const [isResendingVerification, setIsResendingVerification] = useState(false);
+
+  const { profile } = useProfile(user?.uid || "");
+  const { requests, fetchRequests, addRequest, cancelRequest } = useRequests(user?.uid || "");
+  const { messages, messageServices, fetchMessages, markMessageAsRead } = useMessages(user?.uid || "");
 
   useEffect(() => {
     if (user) {
-      fetchUserProfile();
       fetchRequests();
-      fetchCars();
       fetchMessages();
     }
-  }, [user]);
-
-  const fetchUserProfile = async () => {
-    if (!user?.uid) return;
-
-    try {
-      const userDoc = await getDoc(doc(db, "clients", user.uid));
-      if (userDoc.exists()) {
-        const userData = userDoc.data() as UserProfile;
-        dispatch(setProfile(userData));
-      }
-    } catch (error) {
-      console.error("Error fetching user profile:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Nu s-au putut încărca datele profilului.",
-      });
-    }
-  };
-
-  const fetchRequests = async () => {
-    if (!user?.uid) return;
-
-    try {
-      const requestsQuery = query(
-        collection(db, "requests"),
-        where("userId", "==", user.uid)
-      );
-      const querySnapshot = await getDocs(requestsQuery);
-      const loadedRequests: Request[] = [];
-      querySnapshot.forEach((doc) => {
-        loadedRequests.push({ id: doc.id, ...doc.data() } as Request);
-      });
-      setRequests(loadedRequests);
-    } catch (error) {
-      console.error("Error loading requests:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Nu s-au putut încărca cererile.",
-      });
-    }
-  };
-
-  const fetchCars = async () => {
-    if (!user?.uid) return;
-
-    try {
-      const carsQuery = query(
-        collection(db, "cars"),
-        where("userId", "==", user.uid)
-      );
-      const querySnapshot = await getDocs(carsQuery);
-      const loadedCars: Car[] = [];
-      querySnapshot.forEach((doc) => {
-        loadedCars.push({ id: doc.id, ...doc.data() } as Car);
-      });
-      setCars(loadedCars);
-    } catch (error) {
-      console.error("Error loading cars:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Nu s-au putut încărca mașinile.",
-      });
-    }
-  };
-
-  const fetchMessages = async () => {
-    if (!user?.uid) return;
-
-    try {
-      const messagesQuery = query(
-        collection(db, "messages"),
-        where("toId", "==", user.uid)
-      );
-      const querySnapshot = await getDocs(messagesQuery);
-      const loadedMessages: Message[] = [];
-      querySnapshot.forEach((doc) => {
-        loadedMessages.push({ id: doc.id, ...doc.data() } as Message);
-      });
-
-      loadedMessages.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-      setMessages(loadedMessages);
-
-      const uniqueServiceIds = [...new Set(loadedMessages.map(m => m.fromId))];
-      const serviceDetails: { [key: string]: any } = {};
-
-      for (const serviceId of uniqueServiceIds) {
-        const serviceDoc = await getDoc(doc(db, "services", serviceId));
-        if (serviceDoc.exists()) {
-          serviceDetails[serviceId] = serviceDoc.data();
-        }
-      }
-
-      setMessageServices(serviceDetails);
-    } catch (error) {
-      console.error("Error loading messages:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Nu s-au putut încărca mesajele.",
-      });
-    }
-  };
+  }, [user, fetchRequests, fetchMessages]);
 
   const handleResendVerification = async () => {
     if (!auth.currentUser) return;
@@ -196,18 +76,21 @@ export default function ClientDashboard() {
     }
   };
 
+  const handleRequestSubmit = async (data: RequestFormData) => {
+    if (!user) return;
+
+    const success = await addRequest(data, profile.name || "Client necunoscut");
+    if (success) {
+      setRequestFormData({});
+      setIsRequestDialogOpen(false);
+    }
+  };
+
   const handleDeleteRequest = async (requestId: string) => {
     if (!user?.uid) return;
 
     try {
-      const requestRef = doc(db, "requests", requestId);
-      await updateDoc(requestRef, {
-        status: "Anulat",
-        updatedAt: new Date().toISOString(),
-      });
-
-      await fetchRequests();
-
+      await cancelRequest(requestId);
       toast({
         title: "Success",
         description: "Cererea a fost anulată cu succes.",
@@ -244,7 +127,6 @@ export default function ClientDashboard() {
           <TabsContent value="active">
             <RequestsTable
               requests={requests.filter((req) => req.status === "Active")}
-              cars={cars}
               onDelete={handleDeleteRequest}
               refreshRequests={fetchRequests}
             />
@@ -252,7 +134,6 @@ export default function ClientDashboard() {
           <TabsContent value="solved">
             <RequestsTable
               requests={requests.filter((req) => req.status === "Rezolvat")}
-              cars={cars}
               onDelete={handleDeleteRequest}
               refreshRequests={fetchRequests}
             />
@@ -260,7 +141,6 @@ export default function ClientDashboard() {
           <TabsContent value="canceled">
             <RequestsTable
               requests={requests.filter((req) => req.status === "Anulat")}
-              cars={cars}
               onDelete={handleDeleteRequest}
               refreshRequests={fetchRequests}
             />
@@ -281,30 +161,13 @@ export default function ClientDashboard() {
       <CardContent className="p-6">
         <RequestsTable
           requests={requests}
-          cars={cars}
-          refreshRequests={fetchRequests}
           hideDeleteButton={true}
+          refreshRequests={fetchRequests}
         />
       </CardContent>
     </Card>
   );
 
-  const markMessageAsRead = async (messageId: string) => {
-    try {
-      const messageRef = doc(db, "messages", messageId);
-      await updateDoc(messageRef, {
-        read: true
-      });
-
-      setMessages(prevMessages =>
-        prevMessages.map(msg =>
-          msg.id === messageId ? { ...msg, read: true } : msg
-        )
-      );
-    } catch (error) {
-      console.error("Error marking message as read:", error);
-    }
-  };
 
   const renderMessages = () => (
     <Card className="shadow-lg">
@@ -382,40 +245,6 @@ export default function ClientDashboard() {
         return renderProfile();
       default:
         return null;
-    }
-  };
-
-  const handleRequestSubmit = async (data: RequestFormData) => {
-    if (!user) return;
-
-    try {
-      const requestData = {
-        ...data,
-        userId: user.uid,
-        clientName: userProfile.name || "Client necunoscut",
-        status: "Active",
-        createdAt: new Date().toISOString(),
-      };
-
-      await addDoc(collection(db, "requests"), requestData);
-
-      toast({
-        title: "Success",
-        description: "Cererea ta a fost adăugată cu succes!",
-      });
-
-      fetchRequests();
-
-      setRequestFormData({});
-      setIsRequestDialogOpen(false);
-    } catch (error) {
-      console.error("Error submitting request:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description:
-          "Nu s-a putut adăuga cererea. Te rugăm să încerci din nou.",
-      });
     }
   };
 
