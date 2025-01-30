@@ -317,6 +317,7 @@ export default function ServiceDashboard() {
             onViewRequestDetails={switchToRequestsAndShowDetails}
             userId={user?.uid || ""}
             serviceName={serviceData?.companyName || "Service Auto"}
+            requestClient={requestClient}
           />
         )}
         {activeTab === "appointments" && <AppointmentsSection />}
