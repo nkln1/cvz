@@ -6,7 +6,17 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Clock, Eye, MessageSquare, SendHorizontal, X, ArrowUpDown, Loader2, Bell, BellOff } from "lucide-react";
+import {
+  FileText,
+  MailOpen,
+  MessageSquare,
+  Calendar,
+  Star,
+  User,
+  Bell,
+  BellOff,
+  Loader2,
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import romanianCitiesData from "../../../../attached_assets/municipii_orase_romania.json";
 import Navigation from "@/components/Navigation";
