@@ -144,87 +144,101 @@ export default function ServiceDashboard() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Navigation />
-      <div className="mx-auto max-w-7xl">
-        <div className="border-b bg-white">
-          <div className="px-4 py-3">
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="inline-flex h-9 items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground">
-                <TabsTrigger value="requests" className="rounded-md px-3 py-1 text-sm font-medium">
-                  Cereri
-                </TabsTrigger>
-                <TabsTrigger value="offers" className="rounded-md px-3 py-1 text-sm font-medium">
-                  Oferte
-                </TabsTrigger>
-                <TabsTrigger value="messages" className="rounded-md px-3 py-1 text-sm font-medium">
-                  Mesaje
-                </TabsTrigger>
-                <TabsTrigger value="appointments" className="rounded-md px-3 py-1 text-sm font-medium">
-                  Programări
-                </TabsTrigger>
-                <TabsTrigger value="reviews" className="rounded-md px-3 py-1 text-sm font-medium">
-                  Recenzii
-                </TabsTrigger>
-                <TabsTrigger value="account" className="rounded-md px-3 py-1 text-sm font-medium">
-                  Cont
-                </TabsTrigger>
-              </TabsList>
+      <div className="mx-auto max-w-7xl px-4">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-8">
+          <TabsList className="h-10 items-center justify-start p-1 bg-white rounded-md border shadow-sm w-fit">
+            <TabsTrigger 
+              value="requests" 
+              className="px-4 h-8 data-[state=active]:bg-[#00aff5] data-[state=active]:text-white rounded"
+            >
+              Cereri
+            </TabsTrigger>
+            <TabsTrigger 
+              value="offers" 
+              className="px-4 h-8 data-[state=active]:bg-[#00aff5] data-[state=active]:text-white rounded"
+            >
+              Oferte
+            </TabsTrigger>
+            <TabsTrigger 
+              value="messages" 
+              className="px-4 h-8 data-[state=active]:bg-[#00aff5] data-[state=active]:text-white rounded"
+            >
+              Mesaje
+            </TabsTrigger>
+            <TabsTrigger 
+              value="appointments" 
+              className="px-4 h-8 data-[state=active]:bg-[#00aff5] data-[state=active]:text-white rounded"
+            >
+              Programări
+            </TabsTrigger>
+            <TabsTrigger 
+              value="reviews" 
+              className="px-4 h-8 data-[state=active]:bg-[#00aff5] data-[state=active]:text-white rounded"
+            >
+              Recenzii
+            </TabsTrigger>
+            <TabsTrigger 
+              value="account" 
+              className="px-4 h-8 data-[state=active]:bg-[#00aff5] data-[state=active]:text-white rounded"
+            >
+              Cont
+            </TabsTrigger>
+          </TabsList>
 
-              <div className="mt-4">
-                <TabsContent value="requests">
-                  <ClientRequests
-                    clientRequests={clientRequests}
-                    viewedRequests={viewedRequests}
-                    onViewDetails={handleViewDetails}
-                    onMessage={handleMessage}
-                    onSendOffer={handleSendOffer}
-                    onRejectRequest={handleRejectRequest}
-                    selectedRequest={selectedRequest}
-                    requestClient={requestClient}
-                    cars={cars}
-                  />
-                </TabsContent>
-                <TabsContent value="offers">
-                  <SentOffers
-                    requests={[]}
-                    cars={cars}
-                    refreshRequests={fetchMessages}
-                  />
-                </TabsContent>
-                <TabsContent value="messages">
-                  <ServiceMessagesSection
-                    messageGroups={messageGroups}
-                    messages={messages}
-                    selectedMessageRequest={selectedMessageRequest}
-                    isViewingConversation={isViewingConversation}
-                    messageContent={messageContent}
-                    sendingMessage={sendingMessage}
-                    onMessageContentChange={setMessageContent}
-                    onSendMessage={sendMessage}
-                    onSelectConversation={handleSelectConversation}
-                    onBackToList={handleBackToList}
-                    onViewRequestDetails={handleViewDetails}
-                    userId={user?.uid || ""}
-                  />
-                </TabsContent>
-                <TabsContent value="appointments">
-                  <AppointmentsSection />
-                </TabsContent>
-                <TabsContent value="reviews">
-                  <ReviewsSection />
-                </TabsContent>
-                <TabsContent value="account">
-                  <ServiceAccountSection
-                    userId={user?.uid || ""}
-                    serviceData={serviceData}
-                    fields={fields}
-                    validationErrors={{}}
-                  />
-                </TabsContent>
-              </div>
-            </Tabs>
+          <div className="mt-6 bg-white rounded-lg border shadow-sm p-6">
+            <TabsContent value="requests">
+              <ClientRequests
+                clientRequests={clientRequests}
+                viewedRequests={viewedRequests}
+                onViewDetails={handleViewDetails}
+                onMessage={handleMessage}
+                onSendOffer={handleSendOffer}
+                onRejectRequest={handleRejectRequest}
+                selectedRequest={selectedRequest}
+                requestClient={requestClient}
+                cars={cars}
+              />
+            </TabsContent>
+            <TabsContent value="offers">
+              <SentOffers
+                requests={[]}
+                cars={cars}
+                refreshRequests={fetchMessages}
+              />
+            </TabsContent>
+            <TabsContent value="messages">
+              <ServiceMessagesSection
+                messageGroups={messageGroups}
+                messages={messages}
+                selectedMessageRequest={selectedMessageRequest}
+                isViewingConversation={isViewingConversation}
+                messageContent={messageContent}
+                sendingMessage={sendingMessage}
+                onMessageContentChange={setMessageContent}
+                onSendMessage={sendMessage}
+                onSelectConversation={handleSelectConversation}
+                onBackToList={handleBackToList}
+                onViewRequestDetails={handleViewDetails}
+                userId={user?.uid || ""}
+              />
+            </TabsContent>
+            <TabsContent value="appointments">
+              <AppointmentsSection />
+            </TabsContent>
+            <TabsContent value="reviews">
+              <ReviewsSection />
+            </TabsContent>
+            <TabsContent value="account">
+              <ServiceAccountSection
+                userId={user?.uid || ""}
+                serviceData={serviceData}
+                fields={fields}
+                validationErrors={{}}
+              />
+            </TabsContent>
           </div>
-        </div>
-        </div>
+        </Tabs>
+      </div>
       <Footer />
     </div>
   );
