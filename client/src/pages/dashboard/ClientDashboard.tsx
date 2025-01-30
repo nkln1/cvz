@@ -34,6 +34,7 @@ import { useMessages } from "@/hooks/useMessages";
 import { useCars } from "@/hooks/useCars";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ReceivedOffers } from "@/components/dashboard/ReceivedOffers";
+import { MessagesSection } from "@/components/dashboard/MessagesSection";
 
 export default function ClientDashboard() {
   const [activeTab, setActiveTab] = useState<TabType>("requests");
@@ -177,67 +178,21 @@ export default function ClientDashboard() {
     />
   );
 
-  const renderMessages = () => (
-    <Card className="shadow-lg">
-      <CardHeader className="border-b bg-gray-50">
-        <CardTitle className="text-[#00aff5] flex items-center gap-2">
-          <MessageSquare className="h-5 w-5" />
-          Mesaje
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="p-6">
-        <div className="space-y-4">
-          {messages.length === 0 ? (
-            <p className="text-gray-600 text-center py-4">Nu există mesaje noi.</p>
-          ) : (
-            <div className="space-y-4">
-              {messages.map((message) => {
-                const service = messageServices[message.fromId];
-                const request = requests.find(r => r.id === message.requestId);
+  const renderMessages = () => {
+    const requestTitles = requests.reduce((acc, request) => {
+      acc[request.id] = request.title;
+      return acc;
+    }, {} as Record<string, string>);
 
-                return (
-                  <Card
-                    key={message.id}
-                    className={`transition-colors ${
-                      !message.read ? 'bg-blue-50' : ''
-                    }`}
-                  >
-                    <CardContent className="p-4">
-                      <div className="flex flex-col space-y-2">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <h4 className="font-medium">
-                              {service?.companyName || 'Service Auto'}
-                            </h4>
-                            <p className="text-sm text-muted-foreground">
-                              Pentru cererea: {request?.title || 'Cerere service'}
-                            </p>
-                          </div>
-                          <span className="text-sm text-muted-foreground">
-                            {format(new Date(message.createdAt), "dd.MM.yyyy HH:mm")}
-                          </span>
-                        </div>
-                        <p className="text-sm mt-2">{message.content}</p>
-                        {!message.read && (
-                          <Button
-                            variant="ghost"
-                            className="self-end mt-2"
-                            onClick={() => markMessageAsRead(message.id)}
-                          >
-                            Marchează ca citit
-                          </Button>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      </CardContent>
-    </Card>
-  );
+    return (
+      <MessagesSection
+        messages={messages}
+        messageServices={messageServices}
+        markMessageAsRead={markMessageAsRead}
+        requestTitles={requestTitles}
+      />
+    );
+  };
 
   const renderContent = () => {
     switch (activeTab) {
