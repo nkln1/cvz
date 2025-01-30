@@ -51,23 +51,29 @@ export function ServiceMessagesSection({
 }: ServiceMessagesSectionProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [isScrolledToBottom, setIsScrolledToBottom] = useState(true);
+  const { toast } = useToast();
 
   const formatTimestamp = (timestamp: any) => {
     if (!timestamp) return "";
 
-    // Handle Firebase Timestamp
-    if (timestamp && typeof timestamp.toDate === 'function') {
-      return format(timestamp.toDate(), "dd.MM.yyyy HH:mm");
-    }
+    try {
+      // Handle Firebase Timestamp
+      if (timestamp && typeof timestamp.toDate === 'function') {
+        return format(timestamp.toDate(), "dd.MM.yyyy HH:mm");
+      }
 
-    // Handle string timestamps
-    if (typeof timestamp === 'string') {
-      return format(new Date(timestamp), "dd.MM.yyyy HH:mm");
-    }
+      // Handle string timestamps
+      if (typeof timestamp === 'string') {
+        return format(new Date(timestamp), "dd.MM.yyyy HH:mm");
+      }
 
-    // Handle Date objects
-    if (timestamp instanceof Date) {
-      return format(timestamp, "dd.MM.yyyy HH:mm");
+      // Handle Date objects
+      if (timestamp instanceof Date) {
+        return format(timestamp, "dd.MM.yyyy HH:mm");
+      }
+    } catch (error) {
+      console.error("Error formatting timestamp:", error);
+      return "";
     }
 
     return "";
@@ -81,7 +87,7 @@ export function ServiceMessagesSection({
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const { scrollHeight, scrollTop, clientHeight } = e.currentTarget;
-    setIsScrolledToBottom(scrollHeight - scrollTop === clientHeight);
+    setIsScrolledToBottom(Math.abs(scrollHeight - scrollTop - clientHeight) < 10);
   };
 
   const renderMessagesList = () => (
@@ -102,12 +108,12 @@ export function ServiceMessagesSection({
                 <div className="flex-1">
                   <h4 className="font-medium">{group.requestTitle}</h4>
                   <p className="text-sm text-muted-foreground truncate">
-                    {group.lastMessage.content}
+                    {group.lastMessage?.content || 'No messages'}
                   </p>
                 </div>
                 <div className="flex flex-col items-end ml-4">
                   <span className="text-xs text-muted-foreground">
-                    {formatTimestamp(group.lastMessage.createdAt)}
+                    {formatTimestamp(group.lastMessage?.createdAt)}
                   </span>
                   {group.unreadCount > 0 && (
                     <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded-full mt-1">
@@ -123,42 +129,49 @@ export function ServiceMessagesSection({
     </div>
   );
 
-  const renderConversation = () => (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between border-b pb-4">
-        <div className="flex items-center gap-2">
+  const renderConversation = () => {
+    const conversationMessages = messages.filter(
+      (msg) => msg.requestId === selectedMessageRequest?.id
+    ).sort((a, b) => {
+      const dateA = a.createdAt && typeof a.createdAt.toDate === 'function' 
+        ? a.createdAt.toDate().getTime() 
+        : new Date(a.createdAt).getTime();
+      const dateB = b.createdAt && typeof b.createdAt.toDate === 'function'
+        ? b.createdAt.toDate().getTime()
+        : new Date(b.createdAt).getTime();
+      return dateA - dateB;
+    });
+
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between border-b pb-4">
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onBackToList}
+              className="hover:bg-gray-100"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Înapoi
+            </Button>
+            <h3 className="font-medium">{selectedMessageRequest?.title}</h3>
+          </div>
           <Button
             variant="ghost"
             size="sm"
-            onClick={onBackToList}
-            className="hover:bg-gray-100"
+            onClick={() => selectedMessageRequest && onViewRequestDetails(selectedMessageRequest.id)}
+            className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 flex items-center gap-1"
           >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Înapoi
+            <Eye className="h-4 w-4" />
+            Detalii cerere
           </Button>
-          <h3 className="font-medium">{selectedMessageRequest?.title}</h3>
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => selectedMessageRequest && onViewRequestDetails(selectedMessageRequest.id)}
-          className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 flex items-center gap-1"
+        <div
+          className="space-y-4 max-h-[400px] overflow-y-auto mb-4 p-4"
+          onScroll={handleScroll}
         >
-          <Eye className="h-4 w-4" />
-          Detalii cerere
-        </Button>
-      </div>
-      <div
-        className="space-y-4 max-h-[400px] overflow-y-auto mb-4 p-4"
-        onScroll={handleScroll}
-      >
-        {messages
-          .filter((msg) => msg.requestId === selectedMessageRequest?.id)
-          .sort(
-            (a, b) =>
-              new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-          )
-          .map((message) => (
+          {conversationMessages.map((message) => (
             <div
               key={message.id}
               className={`p-3 rounded-lg max-w-[80%] ${
@@ -173,43 +186,44 @@ export function ServiceMessagesSection({
               </span>
             </div>
           ))}
-        <div ref={messagesEndRef} />
-      </div>
-      <div className="flex gap-2">
-        <Textarea
-          value={messageContent}
-          onChange={(e) => onMessageContentChange(e.target.value)}
-          placeholder="Scrie un mesaj..."
-          className="flex-1"
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-              e.preventDefault();
-              if (messageContent.trim()) {
-                onSendMessage();
+          <div ref={messagesEndRef} />
+        </div>
+        <div className="flex gap-2">
+          <Textarea
+            value={messageContent}
+            onChange={(e) => onMessageContentChange(e.target.value)}
+            placeholder="Scrie un mesaj..."
+            className="flex-1"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                if (messageContent.trim()) {
+                  onSendMessage();
+                }
               }
-            }
-          }}
-        />
-        <Button
-          onClick={onSendMessage}
-          disabled={!messageContent.trim() || sendingMessage}
-          className="bg-[#00aff5] hover:bg-[#0099d6]"
-        >
-          {sendingMessage ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Se trimite...
-            </>
-          ) : (
-            <>
-              <SendHorizontal className="mr-2 h-4 w-4" />
-              Trimite
-            </>
-          )}
-        </Button>
+            }}
+          />
+          <Button
+            onClick={onSendMessage}
+            disabled={!messageContent.trim() || sendingMessage}
+            className="bg-[#00aff5] hover:bg-[#0099d6]"
+          >
+            {sendingMessage ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Se trimite...
+              </>
+            ) : (
+              <>
+                <SendHorizontal className="mr-2 h-4 w-4" />
+                Trimite
+              </>
+            )}
+          </Button>
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <Card className="border-[#00aff5]/20">
