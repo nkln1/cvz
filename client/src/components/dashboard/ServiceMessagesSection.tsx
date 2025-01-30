@@ -52,6 +52,27 @@ export function ServiceMessagesSection({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [isScrolledToBottom, setIsScrolledToBottom] = useState(true);
 
+  const formatTimestamp = (timestamp: any) => {
+    if (!timestamp) return "";
+
+    // Handle Firebase Timestamp
+    if (timestamp && typeof timestamp.toDate === 'function') {
+      return format(timestamp.toDate(), "dd.MM.yyyy HH:mm");
+    }
+
+    // Handle string timestamps
+    if (typeof timestamp === 'string') {
+      return format(new Date(timestamp), "dd.MM.yyyy HH:mm");
+    }
+
+    // Handle Date objects
+    if (timestamp instanceof Date) {
+      return format(timestamp, "dd.MM.yyyy HH:mm");
+    }
+
+    return "";
+  };
+
   useEffect(() => {
     if (isScrolledToBottom && messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
@@ -86,7 +107,7 @@ export function ServiceMessagesSection({
                 </div>
                 <div className="flex flex-col items-end ml-4">
                   <span className="text-xs text-muted-foreground">
-                    {format(new Date(group.lastMessage.createdAt), "dd.MM.yyyy HH:mm")}
+                    {formatTimestamp(group.lastMessage.createdAt)}
                   </span>
                   {group.unreadCount > 0 && (
                     <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded-full mt-1">
@@ -127,7 +148,7 @@ export function ServiceMessagesSection({
           Detalii cerere
         </Button>
       </div>
-      <div 
+      <div
         className="space-y-4 max-h-[400px] overflow-y-auto mb-4 p-4"
         onScroll={handleScroll}
       >
@@ -148,7 +169,7 @@ export function ServiceMessagesSection({
             >
               <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
               <span className="text-xs opacity-70 block mt-1">
-                {format(new Date(message.createdAt), "dd.MM.yyyy HH:mm")}
+                {formatTimestamp(message.createdAt)}
               </span>
             </div>
           ))}

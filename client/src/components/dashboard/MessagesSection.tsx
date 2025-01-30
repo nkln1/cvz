@@ -18,6 +18,27 @@ export function MessagesSection({
   markMessageAsRead,
   requestTitles,
 }: MessagesSectionProps) {
+  const formatTimestamp = (timestamp: any) => {
+    if (!timestamp) return "";
+
+    // Handle Firebase Timestamp
+    if (timestamp && typeof timestamp.toDate === 'function') {
+      return format(timestamp.toDate(), "dd.MM.yyyy HH:mm");
+    }
+
+    // Handle string timestamps
+    if (typeof timestamp === 'string') {
+      return format(new Date(timestamp), "dd.MM.yyyy HH:mm");
+    }
+
+    // Handle Date objects
+    if (timestamp instanceof Date) {
+      return format(timestamp, "dd.MM.yyyy HH:mm");
+    }
+
+    return "";
+  };
+
   return (
     <Card className="shadow-lg">
       <CardHeader className="border-b bg-gray-50">
@@ -55,7 +76,7 @@ export function MessagesSection({
                             </p>
                           </div>
                           <span className="text-sm text-muted-foreground">
-                            {format(new Date(message.createdAt), "dd.MM.yyyy HH:mm")}
+                            {formatTimestamp(message.createdAt)}
                           </span>
                         </div>
                         <p className="text-sm mt-2">{message.content}</p>
