@@ -27,6 +27,7 @@ export function useServiceMessages(userId: string) {
   const [messageContent, setMessageContent] = useState("");
   const [sendingMessage, setSendingMessage] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [unreadClientsCount, setUnreadClientsCount] = useState(0);
 
   useEffect(() => {
     if (!userId) return;
@@ -90,6 +91,7 @@ export function useServiceMessages(userId: string) {
         new Set(currentMessages.map((m) => m.requestId)),
       );
       const groups: MessageGroup[] = [];
+      const unreadClients = new Set<string>();
 
       for (const requestId of requestIds) {
         const requestDoc = await getDoc(doc(db, "requests", requestId));
@@ -97,9 +99,9 @@ export function useServiceMessages(userId: string) {
 
         const requestData = requestDoc.data();
         const clientDoc = await getDoc(doc(db, "users", requestData.userId));
-        const clientName = clientDoc.exists() 
-          ? requestData.clientName || clientDoc.data().numeComplet || clientDoc.data().name || `${clientDoc.data().nume || ''} ${clientDoc.data().prenume || ''}`.trim()
-          : "Client necunoscut";
+        const clientName = requestData.clientName || (clientDoc.exists() 
+          ? clientDoc.data().numeComplet || clientDoc.data().name || `${clientDoc.data().nume || ''} ${clientDoc.data().prenume || ''}`.trim()
+          : "Client necunoscut");
 
         const requestMessages = currentMessages.filter(
           (m) => m.requestId === requestId,
@@ -111,16 +113,24 @@ export function useServiceMessages(userId: string) {
           return bTime - aTime;
         });
 
+        const unreadCount = requestMessages.filter(
+          (m) => !m.read && m.toId === userId
+        ).length;
+
+        if (unreadCount > 0) {
+          unreadClients.add(requestData.userId);
+        }
+
         groups.push({
           requestId,
           requestTitle: requestData.title || "Untitled Request",
           lastMessage: requestMessages[0],
-          unreadCount: requestMessages.filter(
-            (m) => !m.read && m.toId === userId,
-          ).length,
+          unreadCount,
           clientName,
         });
       }
+
+      setUnreadClientsCount(unreadClients.size);
 
       // Sort groups by latest message
       groups.sort((a, b) => {
@@ -234,6 +244,7 @@ export function useServiceMessages(userId: string) {
     messageContent,
     sendingMessage,
     isLoading,
+    unreadClientsCount,
     sendMessage,
     handleSelectConversation,
     handleBackToList,

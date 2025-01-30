@@ -29,6 +29,7 @@ import { ReceivedOffers } from "@/components/dashboard/ReceivedOffers";
 import { MessagesSection } from "@/components/dashboard/MessagesSection";
 import { MyRequests } from "@/components/dashboard/MyRequests";
 import { EmailVerificationView } from "@/components/dashboard/EmailVerificationView";
+import { Badge } from "@/components/ui/badge";
 
 export default function ClientDashboard() {
   const [activeTab, setActiveTab] = useState<TabType>("requests");
@@ -48,6 +49,7 @@ export default function ClientDashboard() {
     sendingMessage,
     selectedMessageRequest,
     isViewingConversation,
+    unreadServiceCount,
     setMessageContent,
     sendMessage,
     markMessageAsRead,
@@ -135,7 +137,17 @@ export default function ClientDashboard() {
               }`}
             >
               <MessageSquare className="w-4 h-4 mr-2 flex-shrink-0" />
-              <span className="text-sm">Mesaje</span>
+              <span className="text-sm flex items-center gap-2">
+                Mesaje
+                {unreadServiceCount > 0 && (
+                  <Badge
+                    variant="secondary"
+                    className="bg-[#00aff5] text-white text-xs px-2 py-0.5 rounded-full"
+                  >
+                    {unreadServiceCount}
+                  </Badge>
+                )}
+              </span>
             </Button>
             <Button
               variant={activeTab === "car" ? "default" : "ghost"}

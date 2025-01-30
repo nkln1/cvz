@@ -37,6 +37,7 @@ export const useMessages = (userId: string) => {
   const [isViewingConversation, setIsViewingConversation] = useState(false);
   const [messageContent, setMessageContent] = useState("");
   const [sendingMessage, setSendingMessage] = useState(false);
+  const [unreadServiceCount, setUnreadServiceCount] = useState(0);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -64,6 +65,8 @@ export const useMessages = (userId: string) => {
 
         // Group messages by request
         const groups: { [key: string]: MessageGroup } = {};
+        const unreadServices = new Set<string>();
+
         loadedMessages.forEach((message) => {
           if (!groups[message.requestId]) {
             groups[message.requestId] = {
@@ -72,9 +75,13 @@ export const useMessages = (userId: string) => {
               lastMessage: message,
               unreadCount: message.toId === userId && !message.read ? 1 : 0,
             };
+            if (message.toId === userId && !message.read) {
+              unreadServices.add(message.fromId);
+            }
           } else {
             if (message.toId === userId && !message.read) {
               groups[message.requestId].unreadCount++;
+              unreadServices.add(message.fromId);
             }
             if (
               new Date(message.createdAt) >
@@ -86,6 +93,7 @@ export const useMessages = (userId: string) => {
         });
 
         console.log("Message groups created:", Object.keys(groups).length);
+        setUnreadServiceCount(unreadServices.size);
 
         setMessages(loadedMessages);
         setMessageGroups(
@@ -220,6 +228,7 @@ export const useMessages = (userId: string) => {
     isViewingConversation,
     messageContent,
     sendingMessage,
+    unreadServiceCount,
     setMessageContent,
     markMessageAsRead,
     sendMessage,
