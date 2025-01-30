@@ -65,7 +65,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { ServiceProfileSection } from "@/components/dashboard/ServiceProfileSection";
 import { ClientRequests } from "@/components/dashboard/ClientRequests";
-import { ReceivedOffers } from "@/components/dashboard/ReceivedOffers"; // Changed to named import
+import { SentOffers } from "@/components/dashboard/SentOffers"; // Changed import to use new component
+
 
 interface Car {
   id: string;
@@ -716,8 +717,8 @@ export default function ServiceDashboard() {
 
   const renderOffers = () => (
     <TabsContent value="offers">
-      <ReceivedOffers
-        requests={[]} // Updated to show empty state
+      <SentOffers
+        requests={[]} // Empty array as we're starting with no sent offers
         cars={cars}
         refreshRequests={fetchClientRequests}
       />
