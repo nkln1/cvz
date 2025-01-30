@@ -68,6 +68,7 @@ import { ClientRequests } from "@/components/dashboard/ClientRequests";
 import { SentOffers } from "@/components/dashboard/SentOffers"; // Changed import to use new component
 import { ServiceMessagesSection } from "@/components/dashboard/ServiceMessagesSection";
 import { AppointmentsSection } from "@/components/dashboard/AppointmentsSection";
+import { ReviewsSection } from "@/components/dashboard/ReviewsSection";
 
 
 interface Car {
@@ -942,22 +943,7 @@ export default function ServiceDashboard() {
       case "reviews":
         return (
           <TabsContent value="reviews">
-            <Card className="border-[#00aff5]/20">
-              <CardHeader>
-                <CardTitle className="text-[#00aff5] flex items-center gap-2">
-                  <Star className="h-5 w-5" />
-                  Recenzii
-                </CardTitle>
-                <CardDescription>
-                  Vezi și răspunde la recenziile primite de la clienți
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">
-                  Lista recenziilor va apărea aici
-                </p>
-              </CardContent>
-            </Card>
+            <ReviewsSection />
           </TabsContent>
         );
       case "account":
@@ -1018,7 +1004,8 @@ export default function ServiceDashboard() {
                           value={serviceData[key]}
                           onChange={(e) => handleChange(key, e.target.value)}
                           disabled={!editable || !editingFields[key]}
-                          className={                          validationErrors[key] ? "border-red-500" : ""
+                          className={
+                            validationErrors[key] ? "border-red-500" : ""
                           }
                         />
                       )}
@@ -1033,8 +1020,7 @@ export default function ServiceDashboard() {
                 <div className="mt-6">
                   <Button
                     onClick={handleSave}
-                    className="bg-[#00aff5] hover:bg-[#0099d6] text-white"
-                    disabled={loading}
+                    className="bg-[#00aff5] hover:bg-[#0099d6] text-white"                    disabled={loading}
                   >
                     {loading ? (
                       <>
