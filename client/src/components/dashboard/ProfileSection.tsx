@@ -2,7 +2,7 @@ import { useState } from "react";
 import { doc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
-import { User, Pencil } from "lucide-react";
+import { User, Pencil, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -18,12 +18,14 @@ import type { UserProfile } from "@/types/dashboard";
 import { useAppDispatch } from "@/hooks/useAppDispatch";
 import { useAppSelector } from "@/hooks/useAppSelector";
 import { setProfile, updateProfile } from "@/store/slices/profileSlice";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface ProfileSectionProps {
   userId: string;
 }
 
-export function ProfileSection({ userId }: ProfileSectionProps) {
+function ProfileSectionContent({ userId }: ProfileSectionProps) {
   const dispatch = useAppDispatch();
   const userProfile = useAppSelector((state) => state.profile.profile);
   const [isEditing, setIsEditing] = useState(false);
@@ -250,5 +252,33 @@ export function ProfileSection({ userId }: ProfileSectionProps) {
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+export function ProfileSection(props: ProfileSectionProps) {
+  return (
+    <ErrorBoundary
+      fallback={
+        <Card className="shadow-lg">
+          <CardHeader className="border-b bg-gray-50">
+            <CardTitle className="text-[#00aff5] flex items-center gap-2">
+              <User className="h-5 w-5" />
+              Profilul Meu
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertTitle>Error</AlertTitle>
+              <AlertDescription>
+                Nu s-au putut încărca datele profilului. Vă rugăm să reîncărcați pagina.
+              </AlertDescription>
+            </Alert>
+          </CardContent>
+        </Card>
+      }
+    >
+      <ProfileSectionContent {...props} />
+    </ErrorBoundary>
   );
 }

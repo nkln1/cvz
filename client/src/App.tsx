@@ -11,41 +11,50 @@ import ServiceDashboard from "@/pages/dashboard/ServiceDashboard";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { Provider } from 'react-redux';
 import { store } from '@/store/store';
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 function Router() {
   return (
-    <Switch>
-      <Route path="/" component={Home} />
-      <Route path="/contact" component={Contact} />
-      <Route path="/dashboard">
-        {() => (
-          <ProtectedRoute allowedRoles={["client"]}>
-            <ClientDashboard />
-          </ProtectedRoute>
-        )}
-      </Route>
-      <Route path="/service-dashboard">
-        {() => (
-          <ProtectedRoute allowedRoles={["service"]}>
-            <ServiceDashboard />
-          </ProtectedRoute>
-        )}
-      </Route>
-      <Route component={NotFound} />
-    </Switch>
+    <ErrorBoundary>
+      <Switch>
+        <Route path="/" component={Home} />
+        <Route path="/contact" component={Contact} />
+        <Route path="/dashboard">
+          {() => (
+            <ErrorBoundary>
+              <ProtectedRoute allowedRoles={["client"]}>
+                <ClientDashboard />
+              </ProtectedRoute>
+            </ErrorBoundary>
+          )}
+        </Route>
+        <Route path="/service-dashboard">
+          {() => (
+            <ErrorBoundary>
+              <ProtectedRoute allowedRoles={["service"]}>
+                <ServiceDashboard />
+              </ProtectedRoute>
+            </ErrorBoundary>
+          )}
+        </Route>
+        <Route component={NotFound} />
+      </Switch>
+    </ErrorBoundary>
   );
 }
 
 function App() {
   return (
-    <Provider store={store}>
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <Router />
-          <Toaster />
-        </AuthProvider>
-      </QueryClientProvider>
-    </Provider>
+    <ErrorBoundary>
+      <Provider store={store}>
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <Router />
+            <Toaster />
+          </AuthProvider>
+        </QueryClientProvider>
+      </Provider>
+    </ErrorBoundary>
   );
 }
 
