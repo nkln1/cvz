@@ -15,6 +15,7 @@ import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import type { Request, Message } from "@/types/service";
 import { motion, AnimatePresence } from "framer-motion";
+import { Timestamp } from "firebase/firestore";
 
 interface MessageGroup {
   requestId: string;
@@ -27,6 +28,7 @@ interface ServiceMessagesSectionProps {
   messageGroups: MessageGroup[];
   messages: Message[];
   selectedMessageRequest: Request | null;
+  clientDetails: Record<string, { name: string; email: string; }>;
   isViewingConversation: boolean;
   messageContent: string;
   sendingMessage: boolean;
@@ -42,6 +44,7 @@ export function ServiceMessagesSection({
   messageGroups,
   messages,
   selectedMessageRequest,
+  clientDetails,
   isViewingConversation,
   messageContent,
   sendingMessage,
@@ -60,8 +63,8 @@ export function ServiceMessagesSection({
     if (!timestamp) return "";
 
     try {
-      const date = timestamp && typeof timestamp.toDate === 'function' 
-        ? timestamp.toDate() 
+      const date = timestamp instanceof Timestamp
+        ? timestamp.toDate()
         : new Date(timestamp);
 
       const now = new Date();
@@ -155,17 +158,19 @@ export function ServiceMessagesSection({
   );
 
   const renderConversation = () => {
-    const conversationMessages = messages.filter(
-      (msg) => msg.requestId === selectedMessageRequest?.id
-    ).sort((a, b) => {
-      const dateA = a.createdAt && typeof a.createdAt.toDate === 'function' 
-        ? a.createdAt.toDate().getTime() 
-        : new Date(a.createdAt).getTime();
-      const dateB = b.createdAt && typeof b.createdAt.toDate === 'function'
-        ? b.createdAt.toDate().getTime()
-        : new Date(b.createdAt).getTime();
-      return dateA - dateB;
-    });
+    if (!selectedMessageRequest) return null;
+
+    const conversationMessages = messages
+      .filter((msg) => msg.requestId === selectedMessageRequest.id)
+      .sort((a, b) => {
+        const getTime = (timestamp: any) => 
+          timestamp instanceof Timestamp 
+            ? timestamp.toMillis() 
+            : new Date(timestamp).getTime();
+        return getTime(a.createdAt) - getTime(b.createdAt);
+      });
+
+    const clientDetail = clientDetails[selectedMessageRequest.userId];
 
     return (
       <div className="space-y-4 h-full flex flex-col">
@@ -182,20 +187,26 @@ export function ServiceMessagesSection({
             </Button>
             <Avatar className="h-8 w-8">
               <AvatarFallback className="bg-blue-100 text-blue-600">
-                {selectedMessageRequest?.title ? getInitials(selectedMessageRequest.title) : "??"}
+                {clientDetail ? getInitials(clientDetail.name) : getInitials(selectedMessageRequest.title)}
               </AvatarFallback>
             </Avatar>
             <div>
-              <h3 className="font-medium text-sm">{selectedMessageRequest?.title}</h3>
+              <h3 className="font-medium text-sm">{selectedMessageRequest.title}</h3>
               <p className="text-xs text-muted-foreground">
-                ID: {selectedMessageRequest?.id}
+                {clientDetail ? (
+                  <span>
+                    Client: {clientDetail.name} ({clientDetail.email})
+                  </span>
+                ) : (
+                  "Loading client details..."
+                )}
               </p>
             </div>
           </div>
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => selectedMessageRequest && onViewRequestDetails(selectedMessageRequest.id)}
+            onClick={() => onViewRequestDetails(selectedMessageRequest.id)}
             className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 flex items-center gap-1"
           >
             <Eye className="h-4 w-4" />
@@ -203,7 +214,7 @@ export function ServiceMessagesSection({
           </Button>
         </div>
 
-        <ScrollArea 
+        <ScrollArea
           className="flex-1 pr-4"
           style={{ height: "calc(600px - 180px)" }}
           onScrollCapture={handleScroll}
@@ -223,7 +234,7 @@ export function ServiceMessagesSection({
                       message.fromId === userId
                         ? "bg-blue-500 text-white rounded-t-2xl rounded-l-2xl"
                         : "bg-gray-100 rounded-t-2xl rounded-r-2xl"
-                    } p-3 relative`}
+                      } p-3 relative`}
                   >
                     <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
                     <div className={`flex items-center gap-1 mt-1 text-xs ${

@@ -17,12 +17,18 @@ import { db } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import type { Message, MessageGroup, Request } from "@/types/service";
 
+interface ClientDetail {
+  name: string;
+  email: string;
+}
+
 export function useServiceMessages(userId: string) {
   const { toast } = useToast();
   const [messages, setMessages] = useState<Message[]>([]);
   const [messageGroups, setMessageGroups] = useState<MessageGroup[]>([]);
   const [selectedMessageRequest, setSelectedMessageRequest] =
     useState<Request | null>(null);
+  const [clientDetails, setClientDetails] = useState<Record<string, ClientDetail>>({});
   const [isViewingConversation, setIsViewingConversation] = useState(false);
   const [messageContent, setMessageContent] = useState("");
   const [sendingMessage, setSendingMessage] = useState(false);
@@ -90,21 +96,33 @@ export function useServiceMessages(userId: string) {
         new Set(currentMessages.map((m) => m.requestId)),
       );
       const groups: MessageGroup[] = [];
+      const newClientDetails: Record<string, ClientDetail> = {};
 
       for (const requestId of requestIds) {
         const requestDoc = await getDoc(doc(db, "requests", requestId));
         if (!requestDoc.exists()) continue;
 
         const requestData = requestDoc.data();
+        const userDoc = await getDoc(doc(db, "users", requestData.userId));
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          newClientDetails[requestData.userId] = {
+            name: userData.displayName || userData.email,
+            email: userData.email,
+          };
+        }
+
         const requestMessages = currentMessages.filter(
           (m) => m.requestId === requestId,
         );
 
         // Sort messages by timestamp
         requestMessages.sort((a, b) => {
-          const aTime = (a.createdAt as Timestamp).toMillis();
-          const bTime = (b.createdAt as Timestamp).toMillis();
-          return bTime - aTime;
+          const getTime = (timestamp: any) => 
+            timestamp instanceof Timestamp 
+              ? timestamp.toMillis() 
+              : new Date(timestamp).getTime();
+          return getTime(b.createdAt) - getTime(a.createdAt);
         });
 
         groups.push({
@@ -117,10 +135,16 @@ export function useServiceMessages(userId: string) {
         });
       }
 
+      setClientDetails(newClientDetails);
+
       // Sort groups by latest message
       groups.sort((a, b) => {
-        const aTime = (a.lastMessage.createdAt as Timestamp).toMillis();
-        const bTime = (b.lastMessage.createdAt as Timestamp).toMillis();
+        const getTime = (timestamp: any) => 
+          timestamp instanceof Timestamp 
+            ? timestamp.toMillis() 
+            : new Date(timestamp).getTime();
+        const aTime = getTime(a.lastMessage.createdAt);
+        const bTime = getTime(b.lastMessage.createdAt);
         return bTime - aTime;
       });
 
@@ -219,6 +243,7 @@ export function useServiceMessages(userId: string) {
     messages,
     messageGroups,
     selectedMessageRequest,
+    clientDetails,
     isViewingConversation,
     messageContent,
     sendingMessage,
