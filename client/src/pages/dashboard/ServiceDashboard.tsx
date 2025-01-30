@@ -258,23 +258,34 @@ export default function ServiceDashboard() {
 
         <div className="bg-white rounded-lg border shadow-sm p-4 sm:p-6">
           {activeTab === "requests" && (
-            <ClientRequests
-              clientRequests={filteredRequests}
-              viewedRequests={viewedRequests}
-              onViewDetails={handleViewDetails}
-              onMessage={setSelectedMessageRequest}
-              onSendOffer={() => {
-                toast({
-                  description: "Funcționalitatea de trimitere oferte va fi disponibilă în curând.",
-                });
-              }}
-              onRejectRequest={handleRejectRequest}
-              selectedRequest={selectedRequest}
-              requestClient={requestClient}
-              cars={cars}
-              showOnlyNew={showOnlyNew}
-              setShowOnlyNew={setShowOnlyNew}
-            />
+            <div className="space-y-4">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <h2 className="text-xl font-semibold">Cererile Clienților</h2>
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="show-new"
+                    checked={showOnlyNew}
+                    onCheckedChange={setShowOnlyNew}
+                  />
+                  <Label htmlFor="show-new">Doar cereri noi</Label>
+                </div>
+              </div>
+              <ClientRequests
+                clientRequests={filteredRequests}
+                viewedRequests={viewedRequests}
+                onViewDetails={handleViewDetails}
+                onMessage={setSelectedMessageRequest}
+                onSendOffer={() => {
+                  toast({
+                    description: "Funcționalitatea de trimitere oferte va fi disponibilă în curând.",
+                  });
+                }}
+                onRejectRequest={handleRejectRequest}
+                selectedRequest={selectedRequest}
+                requestClient={requestClient}
+                cars={cars}
+              />
+            </div>
           )}
           {activeTab === "offers" && (
             <SentOffers

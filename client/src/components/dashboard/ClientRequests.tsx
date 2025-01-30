@@ -24,8 +24,6 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import {
   Clock,
   Eye,
@@ -58,8 +56,6 @@ interface ClientRequestsProps {
   requestClient: User | null;
   cars: Record<string, Car>;
   loading?: boolean;
-  showOnlyNew?: boolean;
-  setShowOnlyNew?: (showOnlyNew: boolean) => void;
 }
 
 export function ClientRequests({
@@ -73,8 +69,6 @@ export function ClientRequests({
   requestClient,
   cars,
   loading = false,
-  showOnlyNew = false,
-  setShowOnlyNew = () => {},
 }: ClientRequestsProps) {
   const [sortField, setSortField] = useState<keyof Request>("createdAt");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
@@ -83,28 +77,24 @@ export function ClientRequests({
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
   const filteredRequests = clientRequests.filter((request) => {
-    if (!searchQuery && !showOnlyNew) return true;
+    if (!searchQuery) return true;
 
     const searchLower = searchQuery.toLowerCase();
-    const isNew = !viewedRequests.has(request.id);
-
     return (
-      (isNew || !showOnlyNew) && (
-        (request.title?.toLowerCase() || "").includes(searchLower) ||
-        (request.description?.toLowerCase() || "").includes(searchLower) ||
-        (request.county?.toLowerCase() || "").includes(searchLower) ||
-        (request.cities || []).some((city) =>
-          (city?.toLowerCase() || "").includes(searchLower)
-        ) ||
-        (request.status?.toLowerCase() || "").includes(searchLower) ||
-        (request.clientName?.toLowerCase() || "").includes(searchLower) ||
-        (request.preferredDate &&
-          format(new Date(request.preferredDate), "dd.MM.yyyy").includes(
-            searchQuery
-          )) ||
-        (request.createdAt &&
-          format(new Date(request.createdAt), "dd.MM.yyyy").includes(searchQuery))
-      )
+      (request.title?.toLowerCase() || "").includes(searchLower) ||
+      (request.description?.toLowerCase() || "").includes(searchLower) ||
+      (request.county?.toLowerCase() || "").includes(searchLower) ||
+      (request.cities || []).some((city) =>
+        (city?.toLowerCase() || "").includes(searchLower)
+      ) ||
+      (request.status?.toLowerCase() || "").includes(searchLower) ||
+      (request.clientName?.toLowerCase() || "").includes(searchLower) ||
+      (request.preferredDate &&
+        format(new Date(request.preferredDate), "dd.MM.yyyy").includes(
+          searchQuery
+        )) ||
+      (request.createdAt &&
+        format(new Date(request.createdAt), "dd.MM.yyyy").includes(searchQuery))
     );
   });
 
@@ -231,6 +221,7 @@ export function ClientRequests({
           <div className="flex items-center gap-2">
             <CardTitle className="text-[#00aff5] flex items-center gap-2">
               <Clock className="h-5 w-5" />
+              Cererile Clienților
             </CardTitle>
             {clientRequests.filter((req) => !viewedRequests.has(req.id)).length >
               0 && (
@@ -245,35 +236,25 @@ export function ClientRequests({
                 </Badge>
               )}
           </div>
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-4">
-            <div className="flex items-center gap-4">
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="show-new"
-                  checked={showOnlyNew}
-                  onCheckedChange={setShowOnlyNew}
-                />
-                <Label htmlFor="show-new">Doar cereri noi</Label>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">Afișează:</span>
-                <Select
-                  value={itemsPerPage.toString()}
-                  onValueChange={(value) => {
-                    setItemsPerPage(Number(value));
-                    setCurrentPage(1);
-                  }}
-                >
-                  <SelectTrigger className="w-[100px]">
-                    <SelectValue placeholder="10 pe pagină" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="10">10 pe pagină</SelectItem>
-                    <SelectItem value="20">20 pe pagină</SelectItem>
-                    <SelectItem value="50">50 pe pagină</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">Afișează:</span>
+              <Select
+                value={itemsPerPage.toString()}
+                onValueChange={(value) => {
+                  setItemsPerPage(Number(value));
+                  setCurrentPage(1);
+                }}
+              >
+                <SelectTrigger className="w-[100px]">
+                  <SelectValue placeholder="10 pe pagină" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="10">10 pe pagină</SelectItem>
+                  <SelectItem value="20">20 pe pagină</SelectItem>
+                  <SelectItem value="50">50 pe pagină</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <Input
               placeholder="Caută cereri..."
