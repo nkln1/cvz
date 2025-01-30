@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { User, Pencil, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -22,11 +22,19 @@ interface ProfileSectionProps {
 }
 
 function ProfileSectionContent({ userId }: ProfileSectionProps) {
-  const { profile, updateUserProfile } = useProfile(userId);
+  const { profile, isLoading, error, updateUserProfile } = useProfile(userId);
   const [isEditing, setIsEditing] = useState(false);
-  const [editedProfile, setEditedProfile] = useState<UserProfile>(profile);
-  const [selectedCounty, setSelectedCounty] = useState<string>(profile.county || "");
+  const [editedProfile, setEditedProfile] = useState<UserProfile>(profile || {});
+  const [selectedCounty, setSelectedCounty] = useState<string>(profile?.county || "");
   const { toast } = useToast();
+
+  // Update local state when profile changes
+  useEffect(() => {
+    if (profile) {
+      setEditedProfile(profile);
+      setSelectedCounty(profile.county || "");
+    }
+  }, [profile]);
 
   const handleEditClick = () => {
     setIsEditing(true);
@@ -68,6 +76,42 @@ function ProfileSectionContent({ userId }: ProfileSectionProps) {
       }));
     }
   };
+
+  if (isLoading) {
+    return (
+      <Card className="shadow-lg">
+        <CardHeader className="border-b bg-gray-50">
+          <CardTitle className="text-[#00aff5] flex items-center gap-2">
+            <User className="h-5 w-5" />
+            Profilul Meu
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-6">
+          <div className="text-center">Se încarcă...</div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card className="shadow-lg">
+        <CardHeader className="border-b bg-gray-50">
+          <CardTitle className="text-[#00aff5] flex items-center gap-2">
+            <User className="h-5 w-5" />
+            Profilul Meu
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-6">
+          <Alert variant="destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="shadow-lg">
@@ -112,7 +156,7 @@ function ProfileSectionContent({ userId }: ProfileSectionProps) {
             {/* Email Field */}
             <div className="space-y-2">
               <label className="text-sm font-medium text-[#00aff5]">Email</label>
-              <p className="text-gray-900">{profile.email}</p>
+              <p className="text-gray-900">{profile.email || "Nespecificat"}</p>
             </div>
 
             {/* Phone Field */}

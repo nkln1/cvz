@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
@@ -41,7 +41,7 @@ export const useProfile = (userId: string) => {
   }, [userId, dispatch, toast]);
 
   const updateUserProfile = useCallback(async (updatedProfile: Partial<UserProfile>) => {
-    if (!userId) return;
+    if (!userId) return false;
 
     setIsLoading(true);
     setError(null);
@@ -68,6 +68,11 @@ export const useProfile = (userId: string) => {
       setIsLoading(false);
     }
   }, [userId, dispatch, toast]);
+
+  // Automatically fetch profile when userId changes
+  useEffect(() => {
+    fetchProfile();
+  }, [userId, fetchProfile]);
 
   return {
     profile,
