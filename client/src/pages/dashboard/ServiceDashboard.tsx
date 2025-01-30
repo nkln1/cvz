@@ -3,8 +3,6 @@ import { useAuth } from "@/context/AuthContext";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import {
   FileText,
@@ -253,33 +251,25 @@ export default function ServiceDashboard() {
           </div>
         </nav>
 
-        <div className="bg-white rounded-lg border shadow-sm p-4 sm:p-6">
-          {activeTab === "requests" && (
-            <ClientRequests
-              clientRequests={clientRequests}
-              viewedRequests={viewedRequests}
-              onViewDetails={handleViewDetails}
-              onMessage={setSelectedMessageRequest}
-              onSendOffer={() => {
-                toast({
-                  description: "Funcționalitatea de trimitere oferte va fi disponibilă în curând.",
-                });
-              }}
-              onRejectRequest={handleRejectRequest}
-              selectedRequest={selectedRequest}
-              requestClient={requestClient}
-              cars={cars}
-            />
-          )}
-          {activeTab === "offers" && (
-            <SentOffers
-              requests={[]}
-              cars={cars}
-              refreshRequests={fetchMessages}
-            />
-          )}
-          {activeTab === "messages" && (
-            <ServiceMessagesSection
+        {activeTab === "requests" && (
+          <ClientRequests
+            clientRequests={clientRequests}
+            viewedRequests={viewedRequests}
+            onViewDetails={handleViewDetails}
+            onMessage={setSelectedMessageRequest}
+            onSendOffer={() => {
+              toast({
+                description: "Funcționalitatea de trimitere oferte va fi disponibilă în curând.",
+              });
+            }}
+            onRejectRequest={handleRejectRequest}
+            selectedRequest={selectedRequest}
+            requestClient={requestClient}
+            cars={cars}
+          />
+        )}
+        {activeTab === "offers" && <SentOffers requests={[]} cars={cars} refreshRequests={fetchMessages} />}
+        {activeTab === "messages" && <ServiceMessagesSection
               messageGroups={messageGroups}
               messages={messages}
               selectedMessageRequest={selectedMessageRequest}
@@ -292,11 +282,10 @@ export default function ServiceDashboard() {
               onBackToList={handleBackToList}
               onViewRequestDetails={handleViewDetails}
               userId={user?.uid || ""}
-            />
-          )}
-          {activeTab === "appointments" && <AppointmentsSection />}
-          {activeTab === "reviews" && <ReviewsSection />}
-          {activeTab === "account" && (
+            />}
+        {activeTab === "appointments" && <AppointmentsSection />}
+        {activeTab === "reviews" && <ReviewsSection />}
+        {activeTab === "account" && (
             <ServiceAccountSection
               userId={user?.uid || ""}
               serviceData={serviceData || ({} as ServiceData)}
@@ -326,7 +315,6 @@ export default function ServiceDashboard() {
               validationErrors={{}}
             />
           )}
-        </div>
       </div>
       <Footer />
     </div>
