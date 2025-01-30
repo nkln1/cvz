@@ -37,7 +37,6 @@ export function useServiceMessages(userId: string) {
       const messagesQuery = query(
         collection(db, "messages"),
         where("participants", "array-contains", userId),
-        orderBy("createdAt", "desc")
       );
 
       unsubscribe = onSnapshot(messagesQuery, {
