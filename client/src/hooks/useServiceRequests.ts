@@ -21,6 +21,11 @@ export function useServiceRequests(userId: string, serviceData: ServiceData | nu
       return;
     }
 
+    console.log("Starting request listener for service:", {
+      county: serviceData.county,
+      city: serviceData.city
+    });
+
     const requestsQuery = query(
       collection(db, "requests"),
       where("status", "==", "Active"),
@@ -28,16 +33,20 @@ export function useServiceRequests(userId: string, serviceData: ServiceData | nu
     );
 
     const unsubscribe = onSnapshot(requestsQuery, async (snapshot) => {
+      console.log("Received snapshot with", snapshot.docs.length, "documents");
       const requests: Request[] = [];
       const carsData: Record<string, Car> = {};
 
-      for (const doc of snapshot.docs) {
-        const data = doc.data() as Omit<Request, 'id'>;
+      for (const docSnapshot of snapshot.docs) {
+        const data = docSnapshot.data() as Omit<Request, 'id'>;
+        console.log("Processing request:", docSnapshot.id, data);
 
-        // Only include requests for the service's city
-        if (data.cities.includes(serviceData.city)) {
+        // Safely check if cities array exists and includes service city
+        if (Array.isArray(data.cities) && data.cities.includes(serviceData.city)) {
           try {
-            const carDoc = await getDoc(doc(db, "cars", data.carId));
+            const carRef = doc(db, "cars", data.carId);
+            const carDoc = await getDoc(carRef);
+
             if (carDoc.exists()) {
               const carData = carDoc.data() as Car;
               carsData[data.carId] = { ...carData, id: data.carId };
@@ -45,20 +54,28 @@ export function useServiceRequests(userId: string, serviceData: ServiceData | nu
 
             requests.push({
               ...data,
-              id: doc.id,
+              id: docSnapshot.id,
             });
           } catch (error) {
-            console.error("Error fetching car data:", error);
+            console.error("Error fetching car data for request:", docSnapshot.id, error);
           }
         }
       }
 
+      console.log("Processed requests:", requests.length);
       setClientRequests(requests);
       setCars(carsData);
+    }, (error) => {
+      console.error("Error in requests listener:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Could not load requests. Please refresh the page.",
+      });
     });
 
     return () => unsubscribe();
-  }, [userId, serviceData]);
+  }, [userId, serviceData, toast]);
 
   const handleViewDetails = async (request: Request) => {
     try {
