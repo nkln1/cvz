@@ -68,11 +68,11 @@ interface ServiceProfileSectionProps {
   romanianCities: { [key: string]: string[] };
 }
 
-export function ServiceProfileSection({ 
-  userId, 
-  serviceData, 
+export function ServiceProfileSection({
+  userId,
+  serviceData,
   setServiceData,
-  romanianCities 
+  romanianCities,
 }: ServiceProfileSectionProps) {
   const { toast } = useToast();
   const [editedData, setEditedData] = useState<ServiceData | null>(serviceData);
@@ -80,7 +80,7 @@ export function ServiceProfileSection({
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
   const [saving, setSaving] = useState(false);
   const [availableCities, setAvailableCities] = useState<string[]>(
-    serviceData?.county ? romanianCities[serviceData.county] || [] : []
+    serviceData?.county ? romanianCities[serviceData.county] || [] : [],
   );
 
   const romanianCounties = Object.keys(romanianCities);
