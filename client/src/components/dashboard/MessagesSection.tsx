@@ -408,35 +408,93 @@ export function MessagesSection({
       </Card>
 
       <Dialog open={isDetailsDialogOpen} onOpenChange={setIsDetailsDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]">
+        <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Detalii Cerere</DialogTitle>
           </DialogHeader>
           {selectedRequest && (
             <div className="space-y-4">
-              <div className="grid gap-2">
-                <div>
-                  <h4 className="font-medium text-sm">Titlu</h4>
-                  <p className="text-sm text-muted-foreground">{selectedRequest.title}</p>
+              <div className="grid gap-4">
+                <div className="border-b pb-3">
+                  <h4 className="font-medium text-sm mb-2">Informații Generale</h4>
+                  <div className="grid gap-2">
+                    <div>
+                      <h5 className="text-sm font-medium text-muted-foreground">Titlu</h5>
+                      <p className="text-sm">{selectedRequest.title}</p>
+                    </div>
+                    <div>
+                      <h5 className="text-sm font-medium text-muted-foreground">Descriere</h5>
+                      <p className="text-sm whitespace-pre-wrap">{selectedRequest.description}</p>
+                    </div>
+                    <div>
+                      <h5 className="text-sm font-medium text-muted-foreground">Status</h5>
+                      <p className="text-sm">{selectedRequest.status}</p>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <h4 className="font-medium text-sm">Descriere</h4>
-                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">{selectedRequest.description}</p>
+
+                <div className="border-b pb-3">
+                  <h4 className="font-medium text-sm mb-2">Detalii Mașină</h4>
+                  <div className="grid gap-2">
+                    <div>
+                      <h5 className="text-sm font-medium text-muted-foreground">Marca</h5>
+                      <p className="text-sm">{selectedRequest.carMake || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <h5 className="text-sm font-medium text-muted-foreground">Model</h5>
+                      <p className="text-sm">{selectedRequest.carModel || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <h5 className="text-sm font-medium text-muted-foreground">An Fabricație</h5>
+                      <p className="text-sm">{selectedRequest.carYear || 'N/A'}</p>
+                    </div>
+                     <div>
+                      <h5 className="text-sm font-medium text-muted-foreground">Număr Înmatriculare</h5>
+                      <p className="text-sm">{selectedRequest.licensePlate || 'N/A'}</p>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <h4 className="font-medium text-sm">Status</h4>
-                  <p className="text-sm text-muted-foreground">{selectedRequest.status}</p>
+
+                <div className="border-b pb-3">
+                  <h4 className="font-medium text-sm mb-2">Locație</h4>
+                  <div className="grid gap-2">
+                    <div>
+                      <h5 className="text-sm font-medium text-muted-foreground">Județ</h5>
+                      <p className="text-sm">{selectedRequest.county || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <h5 className="text-sm font-medium text-muted-foreground">Localitate</h5>
+                      <p className="text-sm">{selectedRequest.city || 'N/A'}</p>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <h4 className="font-medium text-sm">Data creării</h4>
-                  <p className="text-sm text-muted-foreground">
-                    {selectedRequest.createdAt ? format(
-                      typeof selectedRequest.createdAt.toDate === 'function'
-                        ? selectedRequest.createdAt.toDate()
-                        : new Date(selectedRequest.createdAt),
-                      "dd.MM.yyyy HH:mm"
-                    ) : 'N/A'}
-                  </p>
+
+                <div className="border-b pb-3">
+                  <h4 className="font-medium text-sm mb-2">Programare</h4>
+                  <div className="grid gap-2">
+                    <div>
+                      <h5 className="text-sm font-medium text-muted-foreground">Data Preferată</h5>
+                      <p className="text-sm">
+                        {selectedRequest.preferredDate ? format(
+                          typeof selectedRequest.preferredDate.toDate === 'function'
+                            ? selectedRequest.preferredDate.toDate()
+                            : new Date(selectedRequest.preferredDate),
+                          "dd.MM.yyyy"
+                        ) : 'N/A'}
+                      </p>
+                    </div>
+                    <div>
+                      <h5 className="text-sm font-medium text-muted-foreground">Data Creării</h5>
+                      <p className="text-sm">
+                        {selectedRequest.createdAt ? format(
+                          typeof selectedRequest.createdAt.toDate === 'function'
+                            ? selectedRequest.createdAt.toDate()
+                            : new Date(selectedRequest.createdAt),
+                          "dd.MM.yyyy HH:mm"
+                        ) : 'N/A'}
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
