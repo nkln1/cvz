@@ -217,6 +217,7 @@ export default function ClientDashboard() {
               onSelectConversation={handleSelectConversation}
               onBackToList={handleBackToList}
               markMessageAsRead={markMessageAsRead}
+              requests={requests}
             />
           )}
           {activeTab === "car" && <CarManagement />}

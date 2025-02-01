@@ -10,15 +10,22 @@ import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   MessageSquare,
   SendHorizontal,
   Loader2,
   ArrowLeft,
   CheckCircle2,
+  Eye,
 } from "lucide-react";
 import { format, isToday, isYesterday, isSameDay } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
-import type { Message } from "@/types/dashboard";
+import type { Message, Request } from "@/types/dashboard";
 
 interface MessagesSectionProps {
   messages: Message[];
@@ -40,6 +47,7 @@ interface MessagesSectionProps {
   onSelectConversation: (requestId: string) => void;
   onBackToList: () => void;
   markMessageAsRead: (messageId: string) => Promise<void>;
+  requests: Request[];
 }
 
 export function MessagesSection({
@@ -57,9 +65,12 @@ export function MessagesSection({
   onSelectConversation,
   onBackToList,
   markMessageAsRead,
+  requests,
 }: MessagesSectionProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [isScrolledToBottom, setIsScrolledToBottom] = useState(true);
+  const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
+  const [selectedRequest, setSelectedRequest] = useState<Request | null>(null);
 
   const formatMessageDate = (timestamp: any) => {
     if (!timestamp) return "";
@@ -115,6 +126,17 @@ export function MessagesSection({
     const { scrollHeight, scrollTop, clientHeight } = e.currentTarget;
     setIsScrolledToBottom(Math.abs(scrollHeight - scrollTop - clientHeight) < 10);
   };
+
+  const handleViewDetails = () => {
+    if (selectedMessageRequest) {
+      const request = requests.find(r => r.id === selectedMessageRequest);
+      if (request) {
+        setSelectedRequest(request);
+        setIsDetailsDialogOpen(true);
+      }
+    }
+  };
+
 
   const renderMessagesList = () => (
     <ScrollArea className="h-[600px] pr-4">
@@ -260,6 +282,15 @@ export function MessagesSection({
               </p>
             </div>
           </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleViewDetails}
+            className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 flex items-center gap-1"
+          >
+            <Eye className="h-4 w-4 mr-1" />
+            Detalii cerere
+          </Button>
         </div>
 
         <ScrollArea
@@ -363,17 +394,56 @@ export function MessagesSection({
   const serviceName = currentGroup ? (messageServices[currentGroup.lastMessage.fromId === userId ? currentGroup.lastMessage.toId : currentGroup.lastMessage.fromId]?.companyName || "Service Auto") : "Service Auto";
 
   return (
-    <Card className="shadow-lg">
-      <CardHeader>
-        <CardTitle className="text-[#00aff5] flex items-center gap-2">
-          <MessageSquare className="h-5 w-5" />
-          Mesaje
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {isViewingConversation ? renderConversation() : renderMessagesList()}
-      </CardContent>
-    </Card>
+    <>
+      <Card className="shadow-lg">
+        <CardHeader>
+          <CardTitle className="text-[#00aff5] flex items-center gap-2">
+            <MessageSquare className="h-5 w-5" />
+            Mesaje
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {isViewingConversation ? renderConversation() : renderMessagesList()}
+        </CardContent>
+      </Card>
+
+      <Dialog open={isDetailsDialogOpen} onOpenChange={setIsDetailsDialogOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Detalii Cerere</DialogTitle>
+          </DialogHeader>
+          {selectedRequest && (
+            <div className="space-y-4">
+              <div className="grid gap-2">
+                <div>
+                  <h4 className="font-medium text-sm">Titlu</h4>
+                  <p className="text-sm text-muted-foreground">{selectedRequest.title}</p>
+                </div>
+                <div>
+                  <h4 className="font-medium text-sm">Descriere</h4>
+                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">{selectedRequest.description}</p>
+                </div>
+                <div>
+                  <h4 className="font-medium text-sm">Status</h4>
+                  <p className="text-sm text-muted-foreground">{selectedRequest.status}</p>
+                </div>
+                <div>
+                  <h4 className="font-medium text-sm">Data creării</h4>
+                  <p className="text-sm text-muted-foreground">
+                    {selectedRequest.createdAt ? format(
+                      typeof selectedRequest.createdAt.toDate === 'function'
+                        ? selectedRequest.createdAt.toDate()
+                        : new Date(selectedRequest.createdAt),
+                      "dd.MM.yyyy HH:mm"
+                    ) : 'N/A'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
