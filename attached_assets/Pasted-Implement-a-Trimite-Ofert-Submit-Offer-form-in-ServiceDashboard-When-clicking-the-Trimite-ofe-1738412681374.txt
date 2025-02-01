@@ -1,0 +1,28 @@
+Implement a "Trimite Ofertă" (Submit Offer) form in ServiceDashboard. When clicking the "Trimite ofertă" button, a modal form should open with the following fields:
+1.	Titlul ofertei (Offer Title)
+o	Auto-filled from the Titlul cererii de ofertă (Request Title).
+o	Read-only, as it should reflect the client’s request.
+2.	Detaliere ofertă (Offer Details)
+o	Textarea input where the auto service fills in the details about the services included in the offer.
+o	Example placeholder text (in Romanian):
+"Această ofertă include următoarele operațiuni: schimb ulei și filtru ulei, verificare presiune anvelope și completare lichid de parbriz. Vom folosi următoarele produse: Motul 5L 5W-30, filtru ulei Mann, filtru aer Bosch."
+3.	Dată disponibilă service (Available Date or Date Range)
+o	A date picker where the service can choose a single available date or a range of available dates.
+o	Or text input (ex. De luni pana vineri, de la 09.00-17.00)
+4.	Preț (Preț în RON)
+o	Numeric input for the estimated cost of the service.
+5.	Observații (Additional Notes) (optional)
+o	A textarea input where the service provider can add extra information (e.g., warranty, estimated duration, special conditions).
+o	Example placeholder text: "Oferta este valabilă 7 zile. Oferim garanție de 6 luni pentru piesele montate."
+
+Functional Requirements:
+
+✅ The form should have a Cancel button and a Submit Offer button.
+✅ The Submit Offer button should only be enabled when all required fields are filled.
+✅ On submission, save the offer in Firestore under "offers" collection with a reference to the request.
+✅ If successful, close the modal and show a success toast: "Oferta a fost trimisă cu succes!".
+✅ If there is an error, display an error toast: "Eroare la trimiterea ofertei. Încercați din nou.".
+After the sending, the request should be moved to the section Oferte trimise in Service Dashboard.
+Also, the form sumbimetd by the service should be received the the client and shown In clientdashboard – oferte primate.
+
+

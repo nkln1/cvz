@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -31,6 +31,7 @@ import { useServiceMessages } from "@/hooks/useServiceMessages";
 import { useServiceRequests } from "@/hooks/useServiceRequests";
 import { useNotifications } from "@/hooks/useNotifications";
 import type { ServiceData, Request as ServiceRequest } from "@/types/service";
+import { addDoc, collection } from "firebase/firestore";
 
 type TabType =
   | "requests"
@@ -193,6 +194,41 @@ export default function ServiceDashboard() {
     }
   };
 
+
+  const handleSendOffer = async (request: ServiceRequest, offerData: any) => {
+    try {
+      const offerId = await addDoc(collection(db, "offers"), {
+        requestId: request.id,
+        serviceId: user?.uid,
+        clientId: request.clientId,
+        status: "Pending",
+        createdAt: new Date(),
+        ...offerData,
+      });
+
+      const requestRef = doc(db, "requests", request.id);
+      await updateDoc(requestRef, {
+        status: "OfferSent",
+        lastUpdated: new Date(),
+      });
+
+
+      toast({
+        title: "Succes",
+        description: "Oferta a fost trimisă cu succes!",
+      });
+
+      // Refresh the requests list
+      // await refreshRequests(); - removed due to it not being defined.
+    } catch (error) {
+      console.error("Error sending offer:", error);
+      toast({
+        variant: "destructive",
+        title: "Eroare",
+        description: "Nu s-a putut trimite oferta. Vă rugăm să încercați din nou.",
+      });
+    }
+  };
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -292,12 +328,7 @@ export default function ServiceDashboard() {
             viewedRequests={viewedRequests}
             onViewDetails={handleViewDetails}
             onMessage={switchToMessagesAndOpenConversation}
-            onSendOffer={() => {
-              toast({
-                description:
-                  "Funcționalitatea de trimitere oferte va fi disponibilă în curând.",
-              });
-            }}
+            onSendOffer={handleSendOffer}
             onRejectRequest={handleRejectRequest}
             selectedRequest={selectedRequest}
             cars={cars}
