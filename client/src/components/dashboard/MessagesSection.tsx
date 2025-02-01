@@ -15,11 +15,16 @@ import {
   Loader2,
   ArrowLeft,
   CheckCircle2,
-  Eye,
+  FileText,
+  Calendar,
+  CreditCard,
 } from "lucide-react";
-import { format, isToday, isYesterday, isSameDay } from "date-fns";
+import { format, isToday, isYesterday } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Message } from "@/types/dashboard";
+import { Separator } from "@/components/ui/separator";
+import { collection, query, where, getDocs } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 import {
   Dialog,
   DialogContent,
@@ -52,6 +57,33 @@ interface MessagesSectionProps {
   requests: Request[];
 }
 
+interface Offer {
+  id: string;
+  requestId: string;
+  serviceId: string;
+  clientId: string;
+  status: string;
+  createdAt: any;
+  title: string;
+  details: string;
+  availableDate: string;
+  price: number;
+  notes?: string;
+}
+
+const formatDateSafely = (dateValue: any) => {
+  if (!dateValue) return "N/A";
+  try {
+    const date = dateValue && typeof dateValue.toDate === 'function'
+      ? dateValue.toDate()
+      : new Date(dateValue);
+    return format(date, "dd.MM.yyyy");
+  } catch (error) {
+    console.error("Error formatting date:", error);
+    return "N/A";
+  }
+};
+
 export function MessagesSection({
   messages,
   messageGroups,
@@ -70,18 +102,54 @@ export function MessagesSection({
   markMessageAsRead,
   requests,
 }: MessagesSectionProps) {
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const [isScrolledToBottom, setIsScrolledToBottom] = useState(true);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<Request | null>(null);
+  const [offer, setOffer] = useState<Offer | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [isScrolledToBottom, setIsScrolledToBottom] = useState(true);
+
+  useEffect(() => {
+    const fetchOffer = async () => {
+      if (!selectedMessageRequest) return;
+
+      try {
+        const offersRef = collection(db, "offers");
+        const q = query(
+          offersRef,
+          where("requestId", "==", selectedMessageRequest)
+        );
+
+        const querySnapshot = await getDocs(q);
+        if (!querySnapshot.empty) {
+          const offerData = querySnapshot.docs[0].data() as Offer;
+          setOffer({ ...offerData, id: querySnapshot.docs[0].id });
+        }
+      } catch (error) {
+        console.error("Error fetching offer:", error);
+      }
+    };
+
+    fetchOffer();
+  }, [selectedMessageRequest]);
+
+  useEffect(() => {
+    if (isScrolledToBottom && messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages, isScrolledToBottom]);
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const { scrollHeight, scrollTop, clientHeight } = e.currentTarget;
+    setIsScrolledToBottom(Math.abs(scrollHeight - scrollTop - clientHeight) < 10);
+  };
 
   const formatMessageDate = (timestamp: any) => {
     if (!timestamp) return "";
     try {
-      const date =
-        timestamp && typeof timestamp.toDate === "function"
-          ? timestamp.toDate()
-          : new Date(timestamp);
+      const date = timestamp && typeof timestamp.toDate === 'function'
+        ? timestamp.toDate()
+        : new Date(timestamp);
+
       if (isToday(date)) {
         return "Astăzi";
       } else if (isYesterday(date)) {
@@ -97,10 +165,10 @@ export function MessagesSection({
   const formatMessageTime = (timestamp: any) => {
     if (!timestamp) return "";
     try {
-      const date =
-        timestamp && typeof timestamp.toDate === "function"
-          ? timestamp.toDate()
-          : new Date(timestamp);
+      const date = timestamp && typeof timestamp.toDate === 'function'
+        ? timestamp.toDate()
+        : new Date(timestamp);
+
       return format(date, "HH:mm");
     } catch (error) {
       console.error("Error formatting time:", error);
@@ -117,27 +185,6 @@ export function MessagesSection({
       .slice(0, 2);
   };
 
-  useEffect(() => {
-    if (isScrolledToBottom && messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [messages, isScrolledToBottom]);
-
-  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    const { scrollHeight, scrollTop, clientHeight } = e.currentTarget;
-    setIsScrolledToBottom(Math.abs(scrollHeight - scrollTop - clientHeight) < 10);
-  };
-
-  const handleViewDetails = () => {
-    if (selectedMessageRequest) {
-      const request = requests.find((r) => r.id === selectedMessageRequest);
-      if (request) {
-        setSelectedRequest(request);
-        setIsDetailsDialogOpen(true);
-      }
-    }
-  };
-
   const renderMessagesList = () => (
     <ScrollArea className="h-[600px] pr-4">
       <div className="space-y-2">
@@ -147,15 +194,10 @@ export function MessagesSection({
           </p>
         ) : (
           messageGroups.map((group) => {
-            // Căutăm cererea în lista `requests` folosind id-ul
-            const request = requests.find((r) => r.id === group.requestId);
-            const requestTitle = request?.title || "Untitled request";
-            const serviceId =
-              group.lastMessage.fromId === userId
-                ? group.lastMessage.toId
-                : group.lastMessage.fromId;
-            const serviceName =
-              messageServices[serviceId]?.companyName || "Service Auto";
+            const serviceId = group.lastMessage.fromId === userId
+              ? group.lastMessage.toId
+              : group.lastMessage.fromId;
+            const serviceName = messageServices[serviceId]?.companyName || "Service Auto";
 
             return (
               <motion.div
@@ -176,13 +218,10 @@ export function MessagesSection({
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0">
-                        {/* Numele service */}
                         <h4 className="font-medium truncate">{serviceName}</h4>
-                        {/* Titlul cererii importat din clientRequest */}
                         <p className="text-xs text-muted-foreground truncate">
-                          {requestTitle}
+                          {group.requestTitle}
                         </p>
-                        {/* Ultimul mesaj */}
                         <p className="text-sm text-muted-foreground truncate">
                           {group.lastMessage?.content || "No messages"}
                         </p>
@@ -214,7 +253,10 @@ export function MessagesSection({
         return dateA - dateB;
       });
 
-    // Get the service name for the conversation
+    const request = requests.find(r => r.id === selectedMessageRequest);
+    const currentGroup = messageGroups.find(
+      (g) => g.requestId === selectedMessageRequest
+    );
     const serviceId = selectedServiceId || 
       (conversationMessages[0]?.fromId === userId 
         ? conversationMessages[0]?.toId 
@@ -250,11 +292,57 @@ export function MessagesSection({
             <div>
               <h3 className="font-medium text-sm">{serviceName}</h3>
               <p className="text-xs text-muted-foreground">
-                {requests.find(r => r.id === selectedMessageRequest)?.title || ""}
+                {request?.title || ""}
               </p>
             </div>
           </div>
         </div>
+
+        {/* Request and Offer History */}
+        {request && offer && (
+          <div className="bg-gray-50 rounded-lg p-4 space-y-4 text-sm">
+            <div>
+              <h4 className="font-medium flex items-center gap-2 text-gray-700 mb-2">
+                <FileText className="h-4 w-4" />
+                Cererea Mea
+              </h4>
+              <div className="space-y-2 pl-6">
+                <p><span className="text-gray-600">Titlu:</span> {request.title}</p>
+                <p><span className="text-gray-600">Descriere:</span> {request.description}</p>
+                <p>
+                  <span className="text-gray-600">Data Preferată:</span>{" "}
+                  {formatDateSafely(request.preferredDate)}
+                </p>
+              </div>
+            </div>
+
+            <Separator />
+
+            <div>
+              <h4 className="font-medium flex items-center gap-2 text-gray-700 mb-2">
+                <MessageSquare className="h-4 w-4" />
+                Oferta Primită
+              </h4>
+              <div className="space-y-2 pl-6">
+                <p><span className="text-gray-600">Titlu:</span> {offer.title}</p>
+                <p><span className="text-gray-600">Detalii:</span> {offer.details}</p>
+                <div className="flex gap-4">
+                  <p className="flex items-center gap-1">
+                    <Calendar className="h-4 w-4 text-gray-500" />
+                    {formatDateSafely(offer.availableDate)}
+                  </p>
+                  <p className="flex items-center gap-1">
+                    <CreditCard className="h-4 w-4 text-gray-500" />
+                    {offer.price} RON
+                  </p>
+                </div>
+                {offer.notes && (
+                  <p><span className="text-gray-600">Note:</span> {offer.notes}</p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Messages Area */}
         <ScrollArea
@@ -270,9 +358,7 @@ export function MessagesSection({
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3 }}
-                  className={`flex ${
-                    message.fromId === userId ? "justify-end" : "justify-start"
-                  }`}
+                  className={`flex ${message.fromId === userId ? "justify-end" : "justify-start"}`}
                 >
                   <div
                     className={`max-w-[80%] ${
@@ -287,11 +373,9 @@ export function MessagesSection({
                     <p className="text-sm whitespace-pre-wrap break-words">
                       {message.content}
                     </p>
-                    <div
-                      className={`flex items-center gap-1 mt-1 text-xs ${
-                        message.fromId === userId ? "text-blue-100" : "text-gray-500"
-                      }`}
-                    >
+                    <div className={`flex items-center gap-1 mt-1 text-xs ${
+                      message.fromId === userId ? "text-blue-100" : "text-gray-500"
+                    }`}>
                       {formatMessageTime(message.createdAt)}
                       {message.fromId === userId && message.read && (
                         <CheckCircle2 className="h-3 w-3" />
@@ -352,19 +436,6 @@ export function MessagesSection({
     );
   };
 
-  const currentGroup = messageGroups.find(
-    (g) => g.requestId === selectedMessageRequest
-  );
-    const serviceIdForHeader =
-    currentGroup &&
-    (currentGroup.lastMessage.fromId === userId
-      ? currentGroup.lastMessage.toId
-      : currentGroup.lastMessage.fromId);
-  const serviceName =
-    (serviceIdForHeader && messageServices[serviceIdForHeader]?.companyName) ||
-    "Service Auto";
-
-
   return (
     <>
       <Card className="shadow-lg">
@@ -378,108 +449,6 @@ export function MessagesSection({
           {isViewingConversation ? renderConversation() : renderMessagesList()}
         </CardContent>
       </Card>
-        <Dialog open={isDetailsDialogOpen} onOpenChange={setIsDetailsDialogOpen}>
-        <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Detalii Cerere</DialogTitle>
-          </DialogHeader>
-          {selectedRequest && (
-            <div className="space-y-4">
-              <div className="grid gap-4">
-                {/* Informații Generale */}
-                <div className="border-b pb-3">
-                  <h4 className="font-medium text-sm mb-2">Informații Generale</h4>
-                  <div className="grid gap-2">
-                    <div>
-                      <h5 className="text-sm font-medium text-muted-foreground">
-                        Titlu
-                      </h5>
-                      <p className="text-sm">{selectedRequest.title}</p>
-                    </div>
-                    <div>
-                      <h5 className="text-sm font-medium text-muted-foreground">
-                        Descriere
-                      </h5>
-                      <p className="text-sm whitespace-pre-wrap">
-                        {selectedRequest.description}
-                      </p>
-                    </div>
-                    <div>
-                      <h5 className="text-sm font-medium text-muted-foreground">
-                        Status
-                      </h5>
-                      <p className="text-sm">{selectedRequest.status}</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Locație */}
-                <div className="border-b pb-3">
-                  <h4 className="font-medium text-sm mb-2">Locație</h4>
-                  <div className="grid gap-2">
-                    <div>
-                      <h5 className="text-sm font-medium text-muted-foreground">
-                        Județ
-                      </h5>
-                      <p className="text-sm">
-                        {selectedRequest.county || "N/A"}
-                      </p>
-                    </div>
-                    <div>
-                      <h5 className="text-sm font-medium text-muted-foreground">
-                        Localitate
-                      </h5>
-                      <p className="text-sm">
-                        {selectedRequest.cities
-                          ? selectedRequest.cities.join(", ")
-                          : "N/A"}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Programare */}
-                <div className="border-b pb-3">
-                  <h4 className="font-medium text-sm mb-2">Programare</h4>
-                  <div className="grid gap-2">
-                    <div>
-                      <h5 className="text-sm font-medium text-muted-foreground">
-                        Data Preferată
-                      </h5>
-                      <p className="text-sm">
-                        {selectedRequest.preferredDate
-                          ? format(
-                              typeof selectedRequest.preferredDate.toDate ===
-                                "function"
-                                ? selectedRequest.preferredDate.toDate()
-                                : new Date(selectedRequest.preferredDate),
-                              "dd.MM.yyyy"
-                            )
-                          : "N/A"}
-                      </p>
-                    </div>
-                    <div>
-                      <h5 className="text-sm font-medium text-muted-foreground">
-                        Data Creării
-                      </h5>
-                      <p className="text-sm">
-                        {selectedRequest.createdAt
-                          ? format(
-                              typeof selectedRequest.createdAt.toDate === "function"
-                                ? selectedRequest.createdAt.toDate()
-                                : new Date(selectedRequest.createdAt),
-                              "dd.MM.yyyy HH:mm"
-                            )
-                          : "N/A"}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
     </>
   );
 }
