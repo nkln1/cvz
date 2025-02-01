@@ -197,27 +197,38 @@ export default function ServiceDashboard() {
   };
 
   const handleSendOffer = async (request: ServiceRequest, offerData: any) => {
+    if (!user) return;
+
     try {
-      const offerId = await addDoc(collection(db, "offers"), {
+      // Create the offer document in Firestore
+      const offerData = {
         requestId: request.id,
-        serviceId: user?.uid,
+        serviceId: user.uid,
         clientId: request.clientId,
         status: "Pending",
         createdAt: new Date(),
-        ...offerData,
-      });
-
+        title: offerData.title,
+        details: offerData.details,
+        availableDate: offerData.availableDate,
+        price: offerData.price,
+        notes: offerData.notes || "",
+      };
+  
+      const offersRef = collection(db, "offers");
+      const offerDoc = await addDoc(offersRef, offerData);
+  
+      // Update the request status
       const requestRef = doc(db, "requests", request.id);
       await updateDoc(requestRef, {
         status: "OfferSent",
         lastUpdated: new Date(),
       });
-
+  
       toast({
         title: "Succes",
         description: "Oferta a fost trimisă cu succes!",
       });
-
+  
       // Increment the counter to trigger a refresh of the SentOffers component
       setRefreshOffersCounter(prev => prev + 1);
       // Switch to the offers tab
