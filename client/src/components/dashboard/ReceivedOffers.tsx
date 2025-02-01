@@ -274,11 +274,6 @@ export function ReceivedOffers({ cars, onMessageService }: ReceivedOffersProps) 
               <p className="text-sm text-gray-600 whitespace-pre-wrap">{offer.details}</p>
             </div>
 
-            <div>
-              <h3 className="text-sm font-medium text-gray-700 mb-2">Service</h3>
-              <p className="text-sm text-gray-600">{offer.serviceName}</p>
-            </div>
-
             <div className="flex gap-4">
               <div>
                 <h3 className="text-sm font-medium text-gray-700">Data Disponibilă</h3>
@@ -368,7 +363,7 @@ export function ReceivedOffers({ cars, onMessageService }: ReceivedOffersProps) 
         <div className="flex items-center justify-between gap-2">
           <Button
             variant="outline"
-            size="sm"
+            size="xs"
             className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 flex-shrink-0"
             onClick={() => onMessageService?.(offer.serviceId, offer.requestId)}
           >
@@ -378,7 +373,7 @@ export function ReceivedOffers({ cars, onMessageService }: ReceivedOffersProps) 
 
           <Button
             variant="outline"
-            size="sm"
+            size="xs"
             className="text-gray-500 hover:text-gray-700 hover:bg-gray-50"
             onClick={() => {
               setSelectedOffer(offer);
@@ -393,7 +388,7 @@ export function ReceivedOffers({ cars, onMessageService }: ReceivedOffersProps) 
             <div className="flex gap-2">
               <Button
                 variant="outline"
-                size="sm"
+                size="xs"
                 className="text-green-500 hover:text-green-700 hover:bg-green-50 flex-shrink-0"
                 onClick={() => handleAcceptOffer(offer)}
               >
@@ -402,7 +397,7 @@ export function ReceivedOffers({ cars, onMessageService }: ReceivedOffersProps) 
               </Button>
               <Button
                 variant="outline"
-                size="sm"
+                size="xs"
                 className="text-red-500 hover:text-red-700 hover:bg-red-50 flex-shrink-0"
                 onClick={() => handleRejectOffer(offer)}
               >
@@ -415,7 +410,7 @@ export function ReceivedOffers({ cars, onMessageService }: ReceivedOffersProps) 
           {offer.status === "Accepted" && (
             <Button
               variant="outline"
-              size="sm"
+              size="xs"
               className="text-orange-500 hover:text-orange-700 hover:bg-orange-50 flex-shrink-0"
               onClick={() => handleCancelOffer(offer)}
             >
