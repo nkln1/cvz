@@ -63,8 +63,9 @@ export default function ClientDashboard() {
   const { cars, fetchCars } = useCars(user?.uid || "");
 
   const handleMessageService = (serviceId: string, requestId: string) => {
+    console.log("Opening message with service:", serviceId, "for request:", requestId);
     setActiveTab("messages");
-    handleSelectConversation(requestId);
+    handleSelectConversation(requestId, serviceId);
   };
 
   useEffect(() => {
