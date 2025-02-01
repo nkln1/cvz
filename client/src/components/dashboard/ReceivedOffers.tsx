@@ -5,7 +5,18 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
-import { SendHorizontal, Clock, User, Calendar, CreditCard, FileText, Loader2, MessageSquare, Check } from "lucide-react";
+import {
+  SendHorizontal,
+  Clock,
+  User,
+  Calendar,
+  CreditCard,
+  FileText,
+  Loader2,
+  MessageSquare,
+  Check,
+  XCircle
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { collection, query, where, getDocs, doc, getDoc, updateDoc, setDoc } from "firebase/firestore";
@@ -142,6 +153,33 @@ export function ReceivedOffers({ cars, onMessageService }: ReceivedOffersProps) 
     }
   };
 
+  const handleRejectOffer = async (offer: Offer) => {
+    if (!user) return;
+
+    try {
+      const offerRef = doc(db, "offers", offer.id);
+      await updateDoc(offerRef, {
+        status: "Rejected",
+        updatedAt: new Date(),
+      });
+
+      // Update the request status
+      const requestRef = doc(db, "requests", offer.requestId);
+      await updateDoc(requestRef, {
+        status: "Respins",
+        lastUpdated: new Date(),
+      });
+
+      // Refresh offers
+      const updatedOffers = offers.map(o => 
+        o.id === offer.id ? { ...o, status: "Rejected" } : o
+      );
+      setOffers(updatedOffers);
+    } catch (error) {
+      console.error("Error rejecting offer:", error);
+    }
+  };
+
   if (loading) {
     return (
       <Card className="shadow-lg">
@@ -211,7 +249,9 @@ export function ReceivedOffers({ cars, onMessageService }: ReceivedOffersProps) 
                       ? "bg-yellow-100 text-yellow-800"
                       : offer.status === "Accepted"
                       ? "bg-green-100 text-green-800"
-                      : "bg-red-100 text-red-800"
+                      : offer.status === "Rejected"
+                      ? "bg-red-100 text-red-800"
+                      : "bg-gray-100 text-gray-800"
                   }`}
                 >
                   {offer.status}
@@ -264,15 +304,26 @@ export function ReceivedOffers({ cars, onMessageService }: ReceivedOffersProps) 
                   Mesaj
                 </Button>
                 {offer.status === "Pending" && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="text-green-500 hover:text-green-700 hover:bg-green-50"
-                    onClick={() => handleAcceptOffer(offer)}
-                  >
-                    <Check className="w-4 h-4 mr-1" />
-                    Acceptă Oferta
-                  </Button>
+                  <>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                      onClick={() => handleRejectOffer(offer)}
+                    >
+                      <XCircle className="w-4 h-4 mr-1" />
+                      Respinge Oferta
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-green-500 hover:text-green-700 hover:bg-green-50"
+                      onClick={() => handleAcceptOffer(offer)}
+                    >
+                      <Check className="w-4 h-4 mr-1" />
+                      Acceptă Oferta
+                    </Button>
+                  </>
                 )}
               </div>
             </div>
