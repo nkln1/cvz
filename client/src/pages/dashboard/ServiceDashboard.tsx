@@ -96,8 +96,7 @@ export default function ServiceDashboard() {
     }
     return (localStorage.getItem("activeTab") as TabType) || "requests";
   });
-    const [refreshOffersCounter, setRefreshOffersCounter] = useState(0);
-
+  const [refreshOffersCounter, setRefreshOffersCounter] = useState(0);
 
   const {
     messages,
@@ -204,7 +203,7 @@ export default function ServiceDashboard() {
       const newOffer = {
         requestId: request.id,
         serviceId: user.uid,
-        clientId: request.userId, // Changed from request.clientId to request.userId
+        clientId: request.userId,
         status: "Pending",
         createdAt: new Date(),
         title: formData.title,
@@ -230,7 +229,7 @@ export default function ServiceDashboard() {
       });
 
       // Increment the counter to trigger a refresh of the SentOffers component
-      setRefreshOffersCounter(prev => prev + 1);
+      setRefreshOffersCounter((prev) => prev + 1);
       // Switch to the offers tab
       setActiveTab("offers");
     } catch (error) {
@@ -242,6 +241,7 @@ export default function ServiceDashboard() {
       });
     }
   };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -352,9 +352,9 @@ export default function ServiceDashboard() {
             requests={clientRequests}
             cars={cars}
             refreshRequests={async () => {
-              setRefreshOffersCounter(prev => prev + 1);
+              setRefreshOffersCounter((prev) => prev + 1);
             }}
-             refreshCounter={refreshOffersCounter}
+            refreshCounter={refreshOffersCounter}
           />
         )}
         {activeTab === "messages" && (
