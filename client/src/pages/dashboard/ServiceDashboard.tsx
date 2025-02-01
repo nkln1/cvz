@@ -110,7 +110,7 @@ export default function ServiceDashboard() {
     handleBackToList,
     setMessageContent,
     setSelectedMessageRequest,
-    markMessageAsRead, // Added based on intention
+    markMessageAsRead,
   } = useServiceMessages(user?.uid || "");
 
   const {
@@ -194,7 +194,6 @@ export default function ServiceDashboard() {
     }
   };
 
-
   const handleSendOffer = async (request: ServiceRequest, offerData: any) => {
     try {
       const offerId = await addDoc(collection(db, "offers"), {
@@ -212,14 +211,13 @@ export default function ServiceDashboard() {
         lastUpdated: new Date(),
       });
 
-
       toast({
         title: "Succes",
         description: "Oferta a fost trimisă cu succes!",
       });
 
-      // Refresh the requests list
-      // await refreshRequests(); - removed due to it not being defined.
+      // Manually refresh the component to show updated data
+      setActiveTab("offers");
     } catch (error) {
       console.error("Error sending offer:", error);
       toast({
@@ -336,9 +334,12 @@ export default function ServiceDashboard() {
         )}
         {activeTab === "offers" && (
           <SentOffers
-            requests={[]}
+            requests={clientRequests}
             cars={cars}
-            refreshRequests={async () => {}}
+            refreshRequests={async () => {
+              // This will trigger a re-fetch of the requests
+              await handleViewDetails(selectedRequest);
+            }}
           />
         )}
         {activeTab === "messages" && (
