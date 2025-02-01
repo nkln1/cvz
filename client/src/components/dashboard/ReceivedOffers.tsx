@@ -35,6 +35,8 @@ import {
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { toast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 interface ReceivedOffersProps {
   cars: Record<string, CarType>;
@@ -64,6 +66,7 @@ export function ReceivedOffers({ cars, onMessageService }: ReceivedOffersProps) 
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("pending");
   const { user } = useAuth();
+  const { toast } = useToast();
 
   useEffect(() => {
     const fetchViewedOffers = async () => {
@@ -143,6 +146,25 @@ export function ReceivedOffers({ cars, onMessageService }: ReceivedOffersProps) 
     if (!user) return;
 
     try {
+      // Check if there's already an accepted offer for this request
+      const offersRef = collection(db, "offers");
+      const q = query(
+        offersRef,
+        where("requestId", "==", offer.requestId),
+        where("status", "==", "Accepted")
+      );
+
+      const existingAcceptedOffers = await getDocs(q);
+
+      if (!existingAcceptedOffers.empty) {
+        toast({
+          title: "Nu se poate accepta oferta",
+          description: "Există deja o ofertă acceptată pentru această cerere. Anulați oferta acceptată înainte de a accepta una nouă.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const offerRef = doc(db, "offers", offer.id);
       await updateDoc(offerRef, {
         status: "Accepted",
@@ -161,8 +183,18 @@ export function ReceivedOffers({ cars, onMessageService }: ReceivedOffersProps) 
         o.id === offer.id ? { ...o, status: "Accepted" } : o
       );
       setOffers(updatedOffers);
+
+      toast({
+        title: "Succes!",
+        description: "Oferta a fost acceptată cu succes.",
+      });
     } catch (error) {
       console.error("Error accepting offer:", error);
+      toast({
+        title: "Eroare",
+        description: "A apărut o eroare la acceptarea ofertei. Încercați din nou.",
+        variant: "destructive",
+      });
     }
   };
 
