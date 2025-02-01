@@ -67,6 +67,19 @@ interface Offer {
   notes?: string;
 }
 
+const formatDateSafely = (dateValue: any) => {
+  if (!dateValue) return "N/A";
+  try {
+    const date = dateValue && typeof dateValue.toDate === 'function'
+      ? dateValue.toDate()
+      : new Date(dateValue);
+    return format(date, "dd.MM.yyyy");
+  } catch (error) {
+    console.error("Error formatting date:", error);
+    return "N/A";
+  }
+};
+
 export function ServiceMessagesSection({
   messageGroups,
   messages,
@@ -277,7 +290,7 @@ export function ServiceMessagesSection({
                 <p><span className="text-gray-600">Descriere:</span> {selectedMessageRequest.description}</p>
                 <p>
                   <span className="text-gray-600">Data Preferată:</span>{" "}
-                  {format(new Date(selectedMessageRequest.preferredDate), "dd.MM.yyyy")}
+                  {formatDateSafely(selectedMessageRequest.preferredDate)}
                 </p>
               </div>
             </div>
@@ -295,7 +308,7 @@ export function ServiceMessagesSection({
                 <div className="flex gap-4">
                   <p className="flex items-center gap-1">
                     <Calendar className="h-4 w-4 text-gray-500" />
-                    {format(new Date(offer.availableDate), "dd.MM.yyyy")}
+                    {formatDateSafely(offer.availableDate)}
                   </p>
                   <p className="flex items-center gap-1">
                     <CreditCard className="h-4 w-4 text-gray-500" />
