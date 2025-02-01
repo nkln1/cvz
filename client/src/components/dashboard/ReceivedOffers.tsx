@@ -15,7 +15,8 @@ import {
   Loader2,
   MessageSquare,
   Check,
-  XCircle
+  XCircle,
+  Eye
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,13 @@ import { useAuth } from "@/context/AuthContext";
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import type { Car as CarType } from "@/types/dashboard";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface ReceivedOffersProps {
   cars: Record<string, CarType>;
@@ -50,6 +58,8 @@ export function ReceivedOffers({ cars, onMessageService }: ReceivedOffersProps) 
   const [offers, setOffers] = useState<Offer[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewedOffers, setViewedOffers] = useState<Set<string>>(new Set());
+  const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -180,6 +190,51 @@ export function ReceivedOffers({ cars, onMessageService }: ReceivedOffersProps) 
     }
   };
 
+    const formatDateSafely = (dateString: string) => {
+        try {
+          return format(new Date(dateString), "dd.MM.yyyy");
+        } catch (error) {
+          console.error("Error formatting date:", error);
+          return "Data necunoscută";
+        }
+    };
+
+  const renderOfferDetails = (offer: Offer) => (
+    <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
+      <DialogContent className="max-w-[600px] max-h-[80vh]">
+        <DialogHeader>
+          <DialogTitle>{offer.title}</DialogTitle>
+        </DialogHeader>
+        <ScrollArea className="h-full max-h-[60vh] pr-4">
+          <div className="space-y-6 p-2">
+            <div>
+              <h3 className="text-sm font-medium text-gray-700 mb-2">Detalii Ofertă</h3>
+              <p className="text-sm text-gray-600 whitespace-pre-wrap">{offer.details}</p>
+            </div>
+
+            <div className="flex gap-4">
+              <div>
+                <h3 className="text-sm font-medium text-gray-700">Data Disponibilă</h3>
+                <p className="text-sm text-gray-600">{formatDateSafely(offer.availableDate)}</p>
+              </div>
+              <div>
+                <h3 className="text-sm font-medium text-gray-700">Preț</h3>
+                <p className="text-sm text-gray-600">{offer.price} RON</p>
+              </div>
+            </div>
+
+            {offer.notes && (
+              <div>
+                <h3 className="text-sm font-medium text-gray-700 mb-2">Observații</h3>
+                <p className="text-sm text-gray-600 whitespace-pre-wrap">{offer.notes}</p>
+              </div>
+            )}
+          </div>
+        </ScrollArea>
+      </DialogContent>
+    </Dialog>
+  );
+
   if (loading) {
     return (
       <Card className="shadow-lg">
@@ -225,12 +280,12 @@ export function ReceivedOffers({ cars, onMessageService }: ReceivedOffersProps) 
           Vezi și gestionează ofertele primite de la service-uri auto
         </CardDescription>
       </CardHeader>
-      <CardContent className="p-4 space-y-4">
+      <CardContent className="p-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {offers.map((offer) => (
             <div
               key={offer.id}
-              className="bg-white border-2 border-gray-200 rounded-lg p-3 shadow-md hover:shadow-lg transition-shadow relative"
+              className="bg-white border-2 border-gray-200 rounded-lg hover:border-[#00aff5]/30 transition-all duration-200 relative h-[320px] flex flex-col"
               onMouseEnter={() => offer.isNew && markOfferAsViewed(offer.id)}
             >
               {offer.isNew && (
@@ -240,96 +295,113 @@ export function ReceivedOffers({ cars, onMessageService }: ReceivedOffersProps) 
                   Nou
                 </Badge>
               )}
-              <div className="flex justify-between items-center mb-2">
-                <h3 className="text-md font-semibold">{offer.title}</h3>
-                <Badge
-                  variant="secondary"
-                  className={`${
-                    offer.status === "Pending"
-                      ? "bg-yellow-100 text-yellow-800"
-                      : offer.status === "Accepted"
-                      ? "bg-green-100 text-green-800"
-                      : offer.status === "Rejected"
-                      ? "bg-red-100 text-red-800"
-                      : "bg-gray-100 text-gray-800"
-                  }`}
-                >
-                  {offer.status}
-                </Badge>
+
+              {/* Header section */}
+              <div className="p-4 border-b">
+                <div className="flex justify-between items-start mb-2">
+                  <h3 className="text-md font-semibold line-clamp-1">{offer.title}</h3>
+                  <Badge
+                    variant="secondary"
+                    className={`${
+                      offer.status === "Pending"
+                        ? "bg-yellow-100 text-yellow-800"
+                        : offer.status === "Accepted"
+                        ? "bg-green-100 text-green-800"
+                        : offer.status === "Rejected"
+                        ? "bg-red-100 text-red-800"
+                        : "bg-gray-100 text-gray-800"
+                    }`}
+                  >
+                    {offer.status}
+                  </Badge>
+                </div>
+                <div className="text-sm text-gray-600">
+                  <Clock className="inline-block w-4 h-4 mr-1 text-gray-500" />
+                  {format(offer.createdAt, "dd.MM.yyyy HH:mm")}
+                </div>
               </div>
 
-              <div className="text-sm text-gray-600 mb-2">
-                <Clock className="inline-block w-4 h-4 mr-1 text-gray-500" />
-                {format(offer.createdAt, "dd.MM.yyyy HH:mm")}
-              </div>
+              {/* Content section */}
+              <div className="p-4 flex-grow">
+                <div className="mb-3">
+                  <h4 className="text-sm font-medium flex items-center gap-2">
+                    <User className="w-4 h-4 text-blue-500" /> Service:{" "}
+                    <span className="font-normal line-clamp-1">{offer.serviceName}</span>
+                  </h4>
+                </div>
 
-              <div className="border-t border-gray-200 py-2">
-                <h4 className="text-sm font-medium flex items-center gap-2">
-                  <User className="w-4 h-4 text-blue-500" /> Service:{" "}
-                  <span className="font-normal">{offer.serviceName}</span>
-                </h4>
-              </div>
+                <div className="grid grid-cols-2 gap-2 mb-3">
+                  <div>
+                    <h4 className="text-xs font-medium text-gray-500">Disponibilitate</h4>
+                    <p className="text-sm">{formatDateSafely(offer.availableDate)}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-medium text-gray-500">Preț</h4>
+                    <p className="text-sm">{offer.price} RON</p>
+                  </div>
+                </div>
 
-              <div className="grid grid-cols-2 gap-2 mt-2">
                 <div>
-                  <h4 className="text-xs font-medium text-gray-500">Disponibilitate</h4>
-                  <p className="text-sm">{offer.availableDate}</p>
-                </div>
-                <div>
-                  <h4 className="text-xs font-medium text-gray-500">Preț</h4>
-                  <p className="text-sm">{offer.price} RON</p>
+                  <h4 className="text-xs font-medium text-gray-500 mb-1">Detalii</h4>
+                  <p className="text-sm line-clamp-2">{offer.details}</p>
                 </div>
               </div>
 
-              <div className="mt-2">
-                <h4 className="text-xs font-medium text-gray-500">Detalii</h4>
-                <p className="text-sm">{offer.details}</p>
-              </div>
+              {/* Actions section */}
+              <div className="p-4 border-t mt-auto">
+                <div className="flex items-center justify-between gap-2">
+                  <Button
+                    variant="outline"
+                    size="xs"
+                    className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 flex-shrink-0"
+                    onClick={() => onMessageService?.(offer.serviceId, offer.requestId)}
+                  >
+                    <MessageSquare className="w-3 h-3 mr-1" />
+                    Mesaj
+                  </Button>
 
-              {offer.notes && (
-                <div className="mt-2">
-                  <h4 className="text-xs font-medium text-gray-500">Observații</h4>
-                  <p className="text-sm">{offer.notes}</p>
+                  <Button
+                    variant="outline"
+                    size="xs"
+                    className="text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+                    onClick={() => {
+                      setSelectedOffer(offer);
+                      setIsDetailsOpen(true);
+                    }}
+                  >
+                    <Eye className="w-3 h-3 mr-1" />
+                    Detalii
+                  </Button>
+
+                  {offer.status === "Pending" && (
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="xs"
+                        className="text-green-500 hover:text-green-700 hover:bg-green-50 flex-shrink-0"
+                        onClick={() => handleAcceptOffer(offer)}
+                      >
+                        <Check className="w-3 h-3 mr-1" />
+                        Acceptă
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="xs"
+                        className="text-red-500 hover:text-red-700 hover:bg-red-50 flex-shrink-0"
+                        onClick={() => handleRejectOffer(offer)}
+                      >
+                        <XCircle className="w-3 h-3 mr-1" />
+                        Respinge
+                      </Button>
+                    </div>
+                  )}
                 </div>
-              )}
-
-              <div className="mt-4 flex items-center justify-between gap-2 border-t pt-3">
-                <Button
-                  variant="outline"
-                  size="xs"
-                  className="text-blue-500 hover:text-blue-700 hover:bg-blue-50"
-                  onClick={() => onMessageService?.(offer.serviceId, offer.requestId)}
-                >
-                  <MessageSquare className="w-3 h-3 mr-1" />
-                  Mesaj
-                </Button>
-                {offer.status === "Pending" && (
-                  <>
-                    <Button
-                      variant="outline"
-                      size="xs"
-                      className="text-green-500 hover:text-green-700 hover:bg-green-50"
-                      onClick={() => handleAcceptOffer(offer)}
-                    >
-                      <Check className="w-3 h-3 mr-1" />
-                      Acceptă
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="xs"
-                      className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                      onClick={() => handleRejectOffer(offer)}
-                    >
-                      <XCircle className="w-3 h-3 mr-1" />
-                      Respinge
-                    </Button>
-                  </>
-                )}
               </div>
             </div>
           ))}
         </div>
       </CardContent>
+      {selectedOffer && renderOfferDetails(selectedOffer)}
     </Card>
   );
 }
