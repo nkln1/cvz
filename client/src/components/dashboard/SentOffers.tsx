@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { SendHorizontal, Clock, User, Car, Calendar, CreditCard, FileText } from "lucide-react";
+import { SendHorizontal, Clock, User, Car, Calendar, CreditCard, FileText, Loader2 } from "lucide-react";
 import type { Request, Car as CarType } from "@/types/dashboard";
 import { collection, query, orderBy, getDocs, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -38,6 +38,7 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
       if (!user) return;
 
       try {
+        console.log("Fetching offers for service:", user.uid);
         setLoading(true);
         const offersRef = collection(db, "offers");
         const q = query(
@@ -50,6 +51,7 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
         const fetchedOffers: Offer[] = [];
         querySnapshot.forEach((doc) => {
           const data = doc.data();
+          console.log("Fetched offer data:", data);
           fetchedOffers.push({
             id: doc.id,
             ...data,
@@ -57,6 +59,7 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
           } as Offer);
         });
 
+        console.log("Total offers fetched:", fetchedOffers.length);
         setOffers(fetchedOffers);
       } catch (error) {
         console.error("Error fetching offers:", error);
@@ -73,7 +76,7 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
       <Card className="shadow-lg">
         <CardContent className="p-6 flex justify-center items-center min-h-[200px]">
           <div className="flex flex-col items-center gap-2">
-            <Clock className="h-8 w-8 animate-spin text-[#00aff5]" />
+            <Loader2 className="h-8 w-8 animate-spin text-[#00aff5]" />
             <p className="text-muted-foreground">Se încarcă ofertele...</p>
           </div>
         </CardContent>
