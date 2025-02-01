@@ -5,9 +5,9 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
-import { SendHorizontal, Clock, User, Car, Calendar, CreditCard, FileText, Loader2 } from "lucide-react";
+import { SendHorizontal, Clock, User, Calendar, CreditCard, FileText, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { collection, query, where, getDocs } from "firebase/firestore";
+import { collection, query, where, getDocs, doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/context/AuthContext";
 import { useEffect, useState } from "react";
@@ -29,6 +29,7 @@ interface Offer {
   status: string;
   createdAt: Date;
   serviceId: string;
+  serviceName?: string;
 }
 
 export function ReceivedOffers({ cars }: ReceivedOffersProps) {
@@ -42,29 +43,27 @@ export function ReceivedOffers({ cars }: ReceivedOffersProps) {
 
       try {
         setLoading(true);
-        console.log("Fetching received offers for client:", user.uid);
         const offersRef = collection(db, "offers");
-        const q = query(
-          offersRef,
-          where("clientId", "==", user.uid)
-        );
+        const q = query(offersRef, where("clientId", "==", user.uid));
         const querySnapshot = await getDocs(q);
 
         const fetchedOffers: Offer[] = [];
-        querySnapshot.forEach((doc) => {
-          const data = doc.data();
-          console.log("Processing received offer:", { id: doc.id, ...data });
+
+        for (const docSnap of querySnapshot.docs) {
+          const data = docSnap.data();
+          const serviceRef = doc(db, "services", data.serviceId);
+          const serviceSnap = await getDoc(serviceRef);
+          const serviceName = serviceSnap.exists() ? serviceSnap.data().companyName : "Service Necunoscut";
+
           fetchedOffers.push({
-            id: doc.id,
+            id: docSnap.id,
             ...data,
+            serviceName,
             createdAt: data.createdAt?.toDate() || new Date(),
           } as Offer);
-        });
+        }
 
-        // Sort offers by createdAt in descending order
         fetchedOffers.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-
-        console.log("Final processed received offers:", fetchedOffers);
         setOffers(fetchedOffers);
       } catch (error) {
         console.error("Error fetching received offers:", error);
@@ -121,21 +120,15 @@ export function ReceivedOffers({ cars }: ReceivedOffersProps) {
           Vezi și gestionează ofertele primite de la service-uri auto
         </CardDescription>
       </CardHeader>
-      <CardContent className="p-6">
-        <div className="space-y-6">
+      <CardContent className="p-4 space-y-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {offers.map((offer) => (
             <div
               key={offer.id}
-              className="bg-white rounded-lg border p-6 hover:shadow-md transition-shadow"
+              className="bg-white border-2 border-gray-200 rounded-lg p-3 shadow-md hover:shadow-lg transition-shadow"
             >
-              <div className="flex items-start justify-between mb-4">
-                <div>
-                  <h3 className="text-lg font-semibold">{offer.title}</h3>
-                  <p className="text-sm text-muted-foreground">
-                    <Clock className="inline-block w-4 h-4 mr-1" />
-                    Primită pe {format(offer.createdAt, "dd.MM.yyyy HH:mm")}
-                  </p>
-                </div>
+              <div className="flex justify-between items-center mb-2">
+                <h3 className="text-md font-semibold">{offer.title}</h3>
                 <Badge
                   variant="secondary"
                   className={`${
@@ -150,49 +143,40 @@ export function ReceivedOffers({ cars }: ReceivedOffersProps) {
                 </Badge>
               </div>
 
-              <div className="grid grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <div>
-                    <h4 className="text-sm font-medium flex items-center gap-2">
-                      <FileText className="w-4 h-4" /> Detalii Ofertă
-                    </h4>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {offer.details}
-                    </p>
-                  </div>
+              <div className="text-sm text-gray-600 mb-2">
+                <Clock className="inline-block w-4 h-4 mr-1 text-gray-500" />
+                {format(offer.createdAt, "dd.MM.yyyy HH:mm")}
+              </div>
+
+              <div className="border-t border-gray-200 py-2">
+                <h4 className="text-sm font-medium flex items-center gap-2">
+                  <User className="w-4 h-4 text-blue-500" /> Service:{" "}
+                  <span className="font-normal">{offer.serviceName}</span>
+                </h4>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 mt-2">
+                <div>
+                  <h4 className="text-xs font-medium text-gray-500">Disponibilitate</h4>
+                  <p className="text-sm">{offer.availableDate}</p>
                 </div>
-
-                <div className="space-y-4">
-                  <div>
-                    <h4 className="text-sm font-medium flex items-center gap-2">
-                      <Calendar className="w-4 h-4" /> Data Disponibilă
-                    </h4>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {offer.availableDate}
-                    </p>
-                  </div>
-
-                  <div>
-                    <h4 className="text-sm font-medium flex items-center gap-2">
-                      <CreditCard className="w-4 h-4" /> Preț
-                    </h4>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {offer.price} RON
-                    </p>
-                  </div>
-
-                  {offer.notes && (
-                    <div>
-                      <h4 className="text-sm font-medium flex items-center gap-2">
-                        <FileText className="w-4 h-4" /> Observații
-                      </h4>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {offer.notes}
-                      </p>
-                    </div>
-                  )}
+                <div>
+                  <h4 className="text-xs font-medium text-gray-500">Preț</h4>
+                  <p className="text-sm">{offer.price} RON</p>
                 </div>
               </div>
+
+              <div className="mt-2">
+                <h4 className="text-xs font-medium text-gray-500">Detalii</h4>
+                <p className="text-sm">{offer.details}</p>
+              </div>
+
+              {offer.notes && (
+                <div className="mt-2">
+                  <h4 className="text-xs font-medium text-gray-500">Observații</h4>
+                  <p className="text-sm">{offer.notes}</p>
+                </div>
+              )}
             </div>
           ))}
         </div>

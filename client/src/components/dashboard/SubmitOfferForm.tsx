@@ -17,17 +17,26 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, CalendarIcon, X } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import { Badge } from "@/components/ui/badge";
+import { format } from "date-fns";
+import { ro } from "date-fns/locale";
 import type { Request } from "@/types/dashboard";
 
 const offerFormSchema = z.object({
   title: z.string().min(1, "Titlul este obligatoriu"),
   details: z.string().min(10, "Vă rugăm să oferiți mai multe detalii despre serviciile incluse"),
-  availableDate: z.string().min(1, "Data disponibilă este obligatorie"),
+  availableDates: z.array(z.date()).min(1, "Selectați cel puțin o dată disponibilă"),
   price: z.number().min(1, "Prețul trebuie să fie mai mare decât 0"),
   notes: z.string().optional(),
 });
@@ -49,13 +58,14 @@ export function SubmitOfferForm({
 }: SubmitOfferFormProps) {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [calendarOpen, setCalendarOpen] = useState(false);
 
   const form = useForm<OfferFormValues>({
     resolver: zodResolver(offerFormSchema),
     defaultValues: {
       title: request.title,
       details: "",
-      availableDate: "",
+      availableDates: [],
       price: 0,
       notes: "",
     },
@@ -64,7 +74,14 @@ export function SubmitOfferForm({
   const handleSubmit = async (values: OfferFormValues) => {
     try {
       setIsSubmitting(true);
-      await onSubmit(values);
+      // Format the dates into a readable string before sending
+      const formattedValues = {
+        ...values,
+        availableDate: values.availableDates
+          .map(date => format(date, "dd.MM.yyyy", { locale: ro }))
+          .join(", "),
+      };
+      await onSubmit(formattedValues);
       toast({
         title: "Succes",
         description: "Oferta a fost trimisă cu succes!",
@@ -80,6 +97,16 @@ export function SubmitOfferForm({
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const removeDate = (dateToRemove: Date) => {
+    const currentDates = form.getValues("availableDates");
+    form.setValue(
+      "availableDates",
+      currentDates.filter(
+        (date) => format(date, "yyyy-MM-dd") !== format(dateToRemove, "yyyy-MM-dd")
+      )
+    );
   };
 
   return (
@@ -124,16 +151,54 @@ export function SubmitOfferForm({
 
             <FormField
               control={form.control}
-              name="availableDate"
+              name="availableDates"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Dată disponibilă service</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      placeholder="De luni până vineri, de la 09:00-17:00"
-                    />
-                  </FormControl>
+                <FormItem className="flex flex-col">
+                  <FormLabel>Date disponibile service</FormLabel>
+                  <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={`w-full justify-start text-left font-normal ${
+                          !field.value?.length && "text-muted-foreground"
+                        }`}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {field.value?.length > 0
+                          ? `${field.value.length} date selectate`
+                          : "Selectați datele disponibile"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="multiple"
+                        selected={field.value}
+                        onSelect={field.onChange}
+                        disabled={(date) =>
+                          date < new Date(new Date().setHours(0, 0, 0, 0))
+                        }
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {field.value?.map((date, index) => (
+                      <Badge
+                        key={index}
+                        variant="secondary"
+                        className="px-3 py-1"
+                      >
+                        {format(date, "dd.MM.yyyy", { locale: ro })}
+                        <button
+                          type="button"
+                          className="ml-2 hover:text-destructive"
+                          onClick={() => removeDate(date)}
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}
