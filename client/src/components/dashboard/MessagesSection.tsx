@@ -10,12 +10,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
   MessageSquare,
   SendHorizontal,
   Loader2,
@@ -25,31 +19,34 @@ import {
 } from "lucide-react";
 import { format, isToday, isYesterday, isSameDay } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
-import type { Message, Request } from "@/types/dashboard";
+import type { Message } from "@/types/dashboard";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import type { Request } from "@/types/dashboard";
 
 interface MessagesSectionProps {
   messages: Message[];
   messageGroups: {
     requestId: string;
-    requestTitle: string; // (se va ignora această valoare și se va obține din `requests`)
+    requestTitle: string;
     lastMessage: Message;
     unreadCount: number;
   }[];
   messageServices: Record<string, { companyName: string }>;
   selectedMessageRequest: string | null;
+  selectedServiceId: string | null;
   isViewingConversation: boolean;
   messageContent: string;
   sendingMessage: boolean;
   userId: string;
   userName: string;
   onMessageContentChange: (content: string) => void;
-  onSendMessage: (
-    content: string,
-    toId: string,
-    requestId: string,
-    requestTitle: string
-  ) => Promise<void>;
-  onSelectConversation: (requestId: string) => void;
+  onSendMessage: () => Promise<void>;
+  onSelectConversation: (requestId: string, serviceId?: string) => void;
   onBackToList: () => void;
   markMessageAsRead: (messageId: string) => Promise<void>;
   requests: Request[];
@@ -60,6 +57,7 @@ export function MessagesSection({
   messageGroups,
   messageServices,
   selectedMessageRequest,
+  selectedServiceId,
   isViewingConversation,
   messageContent,
   sendingMessage,
@@ -168,7 +166,7 @@ export function MessagesSection({
               >
                 <Card
                   className="cursor-pointer hover:bg-gray-50 transition-colors"
-                  onClick={() => onSelectConversation(group.requestId)}
+                  onClick={() => onSelectConversation(group.requestId, serviceId)}
                 >
                   <CardContent className="p-4">
                     <div className="flex items-start gap-4">
@@ -211,115 +209,54 @@ export function MessagesSection({
     const conversationMessages = messages
       .filter((msg) => msg.requestId === selectedMessageRequest)
       .sort((a, b) => {
-        const dateA =
-          a.createdAt && typeof a.createdAt.toDate === "function"
-            ? a.createdAt.toDate().getTime()
-            : new Date(a.createdAt).getTime();
-        const dateB =
-          b.createdAt && typeof b.createdAt.toDate === "function"
-            ? b.createdAt.toDate().getTime()
-            : new Date(b.createdAt).getTime();
+        const dateA = new Date(a.createdAt).getTime();
+        const dateB = new Date(b.createdAt).getTime();
         return dateA - dateB;
       });
 
-    let currentDate: Date | null = null;
+    // Get the service name for the conversation
+    const serviceId = selectedServiceId || 
+      (conversationMessages[0]?.fromId === userId 
+        ? conversationMessages[0]?.toId 
+        : conversationMessages[0]?.fromId);
+    const serviceName = messageServices[serviceId]?.companyName || "Service Auto";
 
-    const renderMessage = (message: Message) => {
+    // Mark messages as read
+    conversationMessages.forEach((message) => {
       if (message.toId === userId && !message.read) {
         markMessageAsRead(message.id);
       }
-
-      const serviceId =
-        message.fromId === userId ? message.toId : message.fromId;
-      const serviceName =
-        messageServices[serviceId]?.companyName || "Service Auto";
-
-      return (
-        <motion.div
-          key={message.id}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-          className={`flex ${
-            message.fromId === userId ? "justify-end" : "justify-start"
-          }`}
-        >
-          <div
-            className={`max-w-[80%] ${
-              message.fromId === userId
-                ? "bg-blue-500 text-white rounded-t-2xl rounded-l-2xl"
-                : "bg-gray-100 rounded-t-2xl rounded-r-2xl"
-            } p-3 relative`}
-          >
-            <div className="text-xs mb-1 font-medium">
-              {message.fromId === userId ? userName : serviceName}
-            </div>
-            <p className="text-sm whitespace-pre-wrap break-words">
-              {message.content}
-            </p>
-            <div
-              className={`flex items-center gap-1 mt-1 text-xs ${
-                message.fromId === userId ? "text-blue-100" : "text-gray-500"
-              }`}
-            >
-              {formatMessageTime(message.createdAt)}
-              {message.fromId === userId && (
-                <CheckCircle2 className="h-3 w-3" />
-              )}
-            </div>
-          </div>
-        </motion.div>
-      );
-    };
-
-    // Pentru header-ul conversației, folosim titlul din request-ul asociat
-    const currentRequest = requests.find(
-      (r) => r.id === selectedMessageRequest
-    );
-    const requestTitle = currentRequest?.title || "Untitled request";
-    const currentGroup = messageGroups.find(
-      (g) => g.requestId === selectedMessageRequest
-    );
-    const serviceId =
-      currentGroup &&
-      (currentGroup.lastMessage.fromId === userId
-        ? currentGroup.lastMessage.toId
-        : currentGroup.lastMessage.fromId);
-    const serviceName =
-      (serviceId && messageServices[serviceId]?.companyName) || "Service Auto";
+    });
 
     return (
       <div className="space-y-4 h-full flex flex-col">
+        {/* Header */}
         <div className="flex items-center justify-between border-b pb-4">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onBackToList}
-            className="hover:bg-gray-100"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Înapoi
-          </Button>
-          <Avatar className="h-8 w-8">
-            <AvatarFallback className="bg-blue-100 text-blue-600">
-              {getInitials(serviceName)}
-            </AvatarFallback>
-          </Avatar>
-          <div>
-            <h3 className="font-medium text-sm">{serviceName}</h3>
-            <p className="text-xs text-muted-foreground">{requestTitle}</p>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onBackToList}
+              className="hover:bg-gray-100"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Înapoi
+            </Button>
+            <Avatar>
+              <AvatarFallback className="bg-blue-100 text-blue-600">
+                {getInitials(serviceName)}
+              </AvatarFallback>
+            </Avatar>
+            <div>
+              <h3 className="font-medium text-sm">{serviceName}</h3>
+              <p className="text-xs text-muted-foreground">
+                {requests.find(r => r.id === selectedMessageRequest)?.title || ""}
+              </p>
+            </div>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleViewDetails}
-            className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 flex items-center gap-1"
-          >
-            <Eye className="h-4 w-4 mr-1" />
-            Detalii cerere
-          </Button>
         </div>
 
+        {/* Messages Area */}
         <ScrollArea
           className="flex-1 pr-4"
           style={{ height: "calc(600px - 180px)" }}
@@ -327,37 +264,48 @@ export function MessagesSection({
         >
           <div className="space-y-4">
             <AnimatePresence>
-              {conversationMessages.map((message) => {
-                const messageDate =
-                  message.createdAt &&
-                  typeof message.createdAt.toDate === "function"
-                    ? message.createdAt.toDate()
-                    : new Date(message.createdAt);
-
-                const showDateSeparator =
-                  !currentDate || !isSameDay(currentDate, messageDate);
-
-                if (showDateSeparator) {
-                  currentDate = messageDate;
-                  return (
-                    <div key={`date-${message.id}`}>
-                      <div className="flex items-center justify-center my-4">
-                        <div className="bg-gray-100 px-3 py-1 rounded-full text-sm text-gray-600">
-                          {formatMessageDate(message.createdAt)}
-                        </div>
-                      </div>
-                      {renderMessage(message)}
+              {conversationMessages.map((message) => (
+                <motion.div
+                  key={message.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className={`flex ${
+                    message.fromId === userId ? "justify-end" : "justify-start"
+                  }`}
+                >
+                  <div
+                    className={`max-w-[80%] ${
+                      message.fromId === userId
+                        ? "bg-blue-500 text-white rounded-t-2xl rounded-l-2xl"
+                        : "bg-gray-100 rounded-t-2xl rounded-r-2xl"
+                    } p-3 relative`}
+                  >
+                    <div className="text-xs mb-1 font-medium">
+                      {message.fromId === userId ? userName : serviceName}
                     </div>
-                  );
-                }
-
-                return renderMessage(message);
-              })}
+                    <p className="text-sm whitespace-pre-wrap break-words">
+                      {message.content}
+                    </p>
+                    <div
+                      className={`flex items-center gap-1 mt-1 text-xs ${
+                        message.fromId === userId ? "text-blue-100" : "text-gray-500"
+                      }`}
+                    >
+                      {formatMessageTime(message.createdAt)}
+                      {message.fromId === userId && message.read && (
+                        <CheckCircle2 className="h-3 w-3" />
+                      )}
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
             </AnimatePresence>
             <div ref={messagesEndRef} />
           </div>
         </ScrollArea>
 
+        {/* Message Input */}
         <div className="border-t pt-4">
           <div className="flex gap-2">
             <Textarea
@@ -368,34 +316,16 @@ export function MessagesSection({
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
-                  if (messageContent.trim() && currentGroup) {
-                    const serviceId =
-                      conversationMessages[0]?.fromId === userId
-                        ? conversationMessages[0]?.toId
-                        : conversationMessages[0]?.fromId;
-                    onSendMessage(
-                      messageContent,
-                      serviceId,
-                      currentGroup.requestId,
-                      requestTitle
-                    );
+                  if (messageContent.trim()) {
+                    onSendMessage();
                   }
                 }
               }}
             />
             <Button
               onClick={() => {
-                if (currentGroup) {
-                  const serviceId =
-                    conversationMessages[0]?.fromId === userId
-                      ? conversationMessages[0]?.toId
-                      : conversationMessages[0]?.fromId;
-                  onSendMessage(
-                    messageContent,
-                    serviceId,
-                    currentGroup.requestId,
-                    requestTitle
-                  );
+                if (messageContent.trim()) {
+                  onSendMessage();
                 }
               }}
               disabled={!messageContent.trim() || sendingMessage}
@@ -425,7 +355,7 @@ export function MessagesSection({
   const currentGroup = messageGroups.find(
     (g) => g.requestId === selectedMessageRequest
   );
-  const serviceIdForHeader =
+    const serviceIdForHeader =
     currentGroup &&
     (currentGroup.lastMessage.fromId === userId
       ? currentGroup.lastMessage.toId
@@ -433,6 +363,7 @@ export function MessagesSection({
   const serviceName =
     (serviceIdForHeader && messageServices[serviceIdForHeader]?.companyName) ||
     "Service Auto";
+
 
   return (
     <>
@@ -447,8 +378,7 @@ export function MessagesSection({
           {isViewingConversation ? renderConversation() : renderMessagesList()}
         </CardContent>
       </Card>
-
-      <Dialog open={isDetailsDialogOpen} onOpenChange={setIsDetailsDialogOpen}>
+        <Dialog open={isDetailsDialogOpen} onOpenChange={setIsDetailsDialogOpen}>
         <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Detalii Cerere</DialogTitle>

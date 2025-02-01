@@ -31,9 +31,8 @@ export const useMessages = (userId: string) => {
   }>({});
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedMessageRequest, setSelectedMessageRequest] = useState<
-    string | null
-  >(null);
+  const [selectedMessageRequest, setSelectedMessageRequest] = useState<string | null>(null);
+  const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null);
   const [isViewingConversation, setIsViewingConversation] = useState(false);
   const [messageContent, setMessageContent] = useState("");
   const [sendingMessage, setSendingMessage] = useState(false);
@@ -63,7 +62,6 @@ export const useMessages = (userId: string) => {
 
         console.log("Total messages loaded:", loadedMessages.length);
 
-        // Group messages by request
         const groups: { [key: string]: MessageGroup } = {};
         const unreadServices = new Set<string>();
 
@@ -92,9 +90,7 @@ export const useMessages = (userId: string) => {
           }
         });
 
-        console.log("Message groups created:", Object.keys(groups).length);
         setUnreadServiceCount(unreadServices.size);
-
         setMessages(loadedMessages);
         setMessageGroups(
           Object.values(groups).sort(
@@ -108,15 +104,12 @@ export const useMessages = (userId: string) => {
         const uniqueServiceIds = Array.from(
           new Set(loadedMessages.map((m) => m.fromId)),
         );
-        console.log("Unique service IDs:", uniqueServiceIds);
 
         const serviceDetails: { [key: string]: any } = {};
-
         for (const serviceId of uniqueServiceIds) {
           const serviceDoc = await getDoc(doc(db, "services", serviceId));
           if (serviceDoc.exists()) {
             serviceDetails[serviceId] = serviceDoc.data();
-            console.log("Service details loaded for:", serviceId);
           }
         }
 
@@ -153,67 +146,62 @@ export const useMessages = (userId: string) => {
     }
   }, []);
 
-  const sendMessage = useCallback(
-    async (
-      content: string,
-      toId: string,
-      requestId: string,
-      requestTitle: string,
-    ) => {
-      if (!content.trim() || !userId || !toId || !requestId) {
-        console.log("Missing required fields for sending message:", {
-          content: !!content.trim(),
-          userId,
-          toId,
-          requestId,
-        });
-        return;
-      }
+  const sendMessage = useCallback(async () => {
+    if (!messageContent.trim() || !userId || !selectedMessageRequest || !selectedServiceId) {
+      console.log("Missing required fields for sending message:", {
+        content: !!messageContent.trim(),
+        userId,
+        selectedMessageRequest,
+        selectedServiceId,
+      });
+      return;
+    }
 
-      setSendingMessage(true);
-      try {
-        const messageData = {
-          content: content.trim(),
-          fromId: userId,
-          toId,
-          requestId,
-          requestTitle,
-          createdAt: Timestamp.now(),
-          read: false,
-          participants: [userId, toId],
-        };
-        console.log("Sending message:", messageData);
+    setSendingMessage(true);
+    try {
+      const messageData = {
+        content: messageContent.trim(),
+        fromId: userId,
+        toId: selectedServiceId,
+        requestId: selectedMessageRequest,
+        createdAt: Timestamp.now(),
+        read: false,
+        participants: [userId, selectedServiceId],
+      };
+      console.log("Sending message:", messageData);
 
-        await addDoc(collection(db, "messages"), messageData);
+      await addDoc(collection(db, "messages"), messageData);
 
-        setMessageContent("");
-        toast({
-          title: "Success",
-          description: "Message sent successfully",
-        });
-      } catch (error) {
-        console.error("Error sending message:", error);
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "Could not send message. Please try again.",
-        });
-      } finally {
-        setSendingMessage(false);
-      }
-    },
-    [userId, toast],
-  );
+      setMessageContent("");
+      toast({
+        title: "Success",
+        description: "Message sent successfully",
+      });
+    } catch (error) {
+      console.error("Error sending message:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Could not send message. Please try again.",
+      });
+    } finally {
+      setSendingMessage(false);
+    }
+  }, [userId, messageContent, selectedMessageRequest, selectedServiceId, toast]);
 
-  const handleSelectConversation = (requestId: string) => {
-    console.log("Selecting conversation:", requestId);
+  const handleSelectConversation = async (requestId: string, serviceId?: string) => {
+    console.log("Selecting conversation:", { requestId, serviceId });
     setSelectedMessageRequest(requestId);
+    if (serviceId) {
+      setSelectedServiceId(serviceId);
+    }
     setIsViewingConversation(true);
   };
 
   const handleBackToList = () => {
     console.log("Going back to messages list");
     setSelectedMessageRequest(null);
+    setSelectedServiceId(null);
     setIsViewingConversation(false);
     setMessageContent("");
   };
@@ -225,6 +213,7 @@ export const useMessages = (userId: string) => {
     isLoading,
     error,
     selectedMessageRequest,
+    selectedServiceId,
     isViewingConversation,
     messageContent,
     sendingMessage,
