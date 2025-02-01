@@ -63,11 +63,11 @@ interface OfferDetailsDialogProps {
 }
 
 const OfferDetailsDialog = ({ offer, onAccept, onReject, onMessage }: OfferDetailsDialogProps) => (
-  <DialogContent className="max-w-2xl">
+  <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
     <DialogHeader>
       <DialogTitle>Detalii Ofertă</DialogTitle>
     </DialogHeader>
-    <div className="space-y-6">
+    <div className="space-y-6 overflow-y-auto pr-2">
       <div>
         <h3 className="font-semibold mb-2">{offer.title}</h3>
         <p className="text-sm text-muted-foreground mb-4">
@@ -79,12 +79,12 @@ const OfferDetailsDialog = ({ offer, onAccept, onReject, onMessage }: OfferDetai
       <div className="grid gap-4">
         <div>
           <h4 className="text-sm font-medium mb-1">Service Auto</h4>
-          <p className="text-sm">{offer.serviceName}</p>
+          <p className="text-sm break-words">{offer.serviceName}</p>
         </div>
 
         <div>
           <h4 className="text-sm font-medium mb-1">Detalii</h4>
-          <p className="text-sm whitespace-pre-wrap">{offer.details}</p>
+          <p className="text-sm whitespace-pre-wrap break-words">{offer.details}</p>
         </div>
 
         <div className="flex gap-6">
@@ -101,13 +101,13 @@ const OfferDetailsDialog = ({ offer, onAccept, onReject, onMessage }: OfferDetai
         {offer.notes && (
           <div>
             <h4 className="text-sm font-medium mb-1">Observații</h4>
-            <p className="text-sm whitespace-pre-wrap">{offer.notes}</p>
+            <p className="text-sm whitespace-pre-wrap break-words">{offer.notes}</p>
           </div>
         )}
       </div>
 
       {offer.status === "Pending" && (
-        <div className="flex justify-between items-center pt-4 border-t">
+        <div className="flex justify-between items-center pt-4 border-t mt-4 sticky bottom-0 bg-white">
           <Button
             variant="outline"
             size="sm"
@@ -218,7 +218,7 @@ export function ReceivedOffers({ cars, onMessageService }: ReceivedOffersProps) 
         updatedAt: new Date(),
       });
 
-      const updatedOffers = offers.map(o => 
+      const updatedOffers = offers.map(o =>
         o.id === offer.id ? { ...o, status: "Accepted" } : o
       );
       setOffers(updatedOffers);
@@ -237,7 +237,7 @@ export function ReceivedOffers({ cars, onMessageService }: ReceivedOffersProps) 
         updatedAt: new Date(),
       });
 
-      const updatedOffers = offers.map(o => 
+      const updatedOffers = offers.map(o =>
         o.id === offer.id ? { ...o, status: "Rejected" } : o
       );
       setOffers(updatedOffers);
@@ -334,7 +334,7 @@ export function ReceivedOffers({ cars, onMessageService }: ReceivedOffersProps) 
                       offer={offer}
                       onAccept={handleAcceptOffer}
                       onReject={handleRejectOffer}
-                      onMessage={(serviceId, requestId) => 
+                      onMessage={(serviceId, requestId) =>
                         onMessageService?.(serviceId, requestId)
                       }
                     />
