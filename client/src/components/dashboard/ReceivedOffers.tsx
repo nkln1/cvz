@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/card";
 import { SendHorizontal, Clock, User, Car, Calendar, CreditCard, FileText, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { collection, query, where, orderBy, getDocs } from "firebase/firestore";
+import { collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/context/AuthContext";
 import { useEffect, useState } from "react";
@@ -42,24 +42,29 @@ export function ReceivedOffers({ cars }: ReceivedOffersProps) {
 
       try {
         setLoading(true);
+        console.log("Fetching received offers for client:", user.uid);
         const offersRef = collection(db, "offers");
         const q = query(
           offersRef,
-          where("clientId", "==", user.uid),
-          orderBy("createdAt", "desc")
+          where("clientId", "==", user.uid)
         );
         const querySnapshot = await getDocs(q);
 
         const fetchedOffers: Offer[] = [];
         querySnapshot.forEach((doc) => {
           const data = doc.data();
+          console.log("Processing received offer:", { id: doc.id, ...data });
           fetchedOffers.push({
             id: doc.id,
             ...data,
-            createdAt: data.createdAt.toDate(),
+            createdAt: data.createdAt?.toDate() || new Date(),
           } as Offer);
         });
 
+        // Sort offers by createdAt in descending order
+        fetchedOffers.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+
+        console.log("Final processed received offers:", fetchedOffers);
         setOffers(fetchedOffers);
       } catch (error) {
         console.error("Error fetching received offers:", error);
@@ -84,7 +89,7 @@ export function ReceivedOffers({ cars }: ReceivedOffersProps) {
     );
   }
 
-  if (offers.length === 0) {
+  if (!offers || offers.length === 0) {
     return (
       <Card className="shadow-lg">
         <CardHeader className="border-b bg-gray-50">
@@ -110,7 +115,7 @@ export function ReceivedOffers({ cars }: ReceivedOffersProps) {
       <CardHeader className="border-b bg-gray-50">
         <CardTitle className="text-[#00aff5] flex items-center gap-2">
           <SendHorizontal className="h-5 w-5" />
-          Oferte Primite
+          Oferte Primite ({offers.length})
         </CardTitle>
         <CardDescription>
           Vezi și gestionează ofertele primite de la service-uri auto
