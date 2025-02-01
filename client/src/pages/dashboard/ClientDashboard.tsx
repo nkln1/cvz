@@ -30,6 +30,8 @@ import { MessagesSection } from "@/components/dashboard/MessagesSection";
 import { MyRequests } from "@/components/dashboard/MyRequests";
 import { EmailVerificationView } from "@/components/dashboard/EmailVerificationView";
 import { Badge } from "@/components/ui/badge";
+import { collection, query, where, getDocs, doc, getDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 export default function ClientDashboard() {
   const [activeTab, setActiveTab] = useState<TabType>("requests");
@@ -38,6 +40,8 @@ export default function ClientDashboard() {
   const [isRequestDialogOpen, setIsRequestDialogOpen] = useState(false);
   const [isCarDialogOpen, setIsCarDialogOpen] = useState(false);
   const [requestFormData, setRequestFormData] = useState<Partial<RequestFormData>>({});
+  const [newOffersCount, setNewOffersCount] = useState(0);
+  const [viewedOffers, setViewedOffers] = useState<Set<string>>(new Set());
 
   const { profile } = useProfile(user?.uid || "");
   const { requests, fetchRequests, addRequest, cancelRequest } = useRequests(user?.uid || "");
@@ -57,6 +61,40 @@ export default function ClientDashboard() {
     handleBackToList,
   } = useMessages(user?.uid || "");
   const { cars, fetchCars } = useCars(user?.uid || "");
+
+  useEffect(() => {
+    const fetchViewedOffers = async () => {
+      if (!user) return;
+
+      try {
+        const viewedOffersRef = doc(db, `users/${user.uid}/metadata/viewedOffers`);
+        const viewedOffersDoc = await getDoc(viewedOffersRef);
+        if (viewedOffersDoc.exists()) {
+          setViewedOffers(new Set(viewedOffersDoc.data().offerIds || []));
+        }
+      } catch (error) {
+        console.error("Error fetching viewed offers:", error);
+      }
+    };
+
+    const fetchNewOffersCount = async () => {
+      if (!user) return;
+
+      try {
+        const offersRef = collection(db, "offers");
+        const q = query(offersRef, where("clientId", "==", user.uid));
+        const querySnapshot = await getDocs(q);
+
+        const unviewedCount = querySnapshot.docs.filter(doc => !viewedOffers.has(doc.id)).length;
+        setNewOffersCount(unviewedCount);
+      } catch (error) {
+        console.error("Error fetching new offers count:", error);
+      }
+    };
+
+    fetchViewedOffers();
+    fetchNewOffersCount();
+  }, [user, viewedOffers]);
 
   useEffect(() => {
     if (user) {
@@ -125,7 +163,17 @@ export default function ClientDashboard() {
               }`}
             >
               <MailOpen className="w-4 h-4 mr-2 flex-shrink-0" />
-              <span className="text-sm">Oferte Primite</span>
+              <span className="text-sm flex items-center gap-2">
+                Oferte Primite
+                {newOffersCount > 0 && (
+                  <Badge
+                    variant="secondary"
+                    className="bg-[#00aff5] text-white text-xs px-2 py-0.5 rounded-full"
+                  >
+                    {newOffersCount}
+                  </Badge>
+                )}
+              </span>
             </Button>
             <Button
               variant={activeTab === "messages" ? "default" : "ghost"}
@@ -196,9 +244,7 @@ export default function ClientDashboard() {
           )}
           {activeTab === "offers" && (
             <ReceivedOffers
-              requests={requests}
               cars={cars}
-              refreshRequests={fetchRequests}
             />
           )}
           {activeTab === "messages" && (
@@ -211,7 +257,7 @@ export default function ClientDashboard() {
               messageContent={messageContent}
               sendingMessage={sendingMessage}
               userId={user?.uid || ""}
-              userName={profile?.numeComplet || profile?.name || `${profile?.nume || ''} ${profile?.prenume || ''}`.trim() || "Client"}
+              userName={profile?.name || "Client"}
               onMessageContentChange={setMessageContent}
               onSendMessage={sendMessage}
               onSelectConversation={handleSelectConversation}
