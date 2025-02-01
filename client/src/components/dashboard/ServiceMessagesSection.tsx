@@ -17,10 +17,16 @@ import {
   Eye,
   ArrowLeft,
   CheckCircle2,
+  FileText,
+  Calendar,
+  CreditCard,
 } from "lucide-react";
 import { format, isToday, isYesterday, isSameDay } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Request, Message } from "@/types/service";
+import { Separator } from "@/components/ui/separator";
+import { collection, query, where, getDocs } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 interface MessageGroup {
   requestId: string;
@@ -47,6 +53,20 @@ interface ServiceMessagesSectionProps {
   markMessageAsRead?: (messageId: string) => Promise<void>;
 }
 
+interface Offer {
+  id: string;
+  requestId: string;
+  serviceId: string;
+  clientId: string;
+  status: string;
+  createdAt: any;
+  title: string;
+  details: string;
+  availableDate: string;
+  price: number;
+  notes?: string;
+}
+
 export function ServiceMessagesSection({
   messageGroups,
   messages,
@@ -63,8 +83,34 @@ export function ServiceMessagesSection({
   serviceName,
   markMessageAsRead,
 }: ServiceMessagesSectionProps) {
+  const [offer, setOffer] = useState<Offer | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [isScrolledToBottom, setIsScrolledToBottom] = useState(true);
+
+  useEffect(() => {
+    const fetchOffer = async () => {
+      if (!selectedMessageRequest) return;
+
+      try {
+        const offersRef = collection(db, "offers");
+        const q = query(
+          offersRef,
+          where("requestId", "==", selectedMessageRequest.id),
+          where("serviceId", "==", userId)
+        );
+
+        const querySnapshot = await getDocs(q);
+        if (!querySnapshot.empty) {
+          const offerData = querySnapshot.docs[0].data() as Offer;
+          setOffer({ ...offerData, id: querySnapshot.docs[0].id });
+        }
+      } catch (error) {
+        console.error("Error fetching offer:", error);
+      }
+    };
+
+    fetchOffer();
+  }, [selectedMessageRequest, userId]);
 
   const formatMessageDate = (timestamp: any) => {
     if (!timestamp) return "";
@@ -174,35 +220,13 @@ export function ServiceMessagesSection({
     </ScrollArea>
   );
 
-  const renderConversation = () => {
+  const renderConversationHeader = () => {
     const currentGroup = messageGroups.find(
       (g) => g.requestId === selectedMessageRequest?.id
     );
 
-    const conversationMessages = messages
-      .filter((msg) => msg.requestId === selectedMessageRequest?.id)
-      .sort((a, b) => {
-        const dateA = a.createdAt && typeof a.createdAt.toDate === 'function'
-          ? a.createdAt.toDate().getTime()
-          : new Date(a.createdAt).getTime();
-        const dateB = b.createdAt && typeof b.createdAt.toDate === 'function'
-          ? b.createdAt.toDate().getTime()
-          : new Date(b.createdAt).getTime();
-        return dateA - dateB;
-      });
-
-    // Mark messages as read
-    conversationMessages.forEach((message) => {
-      if (message.toId === userId && !message.read && markMessageAsRead) {
-        markMessageAsRead(message.id);
-      }
-    });
-
-    // Track current date for separators
-    let currentDate: Date | null = null;
-
     return (
-      <div className="space-y-4 h-full flex flex-col">
+      <div className="space-y-4">
         <div className="flex items-center justify-between border-b pb-4">
           <div className="flex items-center gap-2">
             <Button
@@ -214,17 +238,14 @@ export function ServiceMessagesSection({
               <ArrowLeft className="h-4 w-4 mr-2" />
               Înapoi
             </Button>
-            <Avatar className="h-8 w-8">
+            <Avatar>
               <AvatarFallback className="bg-blue-100 text-blue-600">
-                {currentGroup ? getInitials(currentGroup.clientName) : "??"}
+                {getInitials(currentGroup?.clientName || "??")}
               </AvatarFallback>
             </Avatar>
             <div>
               <h3 className="font-medium text-sm">
                 {currentGroup?.clientName}
-                <span className="text-muted-foreground ml-2 text-xs">
-                  ({currentGroup?.requestTitle})
-                </span>
               </h3>
               <p className="text-xs text-muted-foreground">
                 ID Cerere: {selectedMessageRequest?.id}
@@ -237,12 +258,89 @@ export function ServiceMessagesSection({
             onClick={() =>
               selectedMessageRequest && onViewRequestDetails(selectedMessageRequest.id)
             }
-            className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 flex items-center gap-1"
+            className="text-blue-500 hover:text-blue-700 hover:bg-blue-50"
           >
-            <Eye className="h-4 w-4" />
+            <Eye className="h-4 w-4 mr-2" />
             Detalii cerere
           </Button>
         </div>
+
+        {selectedMessageRequest && offer && (
+          <div className="bg-gray-50 rounded-lg p-4 space-y-4 text-sm">
+            <div>
+              <h4 className="font-medium flex items-center gap-2 text-gray-700 mb-2">
+                <FileText className="h-4 w-4" />
+                Cererea Clientului
+              </h4>
+              <div className="space-y-2 pl-6">
+                <p><span className="text-gray-600">Titlu:</span> {selectedMessageRequest.title}</p>
+                <p><span className="text-gray-600">Descriere:</span> {selectedMessageRequest.description}</p>
+                <p>
+                  <span className="text-gray-600">Data Preferată:</span>{" "}
+                  {format(new Date(selectedMessageRequest.preferredDate), "dd.MM.yyyy")}
+                </p>
+              </div>
+            </div>
+
+            <Separator />
+
+            <div>
+              <h4 className="font-medium flex items-center gap-2 text-gray-700 mb-2">
+                <MessageSquare className="h-4 w-4" />
+                Oferta Trimisă
+              </h4>
+              <div className="space-y-2 pl-6">
+                <p><span className="text-gray-600">Titlu:</span> {offer.title}</p>
+                <p><span className="text-gray-600">Detalii:</span> {offer.details}</p>
+                <div className="flex gap-4">
+                  <p className="flex items-center gap-1">
+                    <Calendar className="h-4 w-4 text-gray-500" />
+                    {format(new Date(offer.availableDate), "dd.MM.yyyy")}
+                  </p>
+                  <p className="flex items-center gap-1">
+                    <CreditCard className="h-4 w-4 text-gray-500" />
+                    {offer.price} RON
+                  </p>
+                </div>
+                {offer.notes && (
+                  <p><span className="text-gray-600">Note:</span> {offer.notes}</p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderConversation = () => {
+    if (!selectedMessageRequest) return null;
+
+    const conversationMessages = messages
+      .filter((msg) => msg.requestId === selectedMessageRequest.id)
+      .sort((a, b) => {
+        const dateA = a.createdAt && typeof a.createdAt.toDate === 'function'
+          ? a.createdAt.toDate().getTime()
+          : new Date(a.createdAt).getTime();
+        const dateB = b.createdAt && typeof b.createdAt.toDate === 'function'
+          ? b.createdAt.toDate().getTime()
+          : new Date(b.createdAt).getTime();
+        return dateA - dateB;
+      });
+
+
+    conversationMessages.forEach((message) => {
+      if (message.toId === userId && !message.read && markMessageAsRead) {
+        markMessageAsRead(message.id);
+      }
+    });
+
+    let currentDate: Date | null = null;
+
+
+    return (
+      <div className="space-y-4 h-full flex flex-col">
+        {renderConversationHeader()}
 
         <ScrollArea
           className="flex-1 pr-4"
@@ -267,12 +365,12 @@ export function ServiceMessagesSection({
                           {formatMessageDate(message.createdAt)}
                         </div>
                       </div>
-                      {renderMessage(message, currentGroup)}
+                      {renderMessage(message, messageGroups.find(g => g.requestId === message.requestId))}
                     </div>
                   );
                 }
 
-                return renderMessage(message, currentGroup);
+                return renderMessage(message, messageGroups.find(g => g.requestId === message.requestId));
               })}
             </AnimatePresence>
             <div ref={messagesEndRef} />
