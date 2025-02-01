@@ -62,6 +62,11 @@ export default function ClientDashboard() {
   } = useMessages(user?.uid || "");
   const { cars, fetchCars } = useCars(user?.uid || "");
 
+  const handleMessageService = (serviceId: string, requestId: string) => {
+    setActiveTab("messages");
+    handleSelectConversation(requestId);
+  };
+
   useEffect(() => {
     const fetchViewedOffers = async () => {
       if (!user) return;
@@ -245,6 +250,7 @@ export default function ClientDashboard() {
           {activeTab === "offers" && (
             <ReceivedOffers
               cars={cars}
+              onMessageService={handleMessageService}
             />
           )}
           {activeTab === "messages" && (
@@ -269,43 +275,43 @@ export default function ClientDashboard() {
           {activeTab === "car" && <CarManagement />}
           {activeTab === "profile" && <ProfileSection userId={user?.uid || ""} />}
         </div>
-
-        <Dialog open={isRequestDialogOpen} onOpenChange={setIsRequestDialogOpen}>
-          <DialogContent className="sm:max-w-[600px]">
-            <DialogHeader>
-              <DialogTitle>Adaugă o cerere nouă</DialogTitle>
-            </DialogHeader>
-            <RequestForm
-              onSubmit={handleRequestSubmit}
-              onCancel={() => {
-                setRequestFormData({});
-                setIsRequestDialogOpen(false);
-              }}
-              onAddCar={(currentFormData) => {
-                setRequestFormData(currentFormData);
-                setIsRequestDialogOpen(false);
-                setIsCarDialogOpen(true);
-              }}
-              initialData={requestFormData}
-            />
-          </DialogContent>
-        </Dialog>
-
-        <Dialog open={isCarDialogOpen} onOpenChange={setIsCarDialogOpen}>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>Adaugă o mașină nouă</DialogTitle>
-            </DialogHeader>
-            <CarManagement
-              isDialog={true}
-              onBackClick={() => {
-                setIsCarDialogOpen(false);
-                setIsRequestDialogOpen(true);
-              }}
-            />
-          </DialogContent>
-        </Dialog>
       </div>
+
+      <Dialog open={isRequestDialogOpen} onOpenChange={setIsRequestDialogOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Adaugă o cerere nouă</DialogTitle>
+          </DialogHeader>
+          <RequestForm
+            onSubmit={handleRequestSubmit}
+            onCancel={() => {
+              setRequestFormData({});
+              setIsRequestDialogOpen(false);
+            }}
+            onAddCar={(currentFormData) => {
+              setRequestFormData(currentFormData);
+              setIsRequestDialogOpen(false);
+              setIsCarDialogOpen(true);
+            }}
+            initialData={requestFormData}
+          />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isCarDialogOpen} onOpenChange={setIsCarDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Adaugă o mașină nouă</DialogTitle>
+          </DialogHeader>
+          <CarManagement
+            isDialog={true}
+            onBackClick={() => {
+              setIsCarDialogOpen(false);
+              setIsRequestDialogOpen(true);
+            }}
+          />
+        </DialogContent>
+      </Dialog>
     </MainLayout>
   );
 }

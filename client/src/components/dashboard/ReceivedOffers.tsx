@@ -5,8 +5,9 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
-import { SendHorizontal, Clock, User, Calendar, CreditCard, FileText, Loader2 } from "lucide-react";
+import { SendHorizontal, Clock, User, Calendar, CreditCard, FileText, Loader2, MessageSquare, Check } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { collection, query, where, getDocs, doc, getDoc, updateDoc, setDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/context/AuthContext";
@@ -16,6 +17,7 @@ import type { Car as CarType } from "@/types/dashboard";
 
 interface ReceivedOffersProps {
   cars: Record<string, CarType>;
+  onMessageService?: (serviceId: string, requestId: string) => void;
 }
 
 interface Offer {
@@ -33,7 +35,7 @@ interface Offer {
   isNew?: boolean;
 }
 
-export function ReceivedOffers({ cars }: ReceivedOffersProps) {
+export function ReceivedOffers({ cars, onMessageService }: ReceivedOffersProps) {
   const [offers, setOffers] = useState<Offer[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewedOffers, setViewedOffers] = useState<Set<string>>(new Set());
@@ -110,6 +112,33 @@ export function ReceivedOffers({ cars }: ReceivedOffersProps) {
       setViewedOffers(newViewedOffers);
     } catch (error) {
       console.error("Error marking offer as viewed:", error);
+    }
+  };
+
+  const handleAcceptOffer = async (offer: Offer) => {
+    if (!user) return;
+
+    try {
+      const offerRef = doc(db, "offers", offer.id);
+      await updateDoc(offerRef, {
+        status: "Accepted",
+        updatedAt: new Date(),
+      });
+
+      // Update the request status
+      const requestRef = doc(db, "requests", offer.requestId);
+      await updateDoc(requestRef, {
+        status: "Rezolvat",
+        lastUpdated: new Date(),
+      });
+
+      // Refresh offers
+      const updatedOffers = offers.map(o => 
+        o.id === offer.id ? { ...o, status: "Accepted" } : o
+      );
+      setOffers(updatedOffers);
+    } catch (error) {
+      console.error("Error accepting offer:", error);
     }
   };
 
@@ -223,6 +252,29 @@ export function ReceivedOffers({ cars }: ReceivedOffersProps) {
                   <p className="text-sm">{offer.notes}</p>
                 </div>
               )}
+
+              <div className="mt-4 flex gap-2 justify-end border-t pt-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-blue-500 hover:text-blue-700 hover:bg-blue-50"
+                  onClick={() => onMessageService?.(offer.serviceId, offer.requestId)}
+                >
+                  <MessageSquare className="w-4 h-4 mr-1" />
+                  Mesaj
+                </Button>
+                {offer.status === "Pending" && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-green-500 hover:text-green-700 hover:bg-green-50"
+                    onClick={() => handleAcceptOffer(offer)}
+                  >
+                    <Check className="w-4 h-4 mr-1" />
+                    Acceptă Oferta
+                  </Button>
+                )}
+              </div>
             </div>
           ))}
         </div>
