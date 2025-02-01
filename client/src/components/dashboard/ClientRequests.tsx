@@ -326,10 +326,15 @@ export function ClientRequests({
                   <TableHead className="text-right">Acțiuni</TableHead>
                 </TableRow>
               </TableHeader>
-              <TableBody className="[&_tr:not(:last-child)]:mb-2">
+              <TableBody className="[&_tr:last-child]:border-0">
                 {paginatedRequests.map((request) => (
                   <Fragment key={request.id}>
-                    <TableRow className="hover:bg-blue-50/80 transition-colors relative mb-2">
+                    <TableRow
+                      className={`
+                        hover:bg-blue-50/80 transition-colors relative 
+                        mb-2 ${selectedRequest?.id === request.id ? 'bg-blue-50' : ''}
+                      `}
+                    >
                       <TableCell className="font-medium">
                         <div className="flex items-center gap-2">
                           {!viewedRequests.has(request.id) && (
@@ -418,55 +423,78 @@ export function ClientRequests({
                     {selectedRequest?.id === request.id && (
                       <TableRow className="hover:bg-transparent">
                         <TableCell colSpan={7} className="p-0">
-                          <div className="bg-gray-50 p-4 border-t border-b">
-                            <div className="grid grid-cols-3 gap-4">
+                          <div className="bg-gray-50 p-6 border-t border-b">
+                            <div className="grid gap-6">
+                              {/* Description Section */}
                               <div>
-                                <h3 className="text-xs font-medium text-muted-foreground">
-                                  Client
+                                <h3 className="text-sm font-medium mb-2">
+                                  Descriere Cerere
                                 </h3>
-                                <p className="text-sm mt-1">
-                                  {request.clientName}
-                                </p>
-                                <p className="text-xs text-muted-foreground">
-                                  {requestClient?.email}
+                                <p className="text-sm text-muted-foreground whitespace-pre-wrap bg-white p-4 rounded-lg border">
+                                  {request.description}
                                 </p>
                               </div>
-                              <div>
-                                <h3 className="text-xs font-medium text-muted-foreground">
-                                  Mașină
-                                </h3>
-                                <p className="text-sm mt-1">
-                                  {cars[request.carId] ? (
-                                    <>
-                                      {cars[request.carId].brand}{" "}
-                                      {cars[request.carId].model} (
-                                      {cars[request.carId].year})
-                                      {cars[request.carId].licensePlate && (
-                                        <span className="text-xs text-muted-foreground ml-1">
-                                          Nr. {cars[request.carId].licensePlate}
-                                        </span>
+
+                              <div className="grid grid-cols-3 gap-6">
+                                {/* Client Details */}
+                                <div>
+                                  <h3 className="text-sm font-medium mb-2">
+                                    Client
+                                  </h3>
+                                  <div className="bg-white p-4 rounded-lg border">
+                                    <p className="text-sm">
+                                      {request.clientName}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">
+                                      {requestClient?.email}
+                                    </p>
+                                  </div>
+                                </div>
+
+                                {/* Car Details */}
+                                <div>
+                                  <h3 className="text-sm font-medium mb-2">
+                                    Mașină
+                                  </h3>
+                                  <div className="bg-white p-4 rounded-lg border">
+                                    <p className="text-sm">
+                                      {cars[request.carId] ? (
+                                        <>
+                                          {cars[request.carId].brand}{" "}
+                                          {cars[request.carId].model} (
+                                          {cars[request.carId].year})
+                                          {cars[request.carId].licensePlate && (
+                                            <span className="text-xs text-muted-foreground block mt-1">
+                                              Nr. {cars[request.carId].licensePlate}
+                                            </span>
+                                          )}
+                                          {cars[request.carId].vin && (
+                                            <span className="text-xs text-muted-foreground block mt-1">
+                                              VIN: {cars[request.carId].vin}
+                                            </span>
+                                          )}
+                                        </>
+                                      ) : (
+                                        "Detalii indisponibile"
                                       )}
-                                      {cars[request.carId].vin && (
-                                        <span className="block text-xs text-muted-foreground">
-                                          VIN: {cars[request.carId].vin}
-                                        </span>
+                                    </p>
+                                  </div>
+                                </div>
+
+                                {/* Date Details */}
+                                <div>
+                                  <h3 className="text-sm font-medium mb-2">
+                                    Data preferată
+                                  </h3>
+                                  <div className="bg-white p-4 rounded-lg border">
+                                    <p className="text-sm">
+                                      {format(
+                                        new Date(request.preferredDate),
+                                        "dd.MM.yyyy"
                                       )}
-                                    </>
-                                  ) : (
-                                    "Detalii indisponibile"
-                                  )}
-                                </p>
-                              </div>
-                              <div>
-                                <h3 className="text-xs font-medium text-muted-foreground">
-                                  Data preferată
-                                </h3>
-                                <p className="text-sm mt-1">
-                                  {format(
-                                    new Date(request.preferredDate),
-                                    "dd.MM.yyyy",
-                                  )}
-                                </p>
+                                    </p>
+                                  </div>
+                                </div>
                               </div>
                             </div>
                           </div>

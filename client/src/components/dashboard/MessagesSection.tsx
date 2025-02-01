@@ -31,7 +31,7 @@ interface MessagesSectionProps {
   messages: Message[];
   messageGroups: {
     requestId: string;
-    requestTitle: string;
+    requestTitle: string; // (se va ignora această valoare și se va obține din `requests`)
     lastMessage: Message;
     unreadCount: number;
   }[];
@@ -43,7 +43,12 @@ interface MessagesSectionProps {
   userId: string;
   userName: string;
   onMessageContentChange: (content: string) => void;
-  onSendMessage: (content: string, toId: string, requestId: string, requestTitle: string) => Promise<void>;
+  onSendMessage: (
+    content: string,
+    toId: string,
+    requestId: string,
+    requestTitle: string
+  ) => Promise<void>;
   onSelectConversation: (requestId: string) => void;
   onBackToList: () => void;
   markMessageAsRead: (messageId: string) => Promise<void>;
@@ -74,12 +79,11 @@ export function MessagesSection({
 
   const formatMessageDate = (timestamp: any) => {
     if (!timestamp) return "";
-
     try {
-      const date = timestamp && typeof timestamp.toDate === 'function'
-        ? timestamp.toDate()
-        : new Date(timestamp);
-
+      const date =
+        timestamp && typeof timestamp.toDate === "function"
+          ? timestamp.toDate()
+          : new Date(timestamp);
       if (isToday(date)) {
         return "Astăzi";
       } else if (isYesterday(date)) {
@@ -94,12 +98,11 @@ export function MessagesSection({
 
   const formatMessageTime = (timestamp: any) => {
     if (!timestamp) return "";
-
     try {
-      const date = timestamp && typeof timestamp.toDate === 'function'
-        ? timestamp.toDate()
-        : new Date(timestamp);
-
+      const date =
+        timestamp && typeof timestamp.toDate === "function"
+          ? timestamp.toDate()
+          : new Date(timestamp);
       return format(date, "HH:mm");
     } catch (error) {
       console.error("Error formatting time:", error);
@@ -109,9 +112,9 @@ export function MessagesSection({
 
   const getInitials = (name: string) => {
     return name
-      .split(' ')
-      .map(part => part[0])
-      .join('')
+      .split(" ")
+      .map((part) => part[0])
+      .join("")
       .toUpperCase()
       .slice(0, 2);
   };
@@ -129,14 +132,13 @@ export function MessagesSection({
 
   const handleViewDetails = () => {
     if (selectedMessageRequest) {
-      const request = requests.find(r => r.id === selectedMessageRequest);
+      const request = requests.find((r) => r.id === selectedMessageRequest);
       if (request) {
         setSelectedRequest(request);
         setIsDetailsDialogOpen(true);
       }
     }
   };
-
 
   const renderMessagesList = () => (
     <ScrollArea className="h-[600px] pr-4">
@@ -147,10 +149,15 @@ export function MessagesSection({
           </p>
         ) : (
           messageGroups.map((group) => {
-            const serviceId = group.lastMessage.fromId === userId
-              ? group.lastMessage.toId
-              : group.lastMessage.fromId;
-            const serviceName = messageServices[serviceId]?.companyName || "Service Auto";
+            // Căutăm cererea în lista `requests` folosind id-ul
+            const request = requests.find((r) => r.id === group.requestId);
+            const requestTitle = request?.title || "Untitled request";
+            const serviceId =
+              group.lastMessage.fromId === userId
+                ? group.lastMessage.toId
+                : group.lastMessage.fromId;
+            const serviceName =
+              messageServices[serviceId]?.companyName || "Service Auto";
 
             return (
               <motion.div
@@ -171,14 +178,15 @@ export function MessagesSection({
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0">
-                        <div className="flex justify-between items-start">
-                          <h4 className="font-medium truncate">{serviceName}</h4>
-                          <span className="text-xs text-muted-foreground whitespace-nowrap ml-2">
-                            {formatMessageDate(group.lastMessage?.createdAt)} {formatMessageTime(group.lastMessage?.createdAt)}
-                          </span>
-                        </div>
+                        {/* Numele service */}
+                        <h4 className="font-medium truncate">{serviceName}</h4>
+                        {/* Titlul cererii importat din clientRequest */}
+                        <p className="text-xs text-muted-foreground truncate">
+                          {requestTitle}
+                        </p>
+                        {/* Ultimul mesaj */}
                         <p className="text-sm text-muted-foreground truncate">
-                          {group.lastMessage?.content || 'No messages'}
+                          {group.lastMessage?.content || "No messages"}
                         </p>
                       </div>
                       {group.unreadCount > 0 && (
@@ -203,12 +211,14 @@ export function MessagesSection({
     const conversationMessages = messages
       .filter((msg) => msg.requestId === selectedMessageRequest)
       .sort((a, b) => {
-        const dateA = a.createdAt && typeof a.createdAt.toDate === 'function'
-          ? a.createdAt.toDate().getTime()
-          : new Date(a.createdAt).getTime();
-        const dateB = b.createdAt && typeof b.createdAt.toDate === 'function'
-          ? b.createdAt.toDate().getTime()
-          : new Date(b.createdAt).getTime();
+        const dateA =
+          a.createdAt && typeof a.createdAt.toDate === "function"
+            ? a.createdAt.toDate().getTime()
+            : new Date(a.createdAt).getTime();
+        const dateB =
+          b.createdAt && typeof b.createdAt.toDate === "function"
+            ? b.createdAt.toDate().getTime()
+            : new Date(b.createdAt).getTime();
         return dateA - dateB;
       });
 
@@ -219,10 +229,10 @@ export function MessagesSection({
         markMessageAsRead(message.id);
       }
 
-      const serviceId = message.fromId === userId
-        ? message.toId
-        : message.fromId;
-      const serviceName = messageServices[serviceId]?.companyName || "Service Auto";
+      const serviceId =
+        message.fromId === userId ? message.toId : message.fromId;
+      const serviceName =
+        messageServices[serviceId]?.companyName || "Service Auto";
 
       return (
         <motion.div
@@ -230,7 +240,9 @@ export function MessagesSection({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
-          className={`flex ${message.fromId === userId ? "justify-end" : "justify-start"}`}
+          className={`flex ${
+            message.fromId === userId ? "justify-end" : "justify-start"
+          }`}
         >
           <div
             className={`max-w-[80%] ${
@@ -242,10 +254,14 @@ export function MessagesSection({
             <div className="text-xs mb-1 font-medium">
               {message.fromId === userId ? userName : serviceName}
             </div>
-            <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
-            <div className={`flex items-center gap-1 mt-1 text-xs ${
-              message.fromId === userId ? "text-blue-100" : "text-gray-500"
-            }`}>
+            <p className="text-sm whitespace-pre-wrap break-words">
+              {message.content}
+            </p>
+            <div
+              className={`flex items-center gap-1 mt-1 text-xs ${
+                message.fromId === userId ? "text-blue-100" : "text-gray-500"
+              }`}
+            >
               {formatMessageTime(message.createdAt)}
               {message.fromId === userId && (
                 <CheckCircle2 className="h-3 w-3" />
@@ -256,31 +272,42 @@ export function MessagesSection({
       );
     };
 
+    // Pentru header-ul conversației, folosim titlul din request-ul asociat
+    const currentRequest = requests.find(
+      (r) => r.id === selectedMessageRequest
+    );
+    const requestTitle = currentRequest?.title || "Untitled request";
+    const currentGroup = messageGroups.find(
+      (g) => g.requestId === selectedMessageRequest
+    );
+    const serviceId =
+      currentGroup &&
+      (currentGroup.lastMessage.fromId === userId
+        ? currentGroup.lastMessage.toId
+        : currentGroup.lastMessage.fromId);
+    const serviceName =
+      (serviceId && messageServices[serviceId]?.companyName) || "Service Auto";
 
     return (
       <div className="space-y-4 h-full flex flex-col">
         <div className="flex items-center justify-between border-b pb-4">
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onBackToList}
-              className="hover:bg-gray-100"
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Înapoi
-            </Button>
-            <Avatar className="h-8 w-8">
-              <AvatarFallback className="bg-blue-100 text-blue-600">
-                {getInitials(serviceName)}
-              </AvatarFallback>
-            </Avatar>
-            <div>
-              <h3 className="font-medium text-sm">{serviceName}</h3>
-              <p className="text-xs text-muted-foreground">
-                {currentGroup?.requestTitle || ''}
-              </p>
-            </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onBackToList}
+            className="hover:bg-gray-100"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Înapoi
+          </Button>
+          <Avatar className="h-8 w-8">
+            <AvatarFallback className="bg-blue-100 text-blue-600">
+              {getInitials(serviceName)}
+            </AvatarFallback>
+          </Avatar>
+          <div>
+            <h3 className="font-medium text-sm">{serviceName}</h3>
+            <p className="text-xs text-muted-foreground">{requestTitle}</p>
           </div>
           <Button
             variant="ghost"
@@ -300,12 +327,15 @@ export function MessagesSection({
         >
           <div className="space-y-4">
             <AnimatePresence>
-              {conversationMessages.map((message, index) => {
-                const messageDate = message.createdAt && typeof message.createdAt.toDate === 'function'
-                  ? message.createdAt.toDate()
-                  : new Date(message.createdAt);
+              {conversationMessages.map((message) => {
+                const messageDate =
+                  message.createdAt &&
+                  typeof message.createdAt.toDate === "function"
+                    ? message.createdAt.toDate()
+                    : new Date(message.createdAt);
 
-                const showDateSeparator = !currentDate || !isSameDay(currentDate, messageDate);
+                const showDateSeparator =
+                  !currentDate || !isSameDay(currentDate, messageDate);
 
                 if (showDateSeparator) {
                   currentDate = messageDate;
@@ -336,17 +366,18 @@ export function MessagesSection({
               placeholder="Scrie un mesaj..."
               className="flex-1 min-h-[80px] resize-none rounded-xl"
               onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
+                if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
                   if (messageContent.trim() && currentGroup) {
-                    const serviceId = conversationMessages[0]?.fromId === userId
-                      ? conversationMessages[0]?.toId
-                      : conversationMessages[0]?.fromId;
+                    const serviceId =
+                      conversationMessages[0]?.fromId === userId
+                        ? conversationMessages[0]?.toId
+                        : conversationMessages[0]?.fromId;
                     onSendMessage(
                       messageContent,
                       serviceId,
                       currentGroup.requestId,
-                      currentGroup.requestTitle
+                      requestTitle
                     );
                   }
                 }
@@ -355,14 +386,15 @@ export function MessagesSection({
             <Button
               onClick={() => {
                 if (currentGroup) {
-                  const serviceId = conversationMessages[0]?.fromId === userId
-                    ? conversationMessages[0]?.toId
-                    : conversationMessages[0]?.fromId;
+                  const serviceId =
+                    conversationMessages[0]?.fromId === userId
+                      ? conversationMessages[0]?.toId
+                      : conversationMessages[0]?.fromId;
                   onSendMessage(
                     messageContent,
                     serviceId,
                     currentGroup.requestId,
-                    currentGroup.requestTitle
+                    requestTitle
                   );
                 }
               }}
@@ -390,8 +422,17 @@ export function MessagesSection({
     );
   };
 
-  const currentGroup = messageGroups.find(g => g.requestId === selectedMessageRequest);
-  const serviceName = currentGroup ? (messageServices[currentGroup.lastMessage.fromId === userId ? currentGroup.lastMessage.toId : currentGroup.lastMessage.fromId]?.companyName || "Service Auto") : "Service Auto";
+  const currentGroup = messageGroups.find(
+    (g) => g.requestId === selectedMessageRequest
+  );
+  const serviceIdForHeader =
+    currentGroup &&
+    (currentGroup.lastMessage.fromId === userId
+      ? currentGroup.lastMessage.toId
+      : currentGroup.lastMessage.fromId);
+  const serviceName =
+    (serviceIdForHeader && messageServices[serviceIdForHeader]?.companyName) ||
+    "Service Auto";
 
   return (
     <>
@@ -415,87 +456,91 @@ export function MessagesSection({
           {selectedRequest && (
             <div className="space-y-4">
               <div className="grid gap-4">
+                {/* Informații Generale */}
                 <div className="border-b pb-3">
                   <h4 className="font-medium text-sm mb-2">Informații Generale</h4>
                   <div className="grid gap-2">
                     <div>
-                      <h5 className="text-sm font-medium text-muted-foreground">Titlu</h5>
+                      <h5 className="text-sm font-medium text-muted-foreground">
+                        Titlu
+                      </h5>
                       <p className="text-sm">{selectedRequest.title}</p>
                     </div>
                     <div>
-                      <h5 className="text-sm font-medium text-muted-foreground">Descriere</h5>
-                      <p className="text-sm whitespace-pre-wrap">{selectedRequest.description}</p>
+                      <h5 className="text-sm font-medium text-muted-foreground">
+                        Descriere
+                      </h5>
+                      <p className="text-sm whitespace-pre-wrap">
+                        {selectedRequest.description}
+                      </p>
                     </div>
                     <div>
-                      <h5 className="text-sm font-medium text-muted-foreground">Status</h5>
+                      <h5 className="text-sm font-medium text-muted-foreground">
+                        Status
+                      </h5>
                       <p className="text-sm">{selectedRequest.status}</p>
                     </div>
                   </div>
                 </div>
 
-                <div className="border-b pb-3">
-                  <h4 className="font-medium text-sm mb-2">Detalii Mașină</h4>
-                  <div className="grid gap-2">
-                    <div>
-                      <h5 className="text-sm font-medium text-muted-foreground">Marca și Model</h5>
-                      <p className="text-sm">{selectedRequest.car?.make} {selectedRequest.car?.model}</p>
-                    </div>
-                    <div>
-                      <h5 className="text-sm font-medium text-muted-foreground">An Fabricație</h5>
-                      <p className="text-sm">{selectedRequest.car?.year || 'N/A'}</p>
-                    </div>
-                    <div>
-                      <h5 className="text-sm font-medium text-muted-foreground">Număr Înmatriculare</h5>
-                      <p className="text-sm">{selectedRequest.car?.licensePlate || 'N/A'}</p>
-                    </div>
-                    <div>
-                      <h5 className="text-sm font-medium text-muted-foreground">Combustibil</h5>
-                      <p className="text-sm">{selectedRequest.car?.fuelType || 'N/A'}</p>
-                    </div>
-                    <div>
-                      <h5 className="text-sm font-medium text-muted-foreground">Kilometraj</h5>
-                      <p className="text-sm">{selectedRequest.car?.mileage ? `${selectedRequest.car.mileage} km` : 'N/A'}</p>
-                    </div>
-                  </div>
-                </div>
-
+                {/* Locație */}
                 <div className="border-b pb-3">
                   <h4 className="font-medium text-sm mb-2">Locație</h4>
                   <div className="grid gap-2">
                     <div>
-                      <h5 className="text-sm font-medium text-muted-foreground">Județ</h5>
-                      <p className="text-sm">{selectedRequest.location?.county || 'N/A'}</p>
+                      <h5 className="text-sm font-medium text-muted-foreground">
+                        Județ
+                      </h5>
+                      <p className="text-sm">
+                        {selectedRequest.county || "N/A"}
+                      </p>
                     </div>
                     <div>
-                      <h5 className="text-sm font-medium text-muted-foreground">Localitate</h5>
-                      <p className="text-sm">{selectedRequest.location?.city || 'N/A'}</p>
+                      <h5 className="text-sm font-medium text-muted-foreground">
+                        Localitate
+                      </h5>
+                      <p className="text-sm">
+                        {selectedRequest.cities
+                          ? selectedRequest.cities.join(", ")
+                          : "N/A"}
+                      </p>
                     </div>
                   </div>
                 </div>
 
+                {/* Programare */}
                 <div className="border-b pb-3">
                   <h4 className="font-medium text-sm mb-2">Programare</h4>
                   <div className="grid gap-2">
                     <div>
-                      <h5 className="text-sm font-medium text-muted-foreground">Data Preferată</h5>
+                      <h5 className="text-sm font-medium text-muted-foreground">
+                        Data Preferată
+                      </h5>
                       <p className="text-sm">
-                        {selectedRequest.preferredDate ? format(
-                          typeof selectedRequest.preferredDate.toDate === 'function'
-                            ? selectedRequest.preferredDate.toDate()
-                            : new Date(selectedRequest.preferredDate),
-                          "dd.MM.yyyy"
-                        ) : 'N/A'}
+                        {selectedRequest.preferredDate
+                          ? format(
+                              typeof selectedRequest.preferredDate.toDate ===
+                                "function"
+                                ? selectedRequest.preferredDate.toDate()
+                                : new Date(selectedRequest.preferredDate),
+                              "dd.MM.yyyy"
+                            )
+                          : "N/A"}
                       </p>
                     </div>
                     <div>
-                      <h5 className="text-sm font-medium text-muted-foreground">Data Creării</h5>
+                      <h5 className="text-sm font-medium text-muted-foreground">
+                        Data Creării
+                      </h5>
                       <p className="text-sm">
-                        {selectedRequest.createdAt ? format(
-                          typeof selectedRequest.createdAt.toDate === 'function'
-                            ? selectedRequest.createdAt.toDate()
-                            : new Date(selectedRequest.createdAt),
-                          "dd.MM.yyyy HH:mm"
-                        ) : 'N/A'}
+                        {selectedRequest.createdAt
+                          ? format(
+                              typeof selectedRequest.createdAt.toDate === "function"
+                                ? selectedRequest.createdAt.toDate()
+                                : new Date(selectedRequest.createdAt),
+                              "dd.MM.yyyy HH:mm"
+                            )
+                          : "N/A"}
                       </p>
                     </div>
                   </div>
