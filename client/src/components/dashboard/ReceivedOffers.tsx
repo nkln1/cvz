@@ -293,35 +293,35 @@ export function ReceivedOffers({ cars, onMessageService }: ReceivedOffersProps) 
                 </div>
               )}
 
-              <div className="mt-4 flex gap-2 justify-end border-t pt-3">
+              <div className="mt-4 flex items-center justify-between gap-2 border-t pt-3">
                 <Button
                   variant="outline"
-                  size="sm"
+                  size="xs"
                   className="text-blue-500 hover:text-blue-700 hover:bg-blue-50"
                   onClick={() => onMessageService?.(offer.serviceId, offer.requestId)}
                 >
-                  <MessageSquare className="w-4 h-4 mr-1" />
+                  <MessageSquare className="w-3 h-3 mr-1" />
                   Mesaj
                 </Button>
                 {offer.status === "Pending" && (
                   <>
                     <Button
                       variant="outline"
-                      size="sm"
-                      className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                      onClick={() => handleRejectOffer(offer)}
-                    >
-                      <XCircle className="w-4 h-4 mr-1" />
-                      Respinge Oferta
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
+                      size="xs"
                       className="text-green-500 hover:text-green-700 hover:bg-green-50"
                       onClick={() => handleAcceptOffer(offer)}
                     >
-                      <Check className="w-4 h-4 mr-1" />
-                      Acceptă Oferta
+                      <Check className="w-3 h-3 mr-1" />
+                      Acceptă
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="xs"
+                      className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                      onClick={() => handleRejectOffer(offer)}
+                    >
+                      <XCircle className="w-3 h-3 mr-1" />
+                      Respinge
                     </Button>
                   </>
                 )}
