@@ -1,0 +1,60 @@
+Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
+firebase.ts:31 Auth state changed: User logged in
+firebase.ts:31 Auth state changed: User logged in
+useServiceMessages.ts:54 Setting up message listeners for user: zqssrF1LFkbTYiVdfTWbLwsiMwy1
+useServiceRequests.ts:20 Missing userId or serviceData
+ServiceDashboard.tsx:146 Fetching service data for user: zqssrF1LFkbTYiVdfTWbLwsiMwy1
+useServiceMessages.ts:100 Cleaning up message listener
+useServiceMessages.ts:54 Setting up message listeners for user: zqssrF1LFkbTYiVdfTWbLwsiMwy1
+useServiceRequests.ts:20 Missing userId or serviceData
+ServiceDashboard.tsx:146 Fetching service data for user: zqssrF1LFkbTYiVdfTWbLwsiMwy1
+firebase.ts:20 Firebase Auth Status: Logged in
+firebase.ts:20 Firebase Auth Status: Logged in
+ServiceDashboard.tsx:155 Service data fetched: Object
+ServiceDashboard.tsx:155 Service data fetched: Object
+useServiceMessages.ts:64 Received messages update: 28 messages
+useServiceRequests.ts:24 Starting request listener for service: Object
+useServiceRequests.ts:36 Received snapshot with 10 documents
+useServiceRequests.ts:42 Processing request: 0cccdKhPyKK99TBJnfPV Object
+useServiceRequests.ts:42 Processing request: 2CpjBAD1EAEaIDHTzLDX Object
+useServiceRequests.ts:42 Processing request: 6xk5vtMy2aQjoaaDxsH8 Object
+useServiceRequests.ts:42 Processing request: FxyhyO3Bn6x8t2W2rGrm Object
+useServiceRequests.ts:42 Processing request: MK6SrKVAE3BL0ZtciFDh Object
+useServiceRequests.ts:42 Processing request: ZTJKHFpQZu0gx2TgAfmW Object
+useServiceRequests.ts:42 Processing request: h9vvAUS2vW3TaTxnSd8C Object
+useServiceRequests.ts:42 Processing request: ir9a4cFgx5NxQ0HtbE9Q Object
+useServiceRequests.ts:42 Processing request: mPzrVa97kP6fVLtArBi2 Object
+useServiceRequests.ts:42 Processing request: tbymAeyHciauknj3JXmr Object
+useServiceRequests.ts:65 Processed requests: 9
+2SentOffers.tsx:44 Starting to fetch offers, serviceId: zqssrF1LFkbTYiVdfTWbLwsiMwy1
+2SentOffers.tsx:70 Error in fetchOffers: FirebaseError: The query requires an index. You can create it here: https://console.firebase.google.com/v1/r/project/carvizio-db/firestore/indexes?create_composite=Ckpwcm9qZWN0cy9jYXJ2aXppby1kYi9kYXRhYmFzZXMvKGRlZmF1bHQpL2NvbGxlY3Rpb25Hcm91cHMvb2ZmZXJzL2luZGV4ZXMvXxABGg0KCXNlcnZpY2VJZBABGg0KCWNyZWF0ZWRBdBACGgwKCF9fbmFtZV9fEAI
+fetchOffers @ SentOffers.tsx:70
+2SentOffers.tsx:44 Starting to fetch offers, serviceId: zqssrF1LFkbTYiVdfTWbLwsiMwy1
+2SentOffers.tsx:70 Error in fetchOffers: FirebaseError: The query requires an index. You can create it here: https://console.firebase.google.com/v1/r/project/carvizio-db/firestore/indexes?create_composite=Ckpwcm9qZWN0cy9jYXJ2aXppby1kYi9kYXRhYmFzZXMvKGRlZmF1bHQpL2NvbGxlY3Rpb25Hcm91cHMvb2ZmZXJzL2luZGV4ZXMvXxABGg0KCXNlcnZpY2VJZBABGg0KCWNyZWF0ZWRBdBACGgwKCF9fbmFtZV9fEAI
+fetchOffers @ SentOffers.tsx:70
+2chunk-HLFBLPY6.js?v=86821556:338 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+(anonymous) @ chunk-HLFBLPY6.js?v=86821556:338
+ServiceDashboard.tsx:202 Creating new offer: Object
+ServiceDashboard.tsx:219 Offer created with ID: GImmXI4kCsicsc7eW39C
+useServiceRequests.ts:36 Received snapshot with 9 documents
+useServiceRequests.ts:42 Processing request: 0cccdKhPyKK99TBJnfPV Object
+useServiceRequests.ts:42 Processing request: 2CpjBAD1EAEaIDHTzLDX Object
+2SentOffers.tsx:44 Starting to fetch offers, serviceId: zqssrF1LFkbTYiVdfTWbLwsiMwy1
+2SentOffers.tsx:70 Error in fetchOffers: FirebaseError: The query requires an index. You can create it here: https://console.firebase.google.com/v1/r/project/carvizio-db/firestore/indexes?create_composite=Ckpwcm9qZWN0cy9jYXJ2aXppby1kYi9kYXRhYmFzZXMvKGRlZmF1bHQpL2NvbGxlY3Rpb25Hcm91cHMvb2ZmZXJzL2luZGV4ZXMvXxABGg0KCXNlcnZpY2VJZBABGg0KCWNyZWF0ZWRBdBACGgwKCF9fbmFtZV9fEAI
+fetchOffers @ SentOffers.tsx:70
+useServiceRequests.ts:42 Processing request: 6xk5vtMy2aQjoaaDxsH8 Object
+useServiceRequests.ts:42 Processing request: FxyhyO3Bn6x8t2W2rGrm Object
+useServiceRequests.ts:42 Processing request: MK6SrKVAE3BL0ZtciFDh Object
+useServiceRequests.ts:42 Processing request: ZTJKHFpQZu0gx2TgAfmW Object
+useServiceRequests.ts:42 Processing request: ir9a4cFgx5NxQ0HtbE9Q Object
+useServiceRequests.ts:42 Processing request: mPzrVa97kP6fVLtArBi2 Object
+useServiceRequests.ts:42 Processing request: tbymAeyHciauknj3JXmr Object
+useServiceRequests.ts:65 Processed requests: 8
+firestore.googleapis.com/google.firestore.v1.Firestore/Write/channel?VER=8&database=projects%2Fcarvizio-db%2Fdatabases%2F(default)&gsessionid=Qe2KCUp7PEaTWNgf-_q_IsiQvjEKyfcDNAzS6Zckg8A&SID=Wq44XotWmWniyLni6NE1aQ&RID=67856&TYPE=terminate&zx=61a5e9vqyvg1:1 
+        
+        
+       Failed to load resource: net::ERR_BLOCKED_BY_CLIENT
+firestore.googleapis.com/google.firestore.v1.Firestore/Listen/channel?VER=8&database=projects%2Fcarvizio-db%2Fdatabases%2F(default)&gsessionid=2LIahsXj_lrX-sS9OHaM-2E7NPaREzZKK2OYSUlQLo4&SID=U-wpDRiWeM1p-xrliwpWWg&RID=55126&TYPE=terminate&zx=n011wo5w39d6:1 
+        
+        
+       Failed to load resource: net::ERR_BLOCKED_BY_CLIENT

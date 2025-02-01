@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { SendHorizontal, Clock, User, Car, Calendar, CreditCard, FileText, Loader2 } from "lucide-react";
 import type { Request, Car as CarType } from "@/types/dashboard";
-import { collection, query, orderBy, getDocs, where } from "firebase/firestore";
+import { collection, query, getDocs, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/context/AuthContext";
 import { useEffect, useState } from "react";
@@ -35,35 +35,40 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
 
   useEffect(() => {
     const fetchOffers = async () => {
-      if (!user) return;
+      if (!user) {
+        console.log("No user found, skipping fetch");
+        return;
+      }
 
       try {
-        console.log("Fetching offers for service:", user.uid);
+        console.log("Starting to fetch offers, serviceId:", user.uid);
         setLoading(true);
         const offersRef = collection(db, "offers");
         const q = query(
           offersRef,
-          where("serviceId", "==", user.uid),
-          orderBy("createdAt", "desc")
+          where("serviceId", "==", user.uid)
         );
 
         const querySnapshot = await getDocs(q);
+        console.log("Query snapshot size:", querySnapshot.size);
         const fetchedOffers: Offer[] = [];
 
         querySnapshot.forEach((doc) => {
           const data = doc.data();
-          console.log("Fetched offer:", { id: doc.id, ...data });
+          console.log("Processing offer document:", { id: doc.id, ...data });
           fetchedOffers.push({
             id: doc.id,
             ...data,
-            createdAt: data.createdAt.toDate(),
+            createdAt: data.createdAt?.toDate() || new Date(),
           } as Offer);
         });
 
-        console.log("Total offers fetched:", fetchedOffers.length);
+        fetchedOffers.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+
+        console.log("Final processed offers:", fetchedOffers);
         setOffers(fetchedOffers);
       } catch (error) {
-        console.error("Error fetching offers:", error);
+        console.error("Error in fetchOffers:", error);
       } finally {
         setLoading(false);
       }
