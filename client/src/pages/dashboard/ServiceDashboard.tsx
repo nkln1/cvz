@@ -199,6 +199,7 @@ export default function ServiceDashboard() {
     if (!user) return;
 
     try {
+      console.log("Creating new offer:", { request, formData });
       // Create the offer document in Firestore
       const newOffer = {
         requestId: request.id,
@@ -214,7 +215,8 @@ export default function ServiceDashboard() {
       };
 
       const offersRef = collection(db, "offers");
-      await addDoc(offersRef, newOffer);
+      const docRef = await addDoc(offersRef, newOffer);
+      console.log("Offer created with ID:", docRef.id);
 
       // Update the request status
       const requestRef = doc(db, "requests", request.id);

@@ -3,10 +3,10 @@ import { SendHorizontal, Clock, User, Car, Calendar, CreditCard, FileText, Loade
 import type { Request, Car as CarType } from "@/types/dashboard";
 import { collection, query, orderBy, getDocs, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { useAuth } from "@/context/AuthContext";
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
-import { useAuth } from "@/context/AuthContext";
 
 interface SentOffersProps {
   requests: Request[];
@@ -46,12 +46,13 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
           where("serviceId", "==", user.uid),
           orderBy("createdAt", "desc")
         );
-        const querySnapshot = await getDocs(q);
 
+        const querySnapshot = await getDocs(q);
         const fetchedOffers: Offer[] = [];
+
         querySnapshot.forEach((doc) => {
           const data = doc.data();
-          console.log("Fetched offer data:", data);
+          console.log("Fetched offer:", { id: doc.id, ...data });
           fetchedOffers.push({
             id: doc.id,
             ...data,
@@ -84,7 +85,7 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
     );
   }
 
-  if (offers.length === 0) {
+  if (!offers || offers.length === 0) {
     return (
       <Card className="shadow-lg">
         <CardHeader className="border-b bg-gray-50">
@@ -110,7 +111,7 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
       <CardHeader className="border-b bg-gray-50">
         <CardTitle className="text-[#00aff5] flex items-center gap-2">
           <SendHorizontal className="h-5 w-5" />
-          Oferte Trimise
+          Oferte Trimise ({offers.length})
         </CardTitle>
         <CardDescription>
           Urmărește și gestionează ofertele trimise către clienți
