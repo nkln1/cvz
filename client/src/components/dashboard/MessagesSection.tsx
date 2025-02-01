@@ -437,20 +437,24 @@ export function MessagesSection({
                   <h4 className="font-medium text-sm mb-2">Detalii Mașină</h4>
                   <div className="grid gap-2">
                     <div>
-                      <h5 className="text-sm font-medium text-muted-foreground">Marca</h5>
-                      <p className="text-sm">{selectedRequest.carMake || 'N/A'}</p>
-                    </div>
-                    <div>
-                      <h5 className="text-sm font-medium text-muted-foreground">Model</h5>
-                      <p className="text-sm">{selectedRequest.carModel || 'N/A'}</p>
+                      <h5 className="text-sm font-medium text-muted-foreground">Marca și Model</h5>
+                      <p className="text-sm">{selectedRequest.car?.make} {selectedRequest.car?.model}</p>
                     </div>
                     <div>
                       <h5 className="text-sm font-medium text-muted-foreground">An Fabricație</h5>
-                      <p className="text-sm">{selectedRequest.carYear || 'N/A'}</p>
+                      <p className="text-sm">{selectedRequest.car?.year || 'N/A'}</p>
                     </div>
-                     <div>
+                    <div>
                       <h5 className="text-sm font-medium text-muted-foreground">Număr Înmatriculare</h5>
-                      <p className="text-sm">{selectedRequest.licensePlate || 'N/A'}</p>
+                      <p className="text-sm">{selectedRequest.car?.licensePlate || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <h5 className="text-sm font-medium text-muted-foreground">Combustibil</h5>
+                      <p className="text-sm">{selectedRequest.car?.fuelType || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <h5 className="text-sm font-medium text-muted-foreground">Kilometraj</h5>
+                      <p className="text-sm">{selectedRequest.car?.mileage ? `${selectedRequest.car.mileage} km` : 'N/A'}</p>
                     </div>
                   </div>
                 </div>
@@ -460,11 +464,11 @@ export function MessagesSection({
                   <div className="grid gap-2">
                     <div>
                       <h5 className="text-sm font-medium text-muted-foreground">Județ</h5>
-                      <p className="text-sm">{selectedRequest.county || 'N/A'}</p>
+                      <p className="text-sm">{selectedRequest.location?.county || 'N/A'}</p>
                     </div>
                     <div>
                       <h5 className="text-sm font-medium text-muted-foreground">Localitate</h5>
-                      <p className="text-sm">{selectedRequest.city || 'N/A'}</p>
+                      <p className="text-sm">{selectedRequest.location?.city || 'N/A'}</p>
                     </div>
                   </div>
                 </div>
