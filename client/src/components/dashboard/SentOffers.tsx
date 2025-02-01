@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { SendHorizontal, Clock, User, Car, Calendar, CreditCard, FileText, Clock4 } from "lucide-react";
+import { SendHorizontal, Clock, User, Car, Calendar, CreditCard, FileText } from "lucide-react";
 import type { Request, Car as CarType } from "@/types/dashboard";
-import { collection, query, where, getDocs } from "firebase/firestore";
+import { collection, query, orderBy, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
@@ -23,6 +23,7 @@ interface Offer {
   notes?: string;
   status: string;
   createdAt: Date;
+  serviceId: string;
 }
 
 export function SentOffers({ requests, cars, refreshRequests }: SentOffersProps) {
@@ -34,7 +35,8 @@ export function SentOffers({ requests, cars, refreshRequests }: SentOffersProps)
       try {
         setLoading(true);
         const offersRef = collection(db, "offers");
-        const q = query(offersRef, where("status", "==", "Pending"));
+        // Remove the where clause to get all offers and order by creation date
+        const q = query(offersRef, orderBy("createdAt", "desc"));
         const querySnapshot = await getDocs(q);
 
         const fetchedOffers: Offer[] = [];
@@ -56,7 +58,7 @@ export function SentOffers({ requests, cars, refreshRequests }: SentOffersProps)
     };
 
     fetchOffers();
-  }, []);
+  }, [refreshRequests]); // Add refreshRequests to the dependency array
 
   if (loading) {
     return (

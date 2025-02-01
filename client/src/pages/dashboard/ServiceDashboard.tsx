@@ -96,6 +96,8 @@ export default function ServiceDashboard() {
     }
     return (localStorage.getItem("activeTab") as TabType) || "requests";
   });
+    const [refreshOffersCounter, setRefreshOffersCounter] = useState(0);
+
 
   const {
     messages,
@@ -216,7 +218,9 @@ export default function ServiceDashboard() {
         description: "Oferta a fost trimisă cu succes!",
       });
 
-      // Manually refresh the component to show updated data
+      // Increment the counter to trigger a refresh of the SentOffers component
+      setRefreshOffersCounter(prev => prev + 1);
+      // Switch to the offers tab
       setActiveTab("offers");
     } catch (error) {
       console.error("Error sending offer:", error);
@@ -337,9 +341,9 @@ export default function ServiceDashboard() {
             requests={clientRequests}
             cars={cars}
             refreshRequests={async () => {
-              // This will trigger a re-fetch of the requests
-              await handleViewDetails(selectedRequest);
+              setRefreshOffersCounter(prev => prev + 1);
             }}
+             refreshCounter={refreshOffersCounter}
           />
         )}
         {activeTab === "messages" && (
