@@ -62,7 +62,7 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
         const offersRef = collection(db, "offers");
         const q = query(
           offersRef,
-          where("serviceId", "==", user.uid)
+          where("serviceId", "==", user.uid),
         );
 
         const querySnapshot = await getDocs(q);
@@ -71,16 +71,24 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
 
         for (const doc of querySnapshot.docs) {
           const data = doc.data();
-          // Fetch request data directly from Firestore
-          const requestDoc = await getDoc(doc(db, "requests", data.requestId));
-          const requestData = requestDoc.exists() ? { id: requestDoc.id, ...requestDoc.data() } as Request : null;
+          try {
+            // Fetch request data directly from Firestore
+            const requestDoc = await getDoc(doc(db, "requests", data.requestId));
+            const requestData = requestDoc.exists() ? { id: requestDoc.id, ...requestDoc.data() } as Request : null;
+            console.log("Fetched request data:", requestData);
 
-          fetchedOffers.push({
-            id: doc.id,
-            ...data,
-            createdAt: data.createdAt?.toDate() || new Date(),
-            request: requestData,
-          } as Offer);
+            fetchedOffers.push({
+              id: doc.id,
+              ...data,
+              createdAt: data.createdAt?.toDate() || new Date(),
+              request: requestData,
+              availableDate: data.availableDate || "Data necunoscută",
+              price: data.price || 0,
+              status: data.status || "Pending"
+            } as Offer);
+          } catch (error) {
+            console.error("Error fetching request data:", error);
+          }
         }
 
         fetchedOffers.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
