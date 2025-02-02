@@ -36,6 +36,7 @@ export function useServiceRequests(userId: string, serviceData: ServiceData | nu
     }
 
     console.log("Fetching requests for service:", {
+      serviceId: userId,
       county: serviceData.county,
       city: serviceData.city
     });
@@ -49,7 +50,7 @@ export function useServiceRequests(userId: string, serviceData: ServiceData | nu
 
     try {
       const snapshot = await getDocs(requestsQuery);
-      console.log(`Found ${snapshot.docs.length} total requests`);
+      console.log(`Found ${snapshot.docs.length} total requests in county`);
 
       const requests: Request[] = [];
       const carsData: Record<string, Car> = {};
@@ -72,7 +73,9 @@ export function useServiceRequests(userId: string, serviceData: ServiceData | nu
               title: data.title,
               status: data.status,
               hasOffer,
-              offersCount: offersSnapshot.docs.length
+              offersCount: offersSnapshot.docs.length,
+              cities: data.cities,
+              matches_city: data.cities.includes(serviceData.city)
             });
 
             // Fetch car data
@@ -98,7 +101,11 @@ export function useServiceRequests(userId: string, serviceData: ServiceData | nu
       console.log("Processed requests summary:", {
         total: requests.length,
         withOffers: requests.filter(r => r.hasOffer).length,
-        withoutOffers: requests.filter(r => !r.hasOffer).length
+        withoutOffers: requests.filter(r => !r.hasOffer).length,
+        byStatus: {
+          active: requests.filter(r => r.status === "Active").length,
+          trimisOferta: requests.filter(r => r.status === "Trimis Oferta").length
+        }
       });
 
       setClientRequests(requests);

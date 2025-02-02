@@ -6,7 +6,7 @@ import type { Car, Request } from "@/types/dashboard";
 
 interface MyRequestsProps {
   requests: Request[];
-  cars: Car[];
+  cars: Record<string, Car>;
   onDelete?: (id: string) => Promise<void>;
   refreshRequests: () => Promise<void>;
 }
@@ -49,7 +49,7 @@ export function MyRequests({
           </TabsList>
           <TabsContent value="active">
             <RequestsTable
-              requests={requests.filter((req) => req.status === "Active")}
+              requests={requests.filter((req) => req.status === "Active" || req.status === "Trimis Oferta")}
               cars={cars}
               onDelete={onDelete}
               refreshRequests={refreshRequests}
