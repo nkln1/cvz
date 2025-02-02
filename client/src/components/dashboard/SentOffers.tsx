@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { SendHorizontal, Clock, User, Car, Calendar, CreditCard, FileText, Loader2, Eye } from "lucide-react";
 import type { Request, Car as CarType } from "@/types/dashboard";
-import { collection, query, getDocs, where, doc, getDoc } from "firebase/firestore";
+import { collection, query, getDocs, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/context/AuthContext";
 import { useEffect, useState } from "react";
@@ -44,74 +44,65 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
   const [offers, setOffers] = useState<Offer[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null);
-  const [selectedRequest, setSelectedRequest] = useState<Request | null>(null);
   const [activeTab, setActiveTab] = useState("pending");
   const [searchTerm, setSearchTerm] = useState("");
   const { user } = useAuth();
 
   useEffect(() => {
-    console.log("SentOffers mounted. Initial requests:", requests);
+    console.log("SentOffers component mounted with requests:", requests);
     const fetchOffers = async () => {
-      if (!user) return;
+      if (!user) {
+        console.log("No user found, skipping fetch");
+        return;
+      }
 
       try {
+        console.log("Starting to fetch offers, serviceId:", user.uid);
         setLoading(true);
         const offersRef = collection(db, "offers");
-        const q = query(offersRef, where("serviceId", "==", user.uid));
+        const q = query(
+          offersRef,
+          where("serviceId", "==", user.uid)
+        );
+
         const querySnapshot = await getDocs(q);
-
+        console.log("Query snapshot size:", querySnapshot.size);
         const fetchedOffers: Offer[] = [];
-        for (const doc of querySnapshot.docs) {
-          const data = doc.data();
-          const request = requests.find(r => r.id === data.requestId);
-          console.log(`Offer ${doc.id} - Found request:`, request);
 
+        querySnapshot.forEach((doc) => {
+          const data = doc.data();
+          console.log("Processing offer document:", { id: doc.id, ...data });
           fetchedOffers.push({
             id: doc.id,
             ...data,
             createdAt: data.createdAt?.toDate() || new Date(),
           } as Offer);
-        }
+        });
 
-        console.log("Fetched offers:", fetchedOffers);
+        fetchedOffers.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+
+        console.log("Final processed offers:", fetchedOffers);
         setOffers(fetchedOffers);
       } catch (error) {
-        console.error("Error fetching offers:", error);
+        console.error("Error in fetchOffers:", error);
       } finally {
         setLoading(false);
       }
     };
 
     fetchOffers();
-  }, [user, refreshCounter, requests]);
+  }, [user, refreshCounter]);
 
-  const fetchRequestDetails = async (requestId: string) => {
-    try {
-      const requestRef = doc(db, "requests", requestId);
-      const requestDoc = await getDoc(requestRef);
-      if (requestDoc.exists()) {
-        return { id: requestDoc.id, ...requestDoc.data() } as Request;
-      }
-      return null;
-    } catch (error) {
-      console.error("Error fetching request details:", error);
-      return null;
-    }
-  };
-
-  const renderOfferDetails = async (offer: Offer) => {
-    console.log("Rendering offer details. Offer:", offer);
-    console.log("Available requests:", requests);
-
-    let request = requests.find((r) => r.id === offer.requestId);
-
-    if (!request) {
-      console.log("Request not found in props, fetching from Firestore...");
-      request = await fetchRequestDetails(offer.requestId);
-    }
-
-    console.log("Final request data:", request);
+  const renderOfferDetails = (offer: Offer) => {
+    const request = requests.find((r) => r.id === offer.requestId);
     const car = request ? cars[request.carId] : null;
+
+    console.log("Rendering offer details:", {
+      offer,
+      requestId: offer.requestId,
+      foundRequest: request,
+      availableRequests: requests
+    });
 
     return (
       <Dialog open={!!selectedOffer} onOpenChange={() => setSelectedOffer(null)}>
@@ -124,6 +115,7 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
           </DialogHeader>
           <ScrollArea className="h-full max-h-[60vh]">
             <div className="space-y-6 p-4">
+              {/* Request Details Section */}
               <div className="bg-gray-50 p-4 rounded-lg">
                 <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
                   <FileText className="h-4 w-4" />
@@ -150,13 +142,15 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
                   </div>
                 ) : (
                   <p className="text-sm text-muted-foreground">
-                    Se încarcă detaliile cererii...
+                    Detaliile cererii nu sunt disponibile momentan.
                   </p>
                 )}
               </div>
 
+              {/* Separator between request and offer */}
               <Separator className="my-4" />
 
+              {/* Offer Details Section */}
               <div>
                 <h4 className="text-sm font-medium mb-2">Detalii Ofertă</h4>
                 <p className="text-sm text-muted-foreground whitespace-pre-wrap">{offer.details}</p>
@@ -244,6 +238,7 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
         key={offer.id}
         className="bg-white rounded-lg border-2 hover:border-[#00aff5]/30 transition-all duration-200 h-[320px] flex flex-col overflow-hidden"
       >
+        {/* Header with title and status */}
         <div className="p-4 border-b bg-gray-50">
           <div className="flex items-start justify-between mb-2">
             <h3 className="font-semibold line-clamp-1">{offer.title}</h3>
@@ -274,6 +269,7 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
           </div>
         </div>
 
+        {/* Content */}
         <div className="p-4 flex-grow">
           <div className="space-y-3">
             {car && (
@@ -320,6 +316,7 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
           </div>
         </div>
 
+        {/* Footer with view details button */}
         <div className="p-4 border-t mt-auto">
           <Button
             variant="outline"
