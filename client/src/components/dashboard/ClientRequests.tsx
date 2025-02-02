@@ -84,7 +84,7 @@ export function ClientRequests({
   const [showOfferForm, setShowOfferForm] = useState(false);
   const [selectedOfferRequest, setSelectedOfferRequest] = useState<Request | null>(null);
 
-    const handleSendOfferClick = (request: Request) => {
+  const handleSendOfferClick = (request: Request) => {
     setSelectedOfferRequest(request);
     setShowOfferForm(true);
   };
@@ -164,10 +164,6 @@ export function ClientRequests({
     return items;
   };
   
-  // Separate active and resolved requests
-  const activeRequests = clientRequests.filter(request => !request.hasOffer);
-  const resolvedRequests = clientRequests.filter(request => request.hasOffer);
-
   const renderRequestsTable = (requests: Request[], title: string, subtitle: string, showNewToggle: boolean = false) => {
     const filteredRequests = requests.filter((request) => {
       if (showOnlyNew && viewedRequests.has(request.id) && showNewToggle) {
@@ -411,7 +407,7 @@ export function ClientRequests({
                               <MessageSquare className="h-4 w-4" />
                               Mesaj
                             </Button>
-                            {!request.hasOffer && request.status === "Active" && (
+                            {!request.hasOffer && request.status === "Active" && title === "Cererile Clienților" && (
                               <>
                                 <Button
                                   variant="ghost"
@@ -553,14 +549,14 @@ export function ClientRequests({
   return (
     <>
       {renderRequestsTable(
-        activeRequests,
+        clientRequests,
         "Cererile Clienților",
         "Vezi și gestionează toate cererile primite de la clienți",
         true
       )}
 
       {renderRequestsTable(
-        resolvedRequests,
+        clientRequests.filter(request => request.hasOffer),
         "Cereri Rezolvate",
         "Cereri pentru care ai trimis deja o ofertă"
       )}
