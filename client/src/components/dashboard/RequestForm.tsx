@@ -104,6 +104,33 @@ export function RequestForm({
     },
   });
 
+  // Watch for car selection changes
+  useEffect(() => {
+    const selectedCarId = form.watch("carId");
+    if (selectedCarId) {
+      const selectedCar = cars.find(car => car.id === selectedCarId);
+      if (selectedCar) {
+        // Format car details
+        const carDetails = `
+Detalii mașină:
+- Marca: ${selectedCar.brand}
+- Model: ${selectedCar.model}
+- An fabricație: ${selectedCar.year}
+${selectedCar.licensePlate ? `- Număr înmatriculare: ${selectedCar.licensePlate}` : ''}
+${selectedCar.vin ? `- Serie șasiu (VIN): ${selectedCar.vin}` : ''}
+${selectedCar.engine ? `- Motor: ${selectedCar.engine}` : ''}
+${selectedCar.transmission ? `- Transmisie: ${selectedCar.transmission}` : ''}
+${selectedCar.fuelType ? `- Combustibil: ${selectedCar.fuelType}` : ''}
+${selectedCar.mileage ? `- Kilometraj: ${selectedCar.mileage} km` : ''}
+
+Descriere cerere:
+${form.getValues("description").split("\n\nDetalii mașină:")[0] || ""}`;
+
+        form.setValue("description", carDetails.trim(), { shouldDirty: true });
+      }
+    }
+  }, [form.watch("carId"), cars]);
+
   useEffect(() => {
     if (selectedCounty) {
       const citiesForCounty = getCitiesForCounty(selectedCounty);
@@ -161,24 +188,6 @@ export function RequestForm({
 
             <FormField
               control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Descriere cerere</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="ex: Doresc oferta de preț revizie anuală la 30.000 km pentru o MAZDA CX5 din 2020."
-                      className="min-h-[100px]"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
               name="carId"
               render={({ field }) => (
                 <FormItem>
@@ -211,6 +220,24 @@ export function RequestForm({
                       Adaugă mașină
                     </Button>
                   </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Descriere cerere</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="ex: Doresc oferta de preț revizie anuală la 30.000 km pentru o MAZDA CX5 din 2020."
+                      className="min-h-[100px]"
+                      {...field}
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
