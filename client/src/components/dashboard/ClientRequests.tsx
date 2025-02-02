@@ -125,11 +125,6 @@ export function ClientRequests({
     return 0;
   });
 
-  const sortedRequestsWithOffers = [...requestsWithOffers].sort((a, b) => {
-    // Always sort by most recent first for offers section
-    return new Date(b.lastUpdated || b.createdAt).getTime() - 
-           new Date(a.lastUpdated || a.createdAt).getTime();
-  });
 
   const totalPages = Math.ceil(sortedRequests.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -470,6 +465,7 @@ export function ClientRequests({
                                     {request.description}
                                   </p>
                                 </div>
+
                                 <div className="grid grid-cols-3 gap-6">
                                   {/* Client Details */}
                                   <div>
@@ -597,7 +593,7 @@ export function ClientRequests({
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {sortedRequestsWithOffers.map((request) => (
+                    {requestsWithOffers.map((request) => (
                       <Fragment key={request.id}>
                         <TableRow
                           className={`
@@ -675,6 +671,7 @@ export function ClientRequests({
                                       {request.description}
                                     </p>
                                   </div>
+
                                   <div className="grid grid-cols-3 gap-6">
                                     {/* Client Details */}
                                     <div>
@@ -690,6 +687,7 @@ export function ClientRequests({
                                         </p>
                                       </div>
                                     </div>
+
                                     {/* Car Details */}
                                     <div>
                                       <h3 className="text-sm font-medium mb-2">
@@ -720,6 +718,7 @@ export function ClientRequests({
                                         </p>
                                       </div>
                                     </div>
+
                                     {/* Date Details */}
                                     <div>
                                       <h3 className="text-sm font-medium mb-2">

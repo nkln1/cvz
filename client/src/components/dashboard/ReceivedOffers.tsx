@@ -390,7 +390,7 @@ export function ReceivedOffers({ cars, onMessageService, refreshRequests }: Rece
           <div className="flex items-center justify-between gap-2">
             <Button
               variant="outline"
-              size="xs"
+              size="sm"
               className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 flex-shrink-0"
               onClick={() => onMessageService?.(offer.serviceId, offer.requestId)}
             >
@@ -400,7 +400,7 @@ export function ReceivedOffers({ cars, onMessageService, refreshRequests }: Rece
 
             <Button
               variant="outline"
-              size="xs"
+              size="sm"
               className="text-gray-500 hover:text-gray-700 hover:bg-gray-50"
               onClick={() => {
                 setSelectedOffer(offer);
@@ -415,7 +415,7 @@ export function ReceivedOffers({ cars, onMessageService, refreshRequests }: Rece
               <div className="flex gap-2">
                 <Button
                   variant="outline"
-                  size="xs"
+                  size="sm"
                   className="text-green-500 hover:text-green-700 hover:bg-green-50 flex-shrink-0"
                   onClick={() => handleAcceptOffer(offer)}
                 >
@@ -424,7 +424,7 @@ export function ReceivedOffers({ cars, onMessageService, refreshRequests }: Rece
                 </Button>
                 <Button
                   variant="outline"
-                  size="xs"
+                  size="sm"
                   className="text-red-500 hover:text-red-700 hover:bg-red-50 flex-shrink-0"
                   onClick={() => handleRejectOffer(offer)}
                 >
