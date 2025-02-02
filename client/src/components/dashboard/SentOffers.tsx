@@ -69,17 +69,19 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
         console.log("Query snapshot size:", querySnapshot.size);
         const fetchedOffers: Offer[] = [];
 
-        querySnapshot.forEach((doc) => {
+        for (const doc of querySnapshot.docs) {
           const data = doc.data();
-          const requestData = requests.find((r) => r.id === data.requestId) || null; //Fetch request data here
+          // Fetch request data directly from Firestore
+          const requestDoc = await getDoc(doc(db, "requests", data.requestId));
+          const requestData = requestDoc.exists() ? { id: requestDoc.id, ...requestDoc.data() } as Request : null;
 
           fetchedOffers.push({
             id: doc.id,
             ...data,
             createdAt: data.createdAt?.toDate() || new Date(),
-            request: requestData, // Assign fetched request data
+            request: requestData,
           } as Offer);
-        });
+        }
 
         fetchedOffers.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
         setOffers(fetchedOffers);
