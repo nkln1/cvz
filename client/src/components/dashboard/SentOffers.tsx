@@ -95,6 +95,10 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
     const request = requests.find((r) => r.id === offer.requestId);
     const car = request ? cars[request.carId] : null;
 
+    console.log("Debug - Offer:", offer);
+    console.log("Debug - Found request:", request);
+    console.log("Debug - All requests:", requests);
+
     return (
       <Dialog open={!!selectedOffer} onOpenChange={() => setSelectedOffer(null)}>
         <DialogContent className="max-w-[600px] max-h-[80vh]">
