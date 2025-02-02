@@ -252,12 +252,16 @@ export function ReceivedOffers({ cars, onMessageService }: ReceivedOffersProps) 
     }
   };
 
-    const formatDateSafely = (dateString: string) => {
+    const formatDateSafely = (dateValue: any) => {
+        if (!dateValue) return "Data necunoscută";
         try {
-          return format(new Date(dateString), "dd.MM.yyyy");
+            const date = dateValue && typeof dateValue.toDate === 'function'
+                ? dateValue.toDate()
+                : new Date(dateValue);
+            return format(date, "dd.MM.yyyy");
         } catch (error) {
-          console.error("Error formatting date:", error);
-          return "Data necunoscută";
+            console.error("Error formatting date:", error, "Date value:", dateValue);
+            return "Data necunoscută";
         }
     };
 
