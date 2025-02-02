@@ -48,12 +48,13 @@ export function useServiceRequests(userId: string, serviceData: ServiceData | nu
 
     try {
       const snapshot = await getDocs(requestsQuery);
+      console.log(`Found ${snapshot.docs.length} total requests`);
+
       const requests: Request[] = [];
       const carsData: Record<string, Car> = {};
 
       for (const docSnapshot of snapshot.docs) {
         const data = docSnapshot.data() as Omit<Request, 'id'>;
-        console.log("Processing request:", docSnapshot.id, data);
 
         if (Array.isArray(data.cities) && data.cities.includes(serviceData.city)) {
           try {
@@ -66,7 +67,11 @@ export function useServiceRequests(userId: string, serviceData: ServiceData | nu
             const offersSnapshot = await getDocs(offersQuery);
             const hasOffer = !offersSnapshot.empty;
 
-            console.log(`Request ${docSnapshot.id} hasOffer:`, hasOffer);
+            console.log(`Request ${docSnapshot.id}:`, {
+              title: data.title,
+              hasOffer,
+              offersCount: offersSnapshot.docs.length
+            });
 
             // Fetch car data
             const carRef = doc(db, "cars", data.carId);
@@ -83,12 +88,17 @@ export function useServiceRequests(userId: string, serviceData: ServiceData | nu
               hasOffer,
             });
           } catch (error) {
-            console.error("Error fetching car data for request:", docSnapshot.id, error);
+            console.error("Error processing request:", docSnapshot.id, error);
           }
         }
       }
 
-      console.log("Processed requests:", requests.length);
+      console.log("Processed requests summary:", {
+        total: requests.length,
+        withOffers: requests.filter(r => r.hasOffer).length,
+        withoutOffers: requests.filter(r => !r.hasOffer).length
+      });
+
       setClientRequests(requests);
       setCars(carsData);
     } catch (error) {
@@ -110,7 +120,8 @@ export function useServiceRequests(userId: string, serviceData: ServiceData | nu
       where("county", "==", serviceData?.county || '')
     );
 
-    const unsubscribe = onSnapshot(requestsQuery, async () => {
+    const unsubscribe = onSnapshot(requestsQuery, async (snapshot) => {
+      console.log("Received snapshot update, refreshing requests...");
       await fetchRequests();
     }, (error) => {
       console.error("Error in requests listener:", error);
@@ -126,6 +137,8 @@ export function useServiceRequests(userId: string, serviceData: ServiceData | nu
 
   const handleSubmitOffer = async (request: Request, offerData: OfferData) => {
     try {
+      console.log("Submitting offer for request:", request.id);
+
       const newOffer = {
         ...offerData,
         requestId: request.id,
@@ -135,8 +148,8 @@ export function useServiceRequests(userId: string, serviceData: ServiceData | nu
         createdAt: new Date().toISOString(),
       };
 
-      await addDoc(collection(db, "offers"), newOffer);
-      console.log("Offer submitted successfully");
+      const offerRef = await addDoc(collection(db, "offers"), newOffer);
+      console.log("Offer submitted successfully:", offerRef.id);
 
       // Explicitly refresh the requests to update the UI
       await fetchRequests();

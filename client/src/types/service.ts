@@ -25,6 +25,7 @@ export interface Request {
   createdAt: string;
   userId: string;
   clientName: string;
+  hasOffer?: boolean;
 }
 
 export interface User {
