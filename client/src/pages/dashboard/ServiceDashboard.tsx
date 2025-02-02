@@ -218,12 +218,8 @@ export default function ServiceDashboard() {
       const docRef = await addDoc(offersRef, newOffer);
       console.log("Offer created with ID:", docRef.id);
 
-      // Update the request status
-      const requestRef = doc(db, "requests", request.id);
-      await updateDoc(requestRef, {
-        status: "OfferSent",
-        lastUpdated: new Date(),
-      });
+      // No longer update request status here
+      // The request should stay Active until an offer is accepted
 
       toast({
         title: "Succes",
