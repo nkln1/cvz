@@ -86,7 +86,6 @@ export function ReceivedOffers({ cars, onMessageService, refreshRequests }: Rece
 
     fetchViewedOffers();
   }, [user]);
-
   
   const formatDateSafely = (dateValue: any) => {
     if (!dateValue) return "Data necunoscută";
@@ -323,6 +322,134 @@ export function ReceivedOffers({ cars, onMessageService, refreshRequests }: Rece
       });
     }
   };
+  
+    const renderOfferBox = (offer: Offer) => {
+    return (
+      <div
+        key={offer.id}
+        className="bg-white border-2 border-gray-200 rounded-lg hover:border-[#00aff5]/30 transition-all duration-200 relative h-[320px] flex flex-col overflow-hidden"
+        onMouseEnter={() => offer.isNew && markOfferAsViewed(offer.id)}
+      >
+        {offer.isNew && (
+          <Badge className="absolute -top-2 -right-2 bg-[#00aff5] text-white">
+            Nou
+          </Badge>
+        )}
+
+        {/* Header section - fixed height */}
+        <div className="p-3 border-b bg-gray-50">
+          <div className="flex justify-between items-start mb-2">
+            <h3 className="text-md font-semibold line-clamp-1 flex-1 mr-2">{offer.title}</h3>
+            <Badge
+              variant="secondary"
+              className={`${
+                offer.status === "Pending"
+                  ? "bg-yellow-100 text-yellow-800"
+                  : offer.status === "Accepted"
+                  ? "bg-green-100 text-green-800"
+                  : "bg-red-100 text-red-800"
+              } flex-shrink-0`}
+            >
+              {offer.status}
+            </Badge>
+          </div>
+          <div className="text-sm text-gray-600">
+            <Clock className="inline-block w-4 h-4 mr-1 text-gray-500" />
+            {format(offer.createdAt, "dd.MM.yyyy HH:mm")}
+          </div>
+        </div>
+
+        {/* Content section - scrollable with max height */}
+        <div className="p-3 flex-1 overflow-hidden flex flex-col min-h-0">
+          <div className="mb-2">
+            <h4 className="text-sm font-medium flex items-center gap-2 mb-1">
+              <User className="w-4 h-4 text-blue-500" /> Service:
+              <span className="font-normal line-clamp-1">{offer.serviceName}</span>
+            </h4>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 mb-2">
+            <div>
+              <h4 className="text-xs font-medium text-gray-500">Disponibilitate</h4>
+              <p className="text-sm truncate">{formatDateSafely(offer.availableDate)}</p>
+            </div>
+            <div>
+              <h4 className="text-xs font-medium text-gray-500">Preț</h4>
+              <p className="text-sm">{offer.price} RON</p>
+            </div>
+          </div>
+
+          <div>
+            <h4 className="text-xs font-medium text-gray-500 mb-1">Detalii</h4>
+            <p className="text-sm line-clamp-3">{offer.details}</p>
+          </div>
+        </div>
+
+        {/* Actions section - fixed at bottom */}
+        <div className="p-3 border-t mt-auto bg-white">
+          <div className="flex items-center justify-between gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 flex-shrink-0"
+              onClick={() => onMessageService?.(offer.serviceId, offer.requestId)}
+            >
+              <MessageSquare className="w-3 h-3 mr-1" />
+              Mesaj
+            </Button>
+
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+              onClick={() => {
+                setSelectedOffer(offer);
+                setIsDetailsOpen(true);
+              }}
+            >
+              <Eye className="w-3 h-3 mr-1" />
+              Detalii
+            </Button>
+
+            {offer.status === "Pending" && (
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-green-500 hover:text-green-700 hover:bg-green-50 flex-shrink-0"
+                  onClick={() => handleAcceptOffer(offer)}
+                >
+                  <Check className="w-3 h-3 mr-1" />
+                  Acceptă
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-red-500 hover:text-red-700 hover:bg-red-50 flex-shrink-0"
+                  onClick={() => handleRejectOffer(offer)}
+                >
+                  <XCircle className="w-3 h-3 mr-1" />
+                  Respinge
+                </Button>
+              </div>
+            )}
+
+            {offer.status === "Accepted" && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-orange-500 hover:text-orange-700 hover:bg-orange-50 flex-shrink-0"
+                onClick={() => handleCancelOffer(offer)}
+              >
+                <RotateCcw className="w-3 h-3 mr-1" />
+                Anulează
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   const renderOfferDetails = (offer: Offer) => (
     <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
@@ -332,6 +459,11 @@ export function ReceivedOffers({ cars, onMessageService, refreshRequests }: Rece
         </DialogHeader>
         <ScrollArea className="h-full max-h-[60vh] pr-4">
           <div className="space-y-6 p-2">
+            <div>
+              <h3 className="text-sm font-medium text-gray-700 mb-2">Service Auto</h3>
+              <p className="text-sm text-gray-600">{offer.serviceName}</p>
+            </div>
+
             <div>
               <h3 className="text-sm font-medium text-gray-700 mb-2">Detalii Ofertă</h3>
               <p className="text-sm text-gray-600 whitespace-pre-wrap">{offer.details}</p>
@@ -360,139 +492,6 @@ export function ReceivedOffers({ cars, onMessageService, refreshRequests }: Rece
     </Dialog>
   );
 
-  const renderOfferBox = (offer: Offer) => {
-    console.log("Rendering offer box for offer:", {
-      id: offer.id,
-      availableDate: offer.availableDate,
-      title: offer.title
-    });
-
-    return (
-      <div
-        key={offer.id}
-        className="bg-white border-2 border-gray-200 rounded-lg hover:border-[#00aff5]/30 transition-all duration-200 relative h-[320px] flex flex-col"
-        onMouseEnter={() => offer.isNew && markOfferAsViewed(offer.id)}
-      >
-        {offer.isNew && (
-          <Badge className="absolute -top-2 -right-2 bg-[#00aff5] text-white">
-            Nou
-          </Badge>
-        )}
-
-        {/* Header section */}
-        <div className="p-4 border-b">
-          <div className="flex justify-between items-start mb-2">
-            <h3 className="text-md font-semibold line-clamp-1">{offer.title}</h3>
-            <Badge
-              variant="secondary"
-              className={`${
-                offer.status === "Pending"
-                  ? "bg-yellow-100 text-yellow-800"
-                  : offer.status === "Accepted"
-                  ? "bg-green-100 text-green-800"
-                  : "bg-red-100 text-red-800"
-              }`}
-            >
-              {offer.status}
-            </Badge>
-          </div>
-          <div className="text-sm text-gray-600">
-            <Clock className="inline-block w-4 h-4 mr-1 text-gray-500" />
-            {format(offer.createdAt, "dd.MM.yyyy HH:mm")}
-          </div>
-        </div>
-
-        {/* Content section */}
-        <div className="p-4 flex-grow">
-          <div className="mb-3">
-            <h4 className="text-sm font-medium flex items-center gap-2">
-              <User className="w-4 h-4 text-blue-500" /> Service:{" "}
-              <span className="font-normal line-clamp-1">{offer.serviceName}</span>
-            </h4>
-          </div>
-
-          <div className="grid grid-cols-2 gap-2 mb-3">
-            <div>
-              <h4 className="text-xs font-medium text-gray-500">Disponibilitate</h4>
-              <p className="text-sm">{formatDateSafely(offer.availableDate)}</p>
-            </div>
-            <div>
-              <h4 className="text-xs font-medium text-gray-500">Preț</h4>
-              <p className="text-sm">{offer.price} RON</p>
-            </div>
-          </div>
-
-          <div>
-            <h4 className="text-xs font-medium text-gray-500 mb-1">Detalii</h4>
-            <p className="text-sm line-clamp-2">{offer.details}</p>
-          </div>
-        </div>
-
-        {/* Actions section */}
-        <div className="p-4 border-t mt-auto">
-          <div className="flex items-center justify-between gap-2">
-            <Button
-              variant="outline"
-              size="xs"
-              className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 flex-shrink-0"
-              onClick={() => onMessageService?.(offer.serviceId, offer.requestId)}
-            >
-              <MessageSquare className="w-3 h-3 mr-1" />
-              Mesaj
-            </Button>
-
-            <Button
-              variant="outline"
-              size="xs"
-              className="text-gray-500 hover:text-gray-700 hover:bg-gray-50"
-              onClick={() => {
-                setSelectedOffer(offer);
-                setIsDetailsOpen(true);
-              }}
-            >
-              <Eye className="w-3 h-3 mr-1" />
-              Detalii
-            </Button>
-
-            {offer.status === "Pending" && (
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="xs"
-                  className="text-green-500 hover:text-green-700 hover:bg-green-50 flex-shrink-0"
-                  onClick={() => handleAcceptOffer(offer)}
-                >
-                  <Check className="w-3 h-3 mr-1" />
-                  Acceptă
-                </Button>
-                <Button
-                  variant="outline"
-                  size="xs"
-                  className="text-red-500 hover:text-red-700 hover:bg-red-50 flex-shrink-0"
-                  onClick={() => handleRejectOffer(offer)}
-                >
-                  <XCircle className="w-3 h-3 mr-1" />
-                  Respinge
-                </Button>
-              </div>
-            )}
-
-            {offer.status === "Accepted" && (
-              <Button
-                variant="outline"
-                size="xs"
-                className="text-orange-500 hover:text-orange-700 hover:bg-orange-50 flex-shrink-0"
-                onClick={() => handleCancelOffer(offer)}
-              >
-                <RotateCcw className="w-3 h-3 mr-1" />
-                Anulează
-              </Button>
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  };
 
   if (loading) {
     return (

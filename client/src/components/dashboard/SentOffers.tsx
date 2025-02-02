@@ -99,8 +99,8 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
         className="bg-white rounded-lg border-2 hover:border-[#00aff5]/30 transition-all duration-200 flex flex-col overflow-hidden h-[320px]"
       >
         {/* Header section - fixed height */}
-        <div className="p-4 border-b bg-gray-50">
-          <div className="flex items-start justify-between mb-2">
+        <div className="p-2 border-b bg-gray-50">
+          <div className="flex items-start justify-between">
             <h3 className="font-semibold line-clamp-1 flex-1 mr-2">{offer.title}</h3>
             <Badge
               variant="secondary"
@@ -130,7 +130,7 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
         </div>
 
         {/* Content section - scrollable with max height */}
-        <div className="p-4 flex-1 overflow-hidden flex flex-col min-h-0">
+        <div className="p-2 flex-1 overflow-hidden flex flex-col min-h-0">
           {car && (
             <div className="bg-gray-50 p-2 rounded-lg mb-3">
               <p className="text-sm font-medium text-gray-600 flex items-center mb-1">
