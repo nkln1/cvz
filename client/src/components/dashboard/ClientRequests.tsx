@@ -84,6 +84,86 @@ export function ClientRequests({
   const [showOfferForm, setShowOfferForm] = useState(false);
   const [selectedOfferRequest, setSelectedOfferRequest] = useState<Request | null>(null);
 
+    const handleSendOfferClick = (request: Request) => {
+    setSelectedOfferRequest(request);
+    setShowOfferForm(true);
+  };
+
+  const handleOfferSubmit = async (values: any) => {
+    if (selectedOfferRequest) {
+      await onSendOffer(selectedOfferRequest, values);
+      setShowOfferForm(false);
+      setSelectedOfferRequest(null);
+    }
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const renderPaginationItems = () => {
+    const items = [];
+    const maxVisiblePages = 5;
+    const halfVisible = Math.floor(maxVisiblePages / 2);
+
+    let startPage = Math.max(1, currentPage - halfVisible);
+    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+    if (endPage - startPage + 1 < maxVisiblePages) {
+      startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+
+    // Add first page
+    if (startPage > 1) {
+      items.push(
+        <PaginationItem key="1">
+          <PaginationLink onClick={() => handlePageChange(1)}>1</PaginationLink>
+        </PaginationItem>,
+      );
+      if (startPage > 2) {
+        items.push(
+          <PaginationItem key="start-ellipsis">
+            <PaginationEllipsis />
+          </PaginationItem>,
+        );
+      }
+    }
+
+    // Add pages
+    for (let i = startPage; i <= endPage; i++) {
+      items.push(
+        <PaginationItem key={i}>
+          <PaginationLink
+            isActive={currentPage === i}
+            onClick={() => handlePageChange(i)}
+          >
+            {i}
+          </PaginationLink>
+        </PaginationItem>,
+      );
+    }
+
+    // Add last page
+    if (endPage < totalPages) {
+      if (endPage < totalPages - 1) {
+        items.push(
+          <PaginationItem key="end-ellipsis">
+            <PaginationEllipsis />
+          </PaginationItem>,
+        );
+      }
+      items.push(
+        <PaginationItem key={totalPages}>
+          <PaginationLink onClick={() => handlePageChange(totalPages)}>
+            {totalPages}
+          </PaginationLink>
+        </PaginationItem>,
+      );
+    }
+
+    return items;
+  };
+  
   // Separate active and resolved requests
   const activeRequests = clientRequests.filter(request => !request.hasOffer);
   const resolvedRequests = clientRequests.filter(request => request.hasOffer);
