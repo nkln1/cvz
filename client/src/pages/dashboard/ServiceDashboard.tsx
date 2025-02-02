@@ -14,7 +14,6 @@ import {
   Bell,
   BellOff,
   Loader2,
-  SendHorizontal,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
@@ -33,12 +32,10 @@ import { useServiceRequests } from "@/hooks/useServiceRequests";
 import { useNotifications } from "@/hooks/useNotifications";
 import type { ServiceData, Request as ServiceRequest } from "@/types/service";
 import { addDoc, collection } from "firebase/firestore";
-import { AcceptedOffers } from "@/components/dashboard/AcceptedOffers";
 
 type TabType =
   | "requests"
   | "offers"
-  | "accepted_offers"
   | "messages"
   | "appointments"
   | "reviews"
@@ -305,13 +302,6 @@ export default function ServiceDashboard() {
               onClick={setActiveTab}
             />
             <NavigationButton
-              tab="accepted_offers"
-              activeTab={activeTab}
-              icon={<SendHorizontal className="w-4 h-4 mr-2 flex-shrink-0" />}
-              label="Oferte acceptate"
-              onClick={setActiveTab}
-            />
-            <NavigationButton
               tab="messages"
               activeTab={activeTab}
               icon={<MessageSquare className="w-4 h-4 mr-2 flex-shrink-0" />}
@@ -363,13 +353,6 @@ export default function ServiceDashboard() {
               setRefreshOffersCounter((prev) => prev + 1);
             }}
             refreshCounter={refreshOffersCounter}
-          />
-        )}
-        {activeTab === "accepted_offers" && (
-          <AcceptedOffers
-            refreshRequests={async () => {
-              setRefreshOffersCounter((prev) => prev + 1);
-            }}
           />
         )}
         {activeTab === "messages" && (
