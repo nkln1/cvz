@@ -55,8 +55,6 @@ export const onNewOffer = functions.firestore
       }
     } catch (error) {
       console.error("Error sending notification:", error);
-      // Don't throw the error to prevent function failure
-      // but log it for monitoring
       if (error instanceof Error) {
         functions.logger.error("Notification error", {
           error: error.message,

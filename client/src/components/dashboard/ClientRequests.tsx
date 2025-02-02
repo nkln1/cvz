@@ -232,6 +232,9 @@ export function ClientRequests({
   const handleOfferSubmit = async (values: any) => {
     if (selectedOfferRequest) {
       await onSendOffer(selectedOfferRequest, values);
+      // Don't change request status here, it should remain Active
+      setShowOfferForm(false);
+      setSelectedOfferRequest(null);
     }
   };
 

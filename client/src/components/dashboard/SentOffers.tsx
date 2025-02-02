@@ -49,7 +49,6 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
   const { user } = useAuth();
 
   useEffect(() => {
-    console.log("SentOffers component mounted with requests:", requests);
     const fetchOffers = async () => {
       if (!user) {
         console.log("No user found, skipping fetch");
@@ -71,7 +70,6 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
 
         querySnapshot.forEach((doc) => {
           const data = doc.data();
-          console.log("Processing offer document:", { id: doc.id, ...data });
           fetchedOffers.push({
             id: doc.id,
             ...data,
@@ -80,8 +78,6 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
         });
 
         fetchedOffers.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-
-        console.log("Final processed offers:", fetchedOffers);
         setOffers(fetchedOffers);
       } catch (error) {
         console.error("Error in fetchOffers:", error);
