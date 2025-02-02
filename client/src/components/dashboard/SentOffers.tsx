@@ -15,6 +15,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface SentOffersProps {
   requests: Request[];
@@ -40,6 +41,7 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
   const [offers, setOffers] = useState<Offer[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null);
+  const [activeTab, setActiveTab] = useState("pending");
   const { user } = useAuth();
 
   useEffect(() => {
@@ -159,117 +161,148 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
     );
   }
 
-  if (!offers || offers.length === 0) {
+  const pendingOffers = offers.filter(offer => offer.status === "Pending");
+  const acceptedOffers = offers.filter(offer => offer.status === "Accepted");
+  const rejectedOffers = offers.filter(offer => offer.status === "Rejected");
+
+  const renderOfferBox = (offer: Offer) => {
+    const request = requests.find((r) => r.id === offer.requestId);
+    const car = request ? cars[request.carId] : null;
+
     return (
-      <Card className="shadow-lg">
-        <CardHeader className="border-b bg-gray-50">
-          <CardTitle className="text-[#00aff5] flex items-center gap-2">
-            <SendHorizontal className="h-5 w-5" />
-            Oferte Trimise
-          </CardTitle>
-          <CardDescription>
-            Urmărește și gestionează ofertele trimise către clienți
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="p-6">
-          <p className="text-center text-muted-foreground py-4">
-            Nu există oferte trimise momentan
+      <div
+        key={offer.id}
+        className="bg-white rounded-lg border-2 hover:border-[#00aff5]/30 transition-all duration-200 h-[320px] flex flex-col overflow-hidden"
+      >
+        {/* Header with title and status */}
+        <div className="p-4 border-b bg-gray-50">
+          <div className="flex items-start justify-between mb-2">
+            <h3 className="font-semibold line-clamp-1">{offer.title}</h3>
+            <Badge
+              variant="secondary"
+              className={`${
+                offer.status === "Pending"
+                  ? "bg-yellow-100 text-yellow-800"
+                  : offer.status === "Accepted"
+                  ? "bg-green-100 text-green-800"
+                  : "bg-red-100 text-red-800"
+              } ml-2 flex-shrink-0`}
+            >
+              {offer.status}
+            </Badge>
+          </div>
+          <p className="text-sm text-muted-foreground flex items-center">
+            <Clock className="w-4 h-4 mr-1" />
+            {format(offer.createdAt, "dd.MM.yyyy HH:mm")}
           </p>
-        </CardContent>
-      </Card>
+        </div>
+
+        {/* Content */}
+        <div className="p-4 flex-grow">
+          <div className="space-y-3">
+            <div>
+              <p className="text-sm font-medium text-gray-600">Detalii:</p>
+              <p className="text-sm line-clamp-2">{offer.details}</p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Data:</p>
+                <p className="text-sm">{offer.availableDate}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-600">Preț:</p>
+                <p className="text-sm">{offer.price} RON</p>
+              </div>
+            </div>
+
+            {car && (
+              <div>
+                <p className="text-sm font-medium text-gray-600">Mașină:</p>
+                <p className="text-sm line-clamp-1">
+                  {car.brand} {car.model} ({car.year})
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Footer with view details button */}
+        <div className="p-4 border-t mt-auto">
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={() => setSelectedOffer(offer)}
+          >
+            <Eye className="w-4 h-4 mr-2" />
+            Vezi Detalii Complete
+          </Button>
+        </div>
+      </div>
     );
-  }
+  };
 
   return (
     <Card className="shadow-lg">
       <CardHeader className="border-b bg-gray-50">
         <CardTitle className="text-[#00aff5] flex items-center gap-2">
           <SendHorizontal className="h-5 w-5" />
-          Oferte Trimise ({offers.length})
+          Oferte Trimise
         </CardTitle>
         <CardDescription>
           Urmărește și gestionează ofertele trimise către clienți
         </CardDescription>
       </CardHeader>
-      <CardContent className="p-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {offers.map((offer) => {
-            const request = requests.find((r) => r.id === offer.requestId);
-            const car = request ? cars[request.carId] : null;
+      <CardContent className="p-4">
+        <Tabs defaultValue="pending" value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-3 mb-4">
+            <TabsTrigger value="pending" className="data-[state=active]:bg-[#00aff5] data-[state=active]:text-white">
+              Oferte Trimise ({pendingOffers.length})
+            </TabsTrigger>
+            <TabsTrigger value="accepted" className="data-[state=active]:bg-[#00aff5] data-[state=active]:text-white">
+              Oferte Acceptate ({acceptedOffers.length})
+            </TabsTrigger>
+            <TabsTrigger value="rejected" className="data-[state=active]:bg-[#00aff5] data-[state=active]:text-white">
+              Oferte Respinse ({rejectedOffers.length})
+            </TabsTrigger>
+          </TabsList>
 
-            return (
-              <div
-                key={offer.id}
-                className="bg-white rounded-lg border-2 hover:border-[#00aff5]/30 transition-all duration-200 h-[320px] flex flex-col overflow-hidden"
-              >
-                {/* Header with title and status */}
-                <div className="p-4 border-b bg-gray-50">
-                  <div className="flex items-start justify-between mb-2">
-                    <h3 className="font-semibold line-clamp-1">{offer.title}</h3>
-                    <Badge
-                      variant="secondary"
-                      className={`${
-                        offer.status === "Pending"
-                          ? "bg-yellow-100 text-yellow-800"
-                          : offer.status === "Accepted"
-                          ? "bg-green-100 text-green-800"
-                          : "bg-red-100 text-red-800"
-                      } ml-2 flex-shrink-0`}
-                    >
-                      {offer.status}
-                    </Badge>
-                  </div>
-                  <p className="text-sm text-muted-foreground flex items-center">
-                    <Clock className="w-4 h-4 mr-1" />
-                    {format(offer.createdAt, "dd.MM.yyyy HH:mm")}
-                  </p>
-                </div>
-
-                {/* Content */}
-                <div className="p-4 flex-grow">
-                  <div className="space-y-3">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Detalii:</p>
-                      <p className="text-sm line-clamp-2">{offer.details}</p>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <p className="text-sm font-medium text-gray-600">Data:</p>
-                        <p className="text-sm">{offer.availableDate}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-gray-600">Preț:</p>
-                        <p className="text-sm">{offer.price} RON</p>
-                      </div>
-                    </div>
-
-                    {car && (
-                      <div>
-                        <p className="text-sm font-medium text-gray-600">Mașină:</p>
-                        <p className="text-sm line-clamp-1">
-                          {car.brand} {car.model} ({car.year})
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Footer with view details button */}
-                <div className="p-4 border-t mt-auto">
-                  <Button
-                    variant="outline"
-                    className="w-full"
-                    onClick={() => setSelectedOffer(offer)}
-                  >
-                    <Eye className="w-4 h-4 mr-2" />
-                    Vezi Detalii Complete
-                  </Button>
-                </div>
+          <TabsContent value="pending">
+            {pendingOffers.length === 0 ? (
+              <p className="text-center text-muted-foreground py-4">
+                Nu există oferte în așteptare
+              </p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {pendingOffers.map(offer => renderOfferBox(offer))}
               </div>
-            );
-          })}
-        </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="accepted">
+            {acceptedOffers.length === 0 ? (
+              <p className="text-center text-muted-foreground py-4">
+                Nu există oferte acceptate
+              </p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {acceptedOffers.map(offer => renderOfferBox(offer))}
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="rejected">
+            {rejectedOffers.length === 0 ? (
+              <p className="text-center text-muted-foreground py-4">
+                Nu există oferte respinse
+              </p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {rejectedOffers.map(offer => renderOfferBox(offer))}
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
       </CardContent>
       {selectedOffer && renderOfferDetails(selectedOffer)}
     </Card>
