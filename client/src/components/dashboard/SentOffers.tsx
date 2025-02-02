@@ -90,10 +90,13 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
   }, [user, refreshCounter]);
 
   const renderOfferBox = (offer: Offer) => {
+    const request = requests.find((r) => r.id === offer.requestId);
+    const car = request ? cars[request.carId] : null;
+
     return (
       <div
         key={offer.id}
-        className="bg-white rounded-lg border-2 hover:border-[#00aff5]/30 transition-all duration-200 flex flex-col overflow-hidden h-[200px]"
+        className="bg-white rounded-lg border-2 hover:border-[#00aff5]/30 transition-all duration-200 flex flex-col overflow-hidden h-[320px]"
       >
         {/* Header section - fixed height */}
         <div className="p-4 border-b bg-gray-50">
@@ -112,30 +115,62 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
               {offer.status}
             </Badge>
           </div>
+          <div className="flex items-center justify-between text-sm text-muted-foreground">
+            <span className="flex items-center">
+              <Clock className="w-4 h-4 mr-1" />
+              {format(offer.createdAt, "dd.MM.yyyy HH:mm")}
+            </span>
+            {car && (
+              <span className="flex items-center">
+                <Car className="w-4 h-4 mr-1" />
+                {car.licensePlate}
+              </span>
+            )}
+          </div>
         </div>
 
-        {/* Content section - essential info only */}
-        <div className="p-4 flex-1">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
+        {/* Content section - scrollable with max height */}
+        <div className="p-4 flex-1 overflow-hidden flex flex-col min-h-0">
+          {car && (
+            <div className="bg-gray-50 p-2 rounded-lg mb-3">
               <p className="text-sm font-medium text-gray-600 flex items-center mb-1">
-                <Clock className="w-4 h-4 mr-1" />
+                <Car className="w-4 h-4 mr-1" />
+                Detalii Mașină
+              </p>
+              <p className="text-sm line-clamp-1">
+                {car.brand} {car.model} ({car.year})
+              </p>
+            </div>
+          )}
+
+          <div className="mb-3">
+            <p className="text-sm font-medium text-gray-600 flex items-center mb-1">
+              <FileText className="w-4 h-4 mr-1" />
+              Detalii Ofertă
+            </p>
+            <p className="text-sm line-clamp-2">{offer.details}</p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 mb-3">
+            <div>
+              <p className="text-sm font-medium text-gray-600 flex items-center">
+                <Calendar className="w-4 h-4 mr-1" />
                 Data
               </p>
-              <p className="text-sm">{format(offer.createdAt, "dd.MM.yyyy")}</p>
+              <p className="text-sm truncate">{offer.availableDate}</p>
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-600 flex items-center mb-1">
+              <p className="text-sm font-medium text-gray-600 flex items-center">
                 <CreditCard className="w-4 h-4 mr-1" />
                 Preț
               </p>
-              <p className="text-sm font-medium text-[#00aff5]">{offer.price} RON</p>
+              <p className="text-sm">{offer.price} RON</p>
             </div>
           </div>
         </div>
 
         {/* Footer section - fixed at bottom */}
-        <div className="p-4 border-t mt-auto">
+        <div className="p-4 border-t mt-auto bg-white">
           <Button
             variant="outline"
             className="w-full"
@@ -148,6 +183,7 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
       </div>
     );
   };
+
 
   const filterOffers = (offers: Offer[]) => {
     if (!searchTerm) return offers;
