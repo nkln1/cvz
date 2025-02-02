@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { SendHorizontal, Clock, User, Car, Calendar, CreditCard, FileText, Loader2, Eye } from "lucide-react";
+import { SendHorizontal, Clock, User, Car, Calendar, CreditCard, FileText, Loader2, Eye, MessageSquare } from "lucide-react";
 import type { Request, Car as CarType } from "@/types/dashboard";
 import { collection, query, getDocs, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -93,6 +93,17 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
     fetchOffers();
   }, [user, refreshCounter]);
 
+  const formatDateSafely = (dateString: string | Date): string => {
+    try {
+      const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
+       return format(date, "dd.MM.yyyy");
+    } catch (error) {
+      console.error("Error formatting date:", error);
+      return "Invalid Date";
+    }
+  };
+
+
   const renderOfferDetails = (offer: Offer) => {
     const request = requests.find((r) => r.id === offer.requestId);
     const car = request ? cars[request.carId] : null;
@@ -124,7 +135,7 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
                 {request ? (
                   <div className="space-y-3">
                     <div>
-                      <p className="text-sm font-medium text-gray-600">Titlu Cerere:</p>
+                      <p className="text-sm font-medium text-gray-600">Titlu:</p>
                       <p className="text-sm">{request.title}</p>
                     </div>
                     <div>
@@ -147,13 +158,31 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
                 )}
               </div>
 
-              {/* Separator between request and offer */}
-              <Separator className="my-4" />
+              <Separator />
 
               {/* Offer Details Section */}
               <div>
-                <h4 className="text-sm font-medium mb-2">Detalii Ofertă</h4>
-                <p className="text-sm text-muted-foreground whitespace-pre-wrap">{offer.details}</p>
+                <h4 className="font-medium flex items-center gap-2 text-gray-700 mb-2">
+                  <MessageSquare className="h-4 w-4" />
+                  Oferta Trimisă
+                </h4>
+                <div className="space-y-2 pl-6">
+                  <p><span className="text-gray-600">Titlu:</span> {offer.title}</p>
+                  <p><span className="text-gray-600">Detalii:</span> {offer.details}</p>
+                  <div className="flex gap-4">
+                    <p className="flex items-center gap-1">
+                      <Calendar className="h-4 w-4 text-gray-500" />
+                      {formatDateSafely(offer.availableDate)}
+                    </p>
+                    <p className="flex items-center gap-1">
+                      <CreditCard className="h-4 w-4 text-gray-500" />
+                      {offer.price} RON
+                    </p>
+                  </div>
+                  {offer.notes && (
+                    <p><span className="text-gray-600">Note:</span> {offer.notes}</p>
+                  )}
+                </div>
               </div>
 
               {request && (
@@ -172,24 +201,6 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
                       <span className="block text-xs">Nr. {car.licensePlate}</span>
                     )}
                   </p>
-                </div>
-              )}
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <h4 className="text-sm font-medium mb-2">Data Disponibilă</h4>
-                  <p className="text-sm text-muted-foreground">{offer.availableDate}</p>
-                </div>
-                <div>
-                  <h4 className="text-sm font-medium mb-2">Preț</h4>
-                  <p className="text-sm text-muted-foreground">{offer.price} RON</p>
-                </div>
-              </div>
-
-              {offer.notes && (
-                <div>
-                  <h4 className="text-sm font-medium mb-2">Observații</h4>
-                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">{offer.notes}</p>
                 </div>
               )}
             </div>
