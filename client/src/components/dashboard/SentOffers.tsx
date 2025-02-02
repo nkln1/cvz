@@ -89,16 +89,136 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
     fetchOffers();
   }, [user, refreshCounter]);
 
-  const renderOfferDetails = (offer: Offer) => {
+  const renderOfferBox = (offer: Offer) => {
     const request = requests.find((r) => r.id === offer.requestId);
     const car = request ? cars[request.carId] : null;
 
-    console.log("Rendering offer details:", {
-      offer,
-      requestId: offer.requestId,
-      foundRequest: request,
-      availableRequests: requests
-    });
+    return (
+      <div
+        key={offer.id}
+        className="bg-white rounded-lg border-2 hover:border-[#00aff5]/30 transition-all duration-200 flex flex-col overflow-hidden h-[320px]"
+      >
+        {/* Header section - fixed height */}
+        <div className="p-4 border-b bg-gray-50">
+          <div className="flex items-start justify-between mb-2">
+            <h3 className="font-semibold line-clamp-1 flex-1 mr-2">{offer.title}</h3>
+            <Badge
+              variant="secondary"
+              className={`${
+                offer.status === "Pending"
+                  ? "bg-yellow-100 text-yellow-800"
+                  : offer.status === "Accepted"
+                  ? "bg-green-100 text-green-800"
+                  : "bg-red-100 text-red-800"
+              } ml-2 flex-shrink-0`}
+            >
+              {offer.status}
+            </Badge>
+          </div>
+          <div className="flex items-center justify-between text-sm text-muted-foreground">
+            <span className="flex items-center">
+              <Clock className="w-4 h-4 mr-1" />
+              {format(offer.createdAt, "dd.MM.yyyy HH:mm")}
+            </span>
+            {car && (
+              <span className="flex items-center">
+                <Car className="w-4 h-4 mr-1" />
+                {car.licensePlate}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Content section - scrollable with max height */}
+        <div className="p-4 flex-1 overflow-hidden flex flex-col min-h-0">
+          {car && (
+            <div className="bg-gray-50 p-2 rounded-lg mb-3">
+              <p className="text-sm font-medium text-gray-600 flex items-center mb-1">
+                <Car className="w-4 h-4 mr-1" />
+                Detalii Mașină
+              </p>
+              <p className="text-sm line-clamp-1">
+                {car.brand} {car.model} ({car.year})
+              </p>
+            </div>
+          )}
+
+          <div className="mb-3">
+            <p className="text-sm font-medium text-gray-600 flex items-center mb-1">
+              <FileText className="w-4 h-4 mr-1" />
+              Detalii Ofertă
+            </p>
+            <p className="text-sm line-clamp-2">{offer.details}</p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 mb-3">
+            <div>
+              <p className="text-sm font-medium text-gray-600 flex items-center">
+                <Calendar className="w-4 h-4 mr-1" />
+                Data
+              </p>
+              <p className="text-sm truncate">{offer.availableDate}</p>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-600 flex items-center">
+                <CreditCard className="w-4 h-4 mr-1" />
+                Preț
+              </p>
+              <p className="text-sm">{offer.price} RON</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer section - fixed at bottom */}
+        <div className="p-4 border-t mt-auto bg-white">
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={() => setSelectedOffer(offer)}
+          >
+            <Eye className="w-4 h-4 mr-2" />
+            Vezi Detalii Complete
+          </Button>
+        </div>
+      </div>
+    );
+  };
+
+
+  const filterOffers = (offers: Offer[]) => {
+    if (!searchTerm) return offers;
+
+    const searchLower = searchTerm.toLowerCase();
+    return offers.filter(offer =>
+      offer.title.toLowerCase().includes(searchLower) ||
+      offer.details.toLowerCase().includes(searchLower) ||
+      offer.price.toString().includes(searchLower) ||
+      offer.availableDate.toLowerCase().includes(searchLower)
+    );
+  };
+
+
+  const pendingOffers = filterOffers(offers.filter(offer => offer.status === "Pending"));
+  const acceptedOffers = filterOffers(offers.filter(offer => offer.status === "Accepted"));
+  const rejectedOffers = filterOffers(offers.filter(offer => offer.status === "Rejected"));
+
+  if (loading) {
+    return (
+      <Card className="shadow-lg">
+        <CardContent className="p-6 flex justify-center items-center min-h-[200px]">
+          <div className="flex flex-col items-center gap-2">
+            <Loader2 className="h-8 w-8 animate-spin text-[#00aff5]" />
+            <p className="text-muted-foreground">Se încarcă ofertele...</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+
+    const renderOfferDetails = (offer: Offer) => {
+    const request = requests.find((r) => r.id === offer.requestId);
+    const car = request ? cars[request.carId] : null;
 
     return (
       <Dialog open={!!selectedOffer} onOpenChange={() => setSelectedOffer(null)}>
@@ -143,10 +263,9 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
                 )}
               </div>
 
-              {/* Separator between request and offer */}
               <Separator className="my-4" />
 
-              {/* Offer Details Section */}
+              {/* Offer Details Section - Full Content */}
               <div>
                 <h4 className="text-sm font-medium mb-2">Detalii Ofertă</h4>
                 <p className="text-sm text-muted-foreground whitespace-pre-wrap">{offer.details}</p>
@@ -194,139 +313,6 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
       </Dialog>
     );
   };
-
-  const filterOffers = (offers: Offer[]) => {
-    if (!searchTerm) return offers;
-
-    const searchLower = searchTerm.toLowerCase();
-    return offers.filter(offer =>
-      offer.title.toLowerCase().includes(searchLower) ||
-      offer.details.toLowerCase().includes(searchLower) ||
-      offer.price.toString().includes(searchLower) ||
-      offer.availableDate.toLowerCase().includes(searchLower)
-    );
-  };
-
-
-  const pendingOffers = filterOffers(offers.filter(offer => offer.status === "Pending"));
-  const acceptedOffers = filterOffers(offers.filter(offer => offer.status === "Accepted"));
-  const rejectedOffers = filterOffers(offers.filter(offer => offer.status === "Rejected"));
-
-  if (loading) {
-    return (
-      <Card className="shadow-lg">
-        <CardContent className="p-6 flex justify-center items-center min-h-[200px]">
-          <div className="flex flex-col items-center gap-2">
-            <Loader2 className="h-8 w-8 animate-spin text-[#00aff5]" />
-            <p className="text-muted-foreground">Se încarcă ofertele...</p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  const renderOfferBox = (offer: Offer) => {
-    const request = requests.find((r) => r.id === offer.requestId);
-    const car = request ? cars[request.carId] : null;
-
-    return (
-      <div
-        key={offer.id}
-        className="bg-white rounded-lg border-2 hover:border-[#00aff5]/30 transition-all duration-200 h-[320px] flex flex-col overflow-hidden"
-      >
-        {/* Header with title and status */}
-        <div className="p-4 border-b bg-gray-50">
-          <div className="flex items-start justify-between mb-2">
-            <h3 className="font-semibold line-clamp-1">{offer.title}</h3>
-            <Badge
-              variant="secondary"
-              className={`${
-                offer.status === "Pending"
-                  ? "bg-yellow-100 text-yellow-800"
-                  : offer.status === "Accepted"
-                  ? "bg-green-100 text-green-800"
-                  : "bg-red-100 text-red-800"
-              } ml-2 flex-shrink-0`}
-            >
-              {offer.status}
-            </Badge>
-          </div>
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-muted-foreground flex items-center">
-              <Clock className="w-4 h-4 mr-1" />
-              {format(offer.createdAt, "dd.MM.yyyy HH:mm")}
-            </p>
-            {car && (
-              <div className="flex items-center text-sm text-muted-foreground">
-                <Car className="w-4 h-4 mr-1" />
-                <span className="font-medium">{car.licensePlate}</span>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Content */}
-        <div className="p-4 flex-grow">
-          <div className="space-y-3">
-            {car && (
-              <div className="bg-gray-50 p-2 rounded-lg">
-                <p className="text-sm font-medium text-gray-600 mb-1 flex items-center">
-                  <Car className="w-4 h-4 mr-1" />
-                  Detalii Mașină:
-                </p>
-                <div className="text-sm space-y-1">
-                  <p className="font-medium">
-                    {car.brand} {car.model} ({car.year})
-                  </p>
-                  {car.licensePlate && (
-                    <p className="text-gray-600">Nr. înmatriculare: {car.licensePlate}</p>
-                  )}
-                </div>
-              </div>
-            )}
-
-            <div>
-              <p className="text-sm font-medium text-gray-600 mb-1 flex items-center">
-                <FileText className="w-4 h-4 mr-1" />
-                Detalii:
-              </p>
-              <p className="text-sm line-clamp-2">{offer.details}</p>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <p className="text-sm font-medium text-gray-600 flex items-center">
-                  <Calendar className="w-4 h-4 mr-1" />
-                  Data:
-                </p>
-                <p className="text-sm">{offer.availableDate}</p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-600 flex items-center">
-                  <CreditCard className="w-4 h-4 mr-1" />
-                  Preț:
-                </p>
-                <p className="text-sm">{offer.price} RON</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Footer with view details button */}
-        <div className="p-4 border-t mt-auto">
-          <Button
-            variant="outline"
-            className="w-full"
-            onClick={() => setSelectedOffer(offer)}
-          >
-            <Eye className="w-4 h-4 mr-2" />
-            Vezi Detalii Complete
-          </Button>
-        </div>
-      </div>
-    );
-  };
-
   return (
     <Card className="shadow-lg">
       <CardHeader className="border-b bg-gray-50">
