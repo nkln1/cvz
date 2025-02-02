@@ -212,13 +212,14 @@ export function ReceivedOffers({ cars, onMessageService }: ReceivedOffersProps) 
         return;
       }
 
+      // Update offer status to Accepted
       const offerRef = doc(db, "offers", offer.id);
       await updateDoc(offerRef, {
         status: "Accepted",
         updatedAt: new Date(),
       });
 
-      // Update the request status
+      // Update the request status to Rezolvat
       const requestRef = doc(db, "requests", offer.requestId);
       await updateDoc(requestRef, {
         status: "Rezolvat",
@@ -249,26 +250,33 @@ export function ReceivedOffers({ cars, onMessageService }: ReceivedOffersProps) 
     if (!user) return;
 
     try {
+      // Update only the offer status to Rejected
       const offerRef = doc(db, "offers", offer.id);
       await updateDoc(offerRef, {
         status: "Rejected",
         updatedAt: new Date(),
       });
 
-      // Update the request status
-      const requestRef = doc(db, "requests", offer.requestId);
-      await updateDoc(requestRef, {
-        status: "Respins",
-        lastUpdated: new Date(),
-      });
+      // Don't update the request status - keep it active
+      // This allows other offers to still come in
 
       // Refresh offers
       const updatedOffers = offers.map(o => 
         o.id === offer.id ? { ...o, status: "Rejected" } : o
       );
       setOffers(updatedOffers);
+
+      toast({
+        title: "Ofertă respinsă",
+        description: "Oferta a fost respinsă cu succes.",
+      });
     } catch (error) {
       console.error("Error rejecting offer:", error);
+      toast({
+        title: "Eroare",
+        description: "A apărut o eroare la respingerea ofertei. Încercați din nou.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -276,16 +284,17 @@ export function ReceivedOffers({ cars, onMessageService }: ReceivedOffersProps) 
     if (!user) return;
 
     try {
+      // Update offer status back to Pending
       const offerRef = doc(db, "offers", offer.id);
       await updateDoc(offerRef, {
         status: "Pending",
         updatedAt: new Date(),
       });
 
-      // Update the request status
+      // Update request status back to Active
       const requestRef = doc(db, "requests", offer.requestId);
       await updateDoc(requestRef, {
-        status: "În așteptare",
+        status: "Active",
         lastUpdated: new Date(),
       });
 
@@ -294,8 +303,18 @@ export function ReceivedOffers({ cars, onMessageService }: ReceivedOffersProps) 
         o.id === offer.id ? { ...o, status: "Pending" } : o
       );
       setOffers(updatedOffers);
+
+      toast({
+        title: "Ofertă anulată",
+        description: "Oferta a fost anulată cu succes.",
+      });
     } catch (error) {
       console.error("Error canceling offer:", error);
+      toast({
+        title: "Eroare",
+        description: "A apărut o eroare la anularea ofertei. Încercați din nou.",
+        variant: "destructive",
+      });
     }
   };
 
