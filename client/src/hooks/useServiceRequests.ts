@@ -40,9 +40,10 @@ export function useServiceRequests(userId: string, serviceData: ServiceData | nu
       city: serviceData.city
     });
 
+    // Query requests with either Active or Rezolvat status
     const requestsQuery = query(
       collection(db, "requests"),
-      where("status", "==", "Active"),
+      where("status", "in", ["Active", "Rezolvat"]),
       where("county", "==", serviceData.county)
     );
 
@@ -69,6 +70,7 @@ export function useServiceRequests(userId: string, serviceData: ServiceData | nu
 
             console.log(`Request ${docSnapshot.id}:`, {
               title: data.title,
+              status: data.status,
               hasOffer,
               offersCount: offersSnapshot.docs.length
             });
@@ -116,11 +118,11 @@ export function useServiceRequests(userId: string, serviceData: ServiceData | nu
 
     const requestsQuery = query(
       collection(db, "requests"),
-      where("status", "==", "Active"),
+      where("status", "in", ["Active", "Rezolvat"]),
       where("county", "==", serviceData?.county || '')
     );
 
-    const unsubscribe = onSnapshot(requestsQuery, async (snapshot) => {
+    const unsubscribe = onSnapshot(requestsQuery, async () => {
       console.log("Received snapshot update, refreshing requests...");
       await fetchRequests();
     }, (error) => {
@@ -147,6 +149,13 @@ export function useServiceRequests(userId: string, serviceData: ServiceData | nu
         status: "Active",
         createdAt: new Date().toISOString(),
       };
+
+      // Update request status to Rezolvat
+      const requestRef = doc(db, "requests", request.id);
+      await updateDoc(requestRef, {
+        status: "Rezolvat",
+        hasOffer: true
+      });
 
       const offerRef = await addDoc(collection(db, "offers"), newOffer);
       console.log("Offer submitted successfully:", offerRef.id);
