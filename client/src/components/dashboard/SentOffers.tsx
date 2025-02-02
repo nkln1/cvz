@@ -1,8 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { SendHorizontal, Clock, User, Car, Calendar, CreditCard, FileText, Loader2, Eye } from "lucide-react";
 import type { Request, Car as CarType } from "@/types/dashboard";
-import { collection, query, getDocs, getDoc, where, DocumentReference } from "firebase/firestore";
-import { doc } from "firebase/firestore";
+import { collection, query, getDocs, getDoc, where, doc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/context/AuthContext";
 import { useEffect, useState } from "react";
@@ -70,8 +69,8 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
         console.log("Query snapshot size:", querySnapshot.size);
         const fetchedOffers: Offer[] = [];
 
-        const fetchPromises = querySnapshot.docs.map(async (doc) => {
-          const data = doc.data();
+        const fetchPromises = querySnapshot.docs.map(async (docSnapshot) => {
+          const data = docSnapshot.data();
           try {
             const requestRef = doc(db, "requests", data.requestId);
             const requestDoc = await getDoc(requestRef);
