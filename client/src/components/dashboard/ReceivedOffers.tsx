@@ -41,6 +41,7 @@ import { useToast } from "@/hooks/use-toast";
 interface ReceivedOffersProps {
   cars: Record<string, CarType>;
   onMessageService?: (serviceId: string, requestId: string) => void;
+  refreshRequests?: () => Promise<void>;
 }
 
 interface Offer {
@@ -58,7 +59,7 @@ interface Offer {
   isNew?: boolean;
 }
 
-export function ReceivedOffers({ cars, onMessageService }: ReceivedOffersProps) {
+export function ReceivedOffers({ cars, onMessageService, refreshRequests }: ReceivedOffersProps) {
   const [offers, setOffers] = useState<Offer[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewedOffers, setViewedOffers] = useState<Set<string>>(new Set());
@@ -226,11 +227,16 @@ export function ReceivedOffers({ cars, onMessageService }: ReceivedOffersProps) 
         lastUpdated: new Date(),
       });
 
-      // Refresh offers
+      // Refresh offers in UI
       const updatedOffers = offers.map(o => 
         o.id === offer.id ? { ...o, status: "Accepted" } : o
       );
       setOffers(updatedOffers);
+
+      // Refresh requests list to update the tabs
+      if (refreshRequests) {
+        await refreshRequests();
+      }
 
       toast({
         title: "Succes!",
