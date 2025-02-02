@@ -38,6 +38,7 @@ interface Request {
   county: string;
   cities?: string[];
   status: "Active" | "Rezolvat" | "Anulat";
+  createdAt: string;
 }
 
 interface RequestsTableProps {
@@ -85,21 +86,26 @@ export function RequestsTable({
     return citiesDisplay ? `${citiesDisplay}, ${request.county}` : request.county;
   };
 
+  // Sort requests by createdAt in descending order (newest first)
+  const sortedRequests = [...requests].sort((a, b) => 
+    new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
+
   return (
     <>
       <Table>
         <TableHeader>
           <TableRow>
             <TableHead>Titlu</TableHead>
-            <TableHead>Mașină</TableHead>
             <TableHead>Data preferată</TableHead>
+            <TableHead>Data trimiterii</TableHead>
             <TableHead>Locație</TableHead>
             <TableHead>Status</TableHead>
             <TableHead className="text-right">Acțiuni</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {requests.map((request) => (
+          {sortedRequests.map((request) => (
             <TableRow
               key={request.id}
               className="hover:bg-gray-50 transition-colors"
@@ -108,11 +114,10 @@ export function RequestsTable({
                 {request.title}
               </TableCell>
               <TableCell>
-                {cars[request.carId]?.brand}{" "}
-                {cars[request.carId]?.model}
+                {format(new Date(request.preferredDate), "dd.MM.yyyy")}
               </TableCell>
               <TableCell>
-                {format(new Date(request.preferredDate), "dd.MM.yyyy")}
+                {format(new Date(request.createdAt), "dd.MM.yyyy")}
               </TableCell>
               <TableCell>{getLocationDisplay(request)}</TableCell>
               <TableCell>
@@ -226,6 +231,17 @@ export function RequestsTable({
                 <p>
                   {format(
                     new Date(selectedRequest.preferredDate),
+                    "dd.MM.yyyy"
+                  )}
+                </p>
+              </div>
+              <div>
+                <h3 className="font-medium text-sm text-muted-foreground">
+                  Data trimiterii
+                </h3>
+                <p>
+                  {format(
+                    new Date(selectedRequest.createdAt),
                     "dd.MM.yyyy"
                   )}
                 </p>
