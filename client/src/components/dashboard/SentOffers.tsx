@@ -48,6 +48,7 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
   const { user } = useAuth();
 
   useEffect(() => {
+    console.log("SentOffers component mounted with requests:", requests);
     const fetchOffers = async () => {
       if (!user) {
         console.log("No user found, skipping fetch");
