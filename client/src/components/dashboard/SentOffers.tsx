@@ -229,12 +229,17 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
             <div className="bg-gray-50 p-2 rounded-lg mb-3">
               <p className="text-sm font-medium text-gray-600 flex items-center mb-1">
                 <FileText className="w-4 h-4 mr-1" />
-                Cerere
+                Cerere Client
               </p>
               <p className="text-sm line-clamp-1">
                 {request.title}
               </p>
-              <p className="text-xs text-gray-500 mt-1 line-clamp-1">
+              {car && (
+                <p className="text-xs text-gray-500 mt-1">
+                  {car.brand} {car.model} ({car.year})
+                </p>
+              )}
+              <p className="text-xs text-gray-500 mt-1">
                 {request.county} - {request.cities.join(", ")}
               </p>
             </div>
@@ -248,7 +253,7 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
             <p className="text-sm line-clamp-2">{offer.details}</p>
           </div>
 
-          <div className="grid grid-cols-2 gap-2 mb-3">
+          <div className="grid grid-cols-2 gap-2">
             <div>
               <p className="text-sm font-medium text-gray-600 flex items-center">
                 <Calendar className="w-4 h-4 mr-1" />
