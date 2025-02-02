@@ -1,22 +1,8 @@
 import { useState, useEffect } from "react";
-import { collection, query, where, doc, getDoc, updateDoc, onSnapshot, getDocs, addDoc } from "firebase/firestore";
+import { collection, query, where, doc, getDoc, updateDoc, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
-import type { Request, Car, ServiceData } from "@/types/service";
-
-interface User {
-  id: string;
-  name: string;
-  email: string;
-}
-
-interface OfferData {
-  title: string;
-  details: string;
-  availableDate: string;
-  price: number;
-  notes?: string;
-}
+import type { Request, Car, User, ServiceData } from "@/types/service";
 
 export function useServiceRequests(userId: string, serviceData: ServiceData | null) {
   const { toast } = useToast();
@@ -29,56 +15,35 @@ export function useServiceRequests(userId: string, serviceData: ServiceData | nu
     return saved ? new Set(JSON.parse(saved)) : new Set();
   });
 
-  const fetchRequests = async () => {
+  useEffect(() => {
     if (!userId || !serviceData) {
       console.log("Missing userId or serviceData");
       return;
     }
 
-    console.log("Fetching requests for service:", {
-      serviceId: userId,
+    console.log("Starting request listener for service:", {
       county: serviceData.county,
       city: serviceData.city
     });
 
-    // Query requests with either Active or Trimis Oferta status
     const requestsQuery = query(
       collection(db, "requests"),
-      where("status", "in", ["Active", "Trimis Oferta"]),
+      where("status", "==", "Active"),
       where("county", "==", serviceData.county)
     );
 
-    try {
-      const snapshot = await getDocs(requestsQuery);
-      console.log(`Found ${snapshot.docs.length} total requests in county`);
-
+    const unsubscribe = onSnapshot(requestsQuery, async (snapshot) => {
+      console.log("Received snapshot with", snapshot.docs.length, "documents");
       const requests: Request[] = [];
       const carsData: Record<string, Car> = {};
 
       for (const docSnapshot of snapshot.docs) {
         const data = docSnapshot.data() as Omit<Request, 'id'>;
+        console.log("Processing request:", docSnapshot.id, data);
 
+        // Safely check if cities array exists and includes service city
         if (Array.isArray(data.cities) && data.cities.includes(serviceData.city)) {
           try {
-            // Check if request has an offer
-            const offersQuery = query(
-              collection(db, "offers"),
-              where("requestId", "==", docSnapshot.id),
-              where("serviceId", "==", userId)
-            );
-            const offersSnapshot = await getDocs(offersQuery);
-            const hasOffer = !offersSnapshot.empty;
-
-            console.log(`Request ${docSnapshot.id}:`, {
-              title: data.title,
-              status: data.status,
-              hasOffer,
-              offersCount: offersSnapshot.docs.length,
-              cities: data.cities,
-              matches_city: data.cities.includes(serviceData.city)
-            });
-
-            // Fetch car data
             const carRef = doc(db, "cars", data.carId);
             const carDoc = await getDoc(carRef);
 
@@ -90,48 +55,16 @@ export function useServiceRequests(userId: string, serviceData: ServiceData | nu
             requests.push({
               ...data,
               id: docSnapshot.id,
-              hasOffer,
             });
           } catch (error) {
-            console.error("Error processing request:", docSnapshot.id, error);
+            console.error("Error fetching car data for request:", docSnapshot.id, error);
           }
         }
       }
 
-      console.log("Processed requests summary:", {
-        total: requests.length,
-        withOffers: requests.filter(r => r.hasOffer).length,
-        withoutOffers: requests.filter(r => !r.hasOffer).length,
-        byStatus: {
-          active: requests.filter(r => r.status === "Active").length,
-          trimisOferta: requests.filter(r => r.status === "Trimis Oferta").length
-        }
-      });
-
+      console.log("Processed requests:", requests.length);
       setClientRequests(requests);
       setCars(carsData);
-    } catch (error) {
-      console.error("Error fetching requests:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Could not load requests. Please refresh the page.",
-      });
-    }
-  };
-
-  useEffect(() => {
-    fetchRequests();
-
-    const requestsQuery = query(
-      collection(db, "requests"),
-      where("status", "in", ["Active", "Trimis Oferta"]),
-      where("county", "==", serviceData?.county || '')
-    );
-
-    const unsubscribe = onSnapshot(requestsQuery, async () => {
-      console.log("Received snapshot update, refreshing requests...");
-      await fetchRequests();
     }, (error) => {
       console.error("Error in requests listener:", error);
       toast({
@@ -143,55 +76,6 @@ export function useServiceRequests(userId: string, serviceData: ServiceData | nu
 
     return () => unsubscribe();
   }, [userId, serviceData, toast]);
-
-  const handleSubmitOffer = async (request: Request, offerData: OfferData) => {
-    try {
-      console.log("Starting offer submission for request:", {
-        requestId: request.id,
-        title: request.title,
-        currentStatus: request.status
-      });
-
-      // First update request status to Trimis Oferta
-      const requestRef = doc(db, "requests", request.id);
-      await updateDoc(requestRef, {
-        status: "Trimis Oferta",
-        hasOffer: true
-      });
-      console.log("Updated request status to Trimis Oferta");
-
-      // Then create the offer
-      const newOffer = {
-        ...offerData,
-        requestId: request.id,
-        serviceId: userId,
-        clientId: request.userId,
-        status: "Active",
-        createdAt: new Date().toISOString(),
-      };
-
-      const offerRef = await addDoc(collection(db, "offers"), newOffer);
-      console.log("Created new offer:", offerRef.id);
-
-      // Explicitly refresh the requests to update the UI
-      await fetchRequests();
-
-      toast({
-        title: "Success",
-        description: "Offer has been sent successfully.",
-      });
-
-      return true;
-    } catch (error) {
-      console.error("Error submitting offer:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Could not submit the offer. Please try again.",
-      });
-      return false;
-    }
-  };
 
   const handleViewDetails = async (request: Request) => {
     try {
@@ -212,7 +96,7 @@ export function useServiceRequests(userId: string, serviceData: ServiceData | nu
           id: userDoc.id,
           name: userData.name || "",
           email: userData.email || "",
-        });
+        } as User);
       }
     } catch (error) {
       console.error("Error fetching client details:", error);
@@ -240,8 +124,6 @@ export function useServiceRequests(userId: string, serviceData: ServiceData | nu
         status: "Anulat",
       });
 
-      await fetchRequests();
-
       toast({
         title: "Success",
         description: "Request has been rejected.",
@@ -265,7 +147,5 @@ export function useServiceRequests(userId: string, serviceData: ServiceData | nu
     handleViewDetails,
     handleRejectRequest,
     markRequestAsViewed,
-    fetchRequests,
-    handleSubmitOffer,
   };
 }

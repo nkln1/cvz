@@ -32,7 +32,6 @@ import {
   X,
   ArrowUpDown,
   Loader2,
-  CheckCircle2,
 } from "lucide-react";
 import {
   Pagination,
@@ -44,11 +43,10 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { format } from "date-fns";
-import type { Request, Car } from "@/types/dashboard";
+import type { Request, Car, User } from "@/types/dashboard";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { SubmitOfferForm } from "./SubmitOfferForm";
-import { Separator } from "@/components/ui/separator";
 
 interface ClientRequestsProps {
   clientRequests: Request[];
@@ -58,10 +56,9 @@ interface ClientRequestsProps {
   onSendOffer: (request: Request, offerData: any) => Promise<void>;
   onRejectRequest: (requestId: string) => void;
   selectedRequest: Request | null;
-  requestClient: { id: string; name: string; email: string } | null;
+  requestClient: User | null;
   cars: Record<string, Car>;
   loading?: boolean;
-  refreshRequests?: () => Promise<void>;
 }
 
 export function ClientRequests({
@@ -75,7 +72,6 @@ export function ClientRequests({
   requestClient,
   cars,
   loading = false,
-  refreshRequests,
 }: ClientRequestsProps) {
   const [sortField, setSortField] = useState<keyof Request>("createdAt");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
@@ -86,21 +82,52 @@ export function ClientRequests({
   const [showOfferForm, setShowOfferForm] = useState(false);
   const [selectedOfferRequest, setSelectedOfferRequest] = useState<Request | null>(null);
 
-  const handleSendOfferClick = (request: Request) => {
-    setSelectedOfferRequest(request);
-    setShowOfferForm(true);
-  };
-
-  const handleOfferSubmit = async (values: any) => {
-    if (selectedOfferRequest) {
-      await onSendOffer(selectedOfferRequest, values);
-      setShowOfferForm(false);
-      setSelectedOfferRequest(null);
-      if (refreshRequests) {
-        await refreshRequests();
-      }
+  const filteredRequests = clientRequests.filter((request) => {
+    if (showOnlyNew && viewedRequests.has(request.id)) {
+      return false;
     }
-  };
+
+    if (!searchQuery) return true;
+
+    const searchLower = searchQuery.toLowerCase();
+    return (
+      (request.title?.toLowerCase() || "").includes(searchLower) ||
+      (request.description?.toLowerCase() || "").includes(searchLower) ||
+      (request.county?.toLowerCase() || "").includes(searchLower) ||
+      (request.cities || []).some((city) =>
+        (city?.toLowerCase() || "").includes(searchLower),
+      ) ||
+      (request.status?.toLowerCase() || "").includes(searchLower) ||
+      (request.clientName?.toLowerCase() || "").includes(searchLower) ||
+      (request.preferredDate &&
+        format(new Date(request.preferredDate), "dd.MM.yyyy").includes(
+          searchQuery,
+        )) ||
+      (request.createdAt &&
+        format(new Date(request.createdAt), "dd.MM.yyyy").includes(searchQuery))
+    );
+  });
+
+  const sortedRequests = [...filteredRequests].sort((a, b) => {
+    const aValue = a[sortField];
+    const bValue = b[sortField];
+    const modifier = sortDirection === "asc" ? 1 : -1;
+
+    if (typeof aValue === "string" && typeof bValue === "string") {
+      return aValue.localeCompare(bValue) * modifier;
+    }
+    if (typeof aValue === "number" && typeof bValue === "number") {
+      return (aValue - bValue) * modifier;
+    }
+    return 0;
+  });
+
+  const totalPages = Math.ceil(sortedRequests.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedRequests = sortedRequests.slice(
+    startIndex,
+    startIndex + itemsPerPage,
+  );
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -118,6 +145,7 @@ export function ClientRequests({
       startPage = Math.max(1, endPage - maxVisiblePages + 1);
     }
 
+    // Add first page
     if (startPage > 1) {
       items.push(
         <PaginationItem key="1">
@@ -133,6 +161,7 @@ export function ClientRequests({
       }
     }
 
+    // Add pages
     for (let i = startPage; i <= endPage; i++) {
       items.push(
         <PaginationItem key={i}>
@@ -146,6 +175,7 @@ export function ClientRequests({
       );
     }
 
+    // Add last page
     if (endPage < totalPages) {
       if (endPage < totalPages - 1) {
         items.push(
@@ -165,107 +195,80 @@ export function ClientRequests({
 
     return items;
   };
-  
-  const renderRequestsTable = (requests: Request[], title: string, subtitle: string, showNewToggle: boolean = false) => {
-    const filteredRequests = requests.filter((request) => {
-      if (showOnlyNew && viewedRequests.has(request.id) && showNewToggle) {
-        return false;
-      }
 
-      if (!searchQuery) return true;
-
-      const searchLower = searchQuery.toLowerCase();
-      return (
-        (request.title?.toLowerCase() || "").includes(searchLower) ||
-        (request.description?.toLowerCase() || "").includes(searchLower) ||
-        (request.county?.toLowerCase() || "").includes(searchLower) ||
-        (request.cities || []).some((city) =>
-          (city?.toLowerCase() || "").includes(searchLower)
-        ) ||
-        (request.status?.toLowerCase() || "").includes(searchLower) ||
-        (request.clientName?.toLowerCase() || "").includes(searchLower) ||
-        (request.preferredDate &&
-          format(new Date(request.preferredDate), "dd.MM.yyyy").includes(searchQuery)) ||
-        (request.createdAt &&
-          format(new Date(request.createdAt), "dd.MM.yyyy").includes(searchQuery))
-      );
-    });
-
-    const sortedRequests = [...filteredRequests].sort((a, b) => {
-      const aValue = a[sortField];
-      const bValue = b[sortField];
-      const modifier = sortDirection === "asc" ? 1 : -1;
-
-      if (typeof aValue === "string" && typeof bValue === "string") {
-        return aValue.localeCompare(bValue) * modifier;
-      }
-      if (typeof aValue === "number" && typeof bValue === "number") {
-        return (aValue - bValue) * modifier;
-      }
-      return 0;
-    });
-
-    const totalPages = Math.ceil(sortedRequests.length / itemsPerPage);
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const paginatedRequests = sortedRequests.slice(startIndex, startIndex + itemsPerPage);
-
-    if (loading) {
-      return (
-        <Card className="border-[#00aff5]/20 mt-6">
-          <CardContent className="p-6 flex justify-center items-center min-h-[200px]">
-            <div className="flex flex-col items-center gap-2">
-              <Loader2 className="h-8 w-8 animate-spin text-[#00aff5]" />
-              <p className="text-muted-foreground">Loading requests...</p>
-            </div>
-          </CardContent>
-        </Card>
-      );
-    }
-
-    if (!loading && requests.length === 0) {
-      return (
-        <Card className="border-[#00aff5]/20 mt-6">
-          <CardContent className="p-6 flex justify-center items-center min-h-[200px]">
-            <div className="text-center">
-              <p className="text-muted-foreground">No requests found in this section.</p>
-            </div>
-          </CardContent>
-        </Card>
-      );
-    }
-
+  if (loading) {
     return (
-      <Card className="border-[#00aff5]/20 mt-6">
+      <Card className="border-[#00aff5]/20">
+        <CardContent className="p-6 flex justify-center items-center min-h-[200px]">
+          <div className="flex flex-col items-center gap-2">
+            <Loader2 className="h-8 w-8 animate-spin text-[#00aff5]" />
+            <p className="text-muted-foreground">Loading requests...</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!loading && clientRequests.length === 0) {
+    return (
+      <Card className="border-[#00aff5]/20">
+        <CardContent className="p-6 flex justify-center items-center min-h-[200px]">
+          <div className="text-center">
+            <p className="text-muted-foreground">No client requests found.</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              New requests matching your location will appear here.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+  
+  const handleSendOfferClick = (request: Request) => {
+    setSelectedOfferRequest(request);
+    setShowOfferForm(true);
+  };
+
+  const handleOfferSubmit = async (values: any) => {
+    if (selectedOfferRequest) {
+      await onSendOffer(selectedOfferRequest, values);
+    }
+  };
+
+  return (
+    <>
+      <Card className="border-[#00aff5]/20">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <CardTitle className="text-[#00aff5] flex items-center gap-2">
-                {title === "Cererile Clienților" ? (
-                  <Clock className="h-5 w-5" />
-                ) : (
-                  <CheckCircle2 className="h-5 w-5" />
-                )}
-                {title}
+                <Clock className="h-5 w-5" />
+                Cererile Clienților
               </CardTitle>
-              {showNewToggle && clientRequests.filter((req) => !viewedRequests.has(req.id)).length > 0 && (
-                <Badge variant="secondary" className="bg-[#00aff5] text-white text-sm font-normal px-2.5 py-1">
-                  {clientRequests.filter((req) => !viewedRequests.has(req.id)).length}
+              {clientRequests.filter((req) => !viewedRequests.has(req.id))
+                .length > 0 && (
+                <Badge
+                  variant="secondary"
+                  className="bg-[#00aff5] text-white text-sm font-normal px-2.5 py-1"
+                >
+                  {
+                    clientRequests.filter((req) => !viewedRequests.has(req.id))
+                      .length
+                  }
                 </Badge>
               )}
             </div>
             <div className="flex items-center gap-10">
-              {showNewToggle && (
-                <div className="flex items-center gap-2">
-                  <Switch
-                    id="show-new"
-                    checked={showOnlyNew}
-                    onCheckedChange={setShowOnlyNew}
-                  />
-                  <Label htmlFor="show-new" className="whitespace-nowrap">
-                    Doar cereri noi
-                  </Label>
-                </div>
-              )}
+              <div className="flex items-center gap-2">
+                <Switch
+                  id="show-new"
+                  checked={showOnlyNew}
+                  onCheckedChange={setShowOnlyNew}
+                />
+                <Label htmlFor="show-new" className="whitespace-nowrap">
+                  Doar cereri noi
+                </Label>
+              </div>
               <div className="flex items-center gap-2">
                 <span className="text-sm text-muted-foreground">Afișează:</span>
                 <Select
@@ -293,7 +296,9 @@ export function ClientRequests({
               />
             </div>
           </div>
-          <CardDescription>{subtitle}</CardDescription>
+          <CardDescription>
+            Vezi și gestionează toate cererile primite de la clienți
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -341,13 +346,13 @@ export function ClientRequests({
                     <Fragment key={request.id}>
                       <TableRow
                         className={`
-                          hover:bg-blue-50/80 transition-colors relative mb-2 
-                          ${
-                            selectedRequest?.id === request.id
-                              ? "bg-blue-200 border-l-4 border-blue-500"
-                              : ""
-                          }
-                        `}
+                        hover:bg-blue-50/80 transition-colors relative mb-2 
+                        ${
+                          selectedRequest?.id === request.id
+                            ? "bg-blue-200 border-l-4 border-blue-500"
+                            : ""
+                        }
+                      `}
                       >
                         <TableCell className="font-medium">
                           <div className="flex items-center gap-2">
@@ -383,9 +388,7 @@ export function ClientRequests({
                                 ? "bg-yellow-100 text-yellow-800"
                                 : request.status === "Rezolvat"
                                   ? "bg-green-100 text-green-800"
-                                  : request.status === "Trimis Oferta"
-                                    ? "bg-blue-100 text-blue-800"
-                                    : "bg-red-100 text-red-800"
+                                  : "bg-red-100 text-red-800"
                             }`}
                           >
                             {request.status}
@@ -411,12 +414,12 @@ export function ClientRequests({
                               <MessageSquare className="h-4 w-4" />
                               Mesaj
                             </Button>
-                            {!request.hasOffer && request.status === "Active" && title === "Cererile Clienților" && (
+                            {request.status === "Active" && (
                               <>
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => handleSendOfferClick(request)}
+                                   onClick={() => handleSendOfferClick(request)}
                                   className="text-green-500 hover:text-green-700 hover:bg-green-50 flex items-center gap-1"
                                 >
                                   <SendHorizontal className="h-4 w-4" />
@@ -446,6 +449,7 @@ export function ClientRequests({
                           <TableCell colSpan={7} className="p-0">
                             <div className="bg-gray-50 p-6 border-t border-b">
                               <div className="grid gap-6">
+                                {/* Description Section */}
                                 <div>
                                   <h3 className="text-sm font-medium mb-2">
                                     Descriere Cerere
@@ -454,7 +458,9 @@ export function ClientRequests({
                                     {request.description}
                                   </p>
                                 </div>
+
                                 <div className="grid grid-cols-3 gap-6">
+                                  {/* Client Details */}
                                   <div>
                                     <h3 className="text-sm font-medium mb-2">
                                       Client
@@ -468,6 +474,8 @@ export function ClientRequests({
                                       </p>
                                     </div>
                                   </div>
+
+                                  {/* Car Details */}
                                   <div>
                                     <h3 className="text-sm font-medium mb-2">
                                       Mașină
@@ -497,6 +505,8 @@ export function ClientRequests({
                                       </p>
                                     </div>
                                   </div>
+
+                                  {/* Date Details */}
                                   <div>
                                     <h3 className="text-sm font-medium mb-2">
                                       Data preferată
@@ -543,25 +553,6 @@ export function ClientRequests({
           </div>
         </CardContent>
       </Card>
-    );
-  };
-
-  return (
-    <>
-      {renderRequestsTable(
-        clientRequests.filter(request => request.status === "Active"),
-        "Cererile Clienților",
-        "Vezi și gestionează toate cererile primite de la clienți",
-        true
-      )}
-
-      {clientRequests.some(request => request.status === "Trimis Oferta") && (
-        renderRequestsTable(
-          clientRequests.filter(request => request.status === "Trimis Oferta"),
-          "Cereri cu Oferte Trimise",
-          "Cereri pentru care ai trimis deja o ofertă"
-        )
-      )}
 
       {selectedOfferRequest && (
         <SubmitOfferForm

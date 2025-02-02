@@ -21,11 +21,10 @@ export interface Request {
   preferredDate: string;
   county: string;
   cities: string[];
-  status: "Active" | "Rezolvat" | "Anulat" | "Trimis Oferta";
+  status: "Active" | "Rezolvat" | "Anulat";
   createdAt: string;
   userId: string;
   clientName: string;
-  hasOffer?: boolean;
 }
 
 export interface User {

@@ -17,44 +17,16 @@ export const useRequests = (userId: string) => {
     setError(null);
 
     try {
-      console.log("Fetching requests for user:", userId);
-
-      // Query all requests for the user regardless of status
       const requestsQuery = query(
         collection(db, "requests"),
         where("userId", "==", userId)
       );
-
       const querySnapshot = await getDocs(requestsQuery);
       const loadedRequests: Request[] = [];
-
       querySnapshot.forEach((doc) => {
-        const request = { id: doc.id, ...doc.data() } as Request;
-        loadedRequests.push(request);
-        console.log("Loaded request:", {
-          id: request.id,
-          title: request.title,
-          status: request.status,
-          hasOffer: request.hasOffer
-        });
+        loadedRequests.push({ id: doc.id, ...doc.data() } as Request);
       });
-
-      console.log("Loaded requests summary:", {
-        total: loadedRequests.length,
-        byStatus: {
-          active: loadedRequests.filter(r => r.status === "Active").length,
-          trimisOferta: loadedRequests.filter(r => r.status === "Trimis Oferta").length,
-          rezolvat: loadedRequests.filter(r => r.status === "Rezolvat").length,
-          anulat: loadedRequests.filter(r => r.status === "Anulat").length
-        }
-      });
-
-      // Sort requests by creation date (newest first)
-      const sortedRequests = loadedRequests.sort((a, b) => 
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      );
-
-      setRequests(sortedRequests);
+      setRequests(loadedRequests);
     } catch (error) {
       const errorMessage = "Nu s-au putut încărca cererile.";
       console.error("Error loading requests:", error);
@@ -82,7 +54,6 @@ export const useRequests = (userId: string) => {
         clientName,
         status: "Active" as const,
         createdAt: new Date().toISOString(),
-        hasOffer: false
       };
 
       await addDoc(collection(db, "requests"), requestData);
