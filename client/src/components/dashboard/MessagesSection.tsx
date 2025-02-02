@@ -185,6 +185,11 @@ export function MessagesSection({
       .slice(0, 2);
   };
 
+  const getRequestTitle = (requestId: string) => {
+    const request = requests.find(r => r.id === requestId);
+    return request?.title || "Cerere fără titlu";
+  };
+
   const renderMessagesList = () => (
     <ScrollArea className="h-[600px] pr-4">
       <div className="space-y-2">
@@ -198,6 +203,7 @@ export function MessagesSection({
               ? group.lastMessage.toId
               : group.lastMessage.fromId;
             const serviceName = messageServices[serviceId]?.companyName || "Service Auto";
+            const requestTitle = getRequestTitle(group.requestId);
 
             return (
               <motion.div
@@ -221,7 +227,7 @@ export function MessagesSection({
                         <div className="flex justify-between items-start">
                           <div>
                             <h4 className="font-medium">{serviceName}</h4>
-                            <p className="text-sm text-muted-foreground">{group.requestTitle}</p>
+                            <p className="text-sm text-muted-foreground">{requestTitle}</p>
                           </div>
                           <span className="text-xs text-muted-foreground whitespace-nowrap ml-2">
                             {formatMessageDate(group.lastMessage?.createdAt)} {formatMessageTime(group.lastMessage?.createdAt)}
