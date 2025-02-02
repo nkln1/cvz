@@ -48,7 +48,7 @@ interface Offer {
   requestId: string;
   title: string;
   details: string;
-  availableDate: string | null;
+  availableDate: string;
   price: number;
   notes?: string;
   status: string;
@@ -88,49 +88,57 @@ export function ReceivedOffers({ cars, onMessageService }: ReceivedOffersProps) 
 
   useEffect(() => {
     const fetchOffers = async () => {
-      if (!user) return;
+      if (!user) {
+        console.log("No user found, skipping fetch");
+        return;
+      }
 
       try {
         setLoading(true);
-        console.log("Fetching received offers for client:", user.uid);
+        console.log("Starting to fetch offers for client:", user.uid);
         const offersRef = collection(db, "offers");
         const q = query(offersRef, where("clientId", "==", user.uid));
         const querySnapshot = await getDocs(q);
+        console.log("Number of offers found:", querySnapshot.size);
 
         const fetchedOffers: Offer[] = [];
 
         for (const docSnap of querySnapshot.docs) {
           const data = docSnap.data();
-          console.log("Raw offer data:", data); // Debug log
+          console.log("Raw offer document data:", {
+            id: docSnap.id,
+            ...data,
+            availableDate: data.availableDate,
+            createdAt: data.createdAt
+          });
 
           const serviceRef = doc(db, "services", data.serviceId);
           const serviceSnap = await getDoc(serviceRef);
           const serviceName = serviceSnap.exists() ? serviceSnap.data().companyName : "Service Necunoscut";
 
-          // Process dates properly
           const processedOffer = {
             id: docSnap.id,
             ...data,
             serviceName,
             createdAt: data.createdAt?.toDate() || new Date(),
-            availableDate: data.availableDate || null, // Ensure we pass the raw value
+            availableDate: data.availableDate,
             isNew: !viewedOffers.has(docSnap.id),
           } as Offer;
 
-          console.log("Processed offer:", processedOffer); // Debug log
+          console.log("Processed offer object:", processedOffer);
           fetchedOffers.push(processedOffer);
         }
 
         fetchedOffers.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-        console.log("Final processed received offers:", fetchedOffers);
+        console.log("All processed offers:", fetchedOffers);
         setOffers(fetchedOffers);
       } catch (error) {
-        console.error("Error fetching received offers:", error);
+        console.error("Error in fetchOffers:", error);
       } finally {
         setLoading(false);
       }
     };
-    
+
     fetchOffers();
   }, [user, viewedOffers]);
 
@@ -262,24 +270,10 @@ export function ReceivedOffers({ cars, onMessageService }: ReceivedOffersProps) 
     const formatDateSafely = (dateValue: any) => {
         if (!dateValue) return "Data necunoscută";
         try {
-            // If it's a Firestore timestamp
-            if (dateValue && typeof dateValue.toDate === 'function') {
-                return format(dateValue.toDate(), "dd.MM.yyyy");
-            }
-            // If it's a string date
-            if (typeof dateValue === 'string') {
-                const parsedDate = new Date(dateValue);
-                if (!isNaN(parsedDate.getTime())) {
-                    return format(parsedDate, "dd.MM.yyyy");
-                }
-            }
-            // If it's already a Date object
-            if (dateValue instanceof Date) {
-                return format(dateValue, "dd.MM.yyyy");
-            }
-
-            console.error("Unhandled date format:", dateValue);
-            return "Data necunoscută";
+            const date = dateValue && typeof dateValue.toDate === 'function'
+                ? dateValue.toDate()
+                : new Date(dateValue);
+            return format(date, "dd.MM.yyyy");
         } catch (error) {
             console.error("Error formatting date:", error, "Date value:", dateValue);
             return "Data necunoscută";
@@ -322,131 +316,139 @@ export function ReceivedOffers({ cars, onMessageService }: ReceivedOffersProps) 
     </Dialog>
   );
 
-  const renderOfferBox = (offer: Offer) => (
-    <div
-      key={offer.id}
-      className="bg-white border-2 border-gray-200 rounded-lg hover:border-[#00aff5]/30 transition-all duration-200 relative h-[320px] flex flex-col"
-      onMouseEnter={() => offer.isNew && markOfferAsViewed(offer.id)}
-    >
-      {offer.isNew && (
-        <Badge className="absolute -top-2 -right-2 bg-[#00aff5] text-white">
-          Nou
-        </Badge>
-      )}
+  const renderOfferBox = (offer: Offer) => {
+    console.log("Rendering offer box for offer:", {
+      id: offer.id,
+      availableDate: offer.availableDate,
+      title: offer.title
+    });
 
-      {/* Header section */}
-      <div className="p-4 border-b">
-        <div className="flex justify-between items-start mb-2">
-          <h3 className="text-md font-semibold line-clamp-1">{offer.title}</h3>
-          <Badge
-            variant="secondary"
-            className={`${
-              offer.status === "Pending"
-                ? "bg-yellow-100 text-yellow-800"
-                : offer.status === "Accepted"
-                ? "bg-green-100 text-green-800"
-                : "bg-red-100 text-red-800"
-            }`}
-          >
-            {offer.status}
+    return (
+      <div
+        key={offer.id}
+        className="bg-white border-2 border-gray-200 rounded-lg hover:border-[#00aff5]/30 transition-all duration-200 relative h-[320px] flex flex-col"
+        onMouseEnter={() => offer.isNew && markOfferAsViewed(offer.id)}
+      >
+        {offer.isNew && (
+          <Badge className="absolute -top-2 -right-2 bg-[#00aff5] text-white">
+            Nou
           </Badge>
-        </div>
-        <div className="text-sm text-gray-600">
-          <Clock className="inline-block w-4 h-4 mr-1 text-gray-500" />
-          {format(offer.createdAt, "dd.MM.yyyy HH:mm")}
-        </div>
-      </div>
+        )}
 
-      {/* Content section */}
-      <div className="p-4 flex-grow">
-        <div className="mb-3">
-          <h4 className="text-sm font-medium flex items-center gap-2">
-            <User className="w-4 h-4 text-blue-500" /> Service:{" "}
-            <span className="font-normal line-clamp-1">{offer.serviceName}</span>
-          </h4>
-        </div>
-
-        <div className="grid grid-cols-2 gap-2 mb-3">
-          <div>
-            <h4 className="text-xs font-medium text-gray-500">Disponibilitate</h4>
-            <p className="text-sm">{formatDateSafely(offer.availableDate)}</p>
+        {/* Header section */}
+        <div className="p-4 border-b">
+          <div className="flex justify-between items-start mb-2">
+            <h3 className="text-md font-semibold line-clamp-1">{offer.title}</h3>
+            <Badge
+              variant="secondary"
+              className={`${
+                offer.status === "Pending"
+                  ? "bg-yellow-100 text-yellow-800"
+                  : offer.status === "Accepted"
+                  ? "bg-green-100 text-green-800"
+                  : "bg-red-100 text-red-800"
+              }`}
+            >
+              {offer.status}
+            </Badge>
           </div>
-          <div>
-            <h4 className="text-xs font-medium text-gray-500">Preț</h4>
-            <p className="text-sm">{offer.price} RON</p>
+          <div className="text-sm text-gray-600">
+            <Clock className="inline-block w-4 h-4 mr-1 text-gray-500" />
+            {format(offer.createdAt, "dd.MM.yyyy HH:mm")}
           </div>
         </div>
 
-        <div>
-          <h4 className="text-xs font-medium text-gray-500 mb-1">Detalii</h4>
-          <p className="text-sm line-clamp-2">{offer.details}</p>
-        </div>
-      </div>
+        {/* Content section */}
+        <div className="p-4 flex-grow">
+          <div className="mb-3">
+            <h4 className="text-sm font-medium flex items-center gap-2">
+              <User className="w-4 h-4 text-blue-500" /> Service:{" "}
+              <span className="font-normal line-clamp-1">{offer.serviceName}</span>
+            </h4>
+          </div>
 
-      {/* Actions section */}
-      <div className="p-4 border-t mt-auto">
-        <div className="flex items-center justify-between gap-2">
-          <Button
-            variant="outline"
-            size="xs"
-            className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 flex-shrink-0"
-            onClick={() => onMessageService?.(offer.serviceId, offer.requestId)}
-          >
-            <MessageSquare className="w-3 h-3 mr-1" />
-            Mesaj
-          </Button>
-
-          <Button
-            variant="outline"
-            size="xs"
-            className="text-gray-500 hover:text-gray-700 hover:bg-gray-50"
-            onClick={() => {
-              setSelectedOffer(offer);
-              setIsDetailsOpen(true);
-            }}
-          >
-            <Eye className="w-3 h-3 mr-1" />
-            Detalii
-          </Button>
-
-          {offer.status === "Pending" && (
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="xs"
-                className="text-green-500 hover:text-green-700 hover:bg-green-50 flex-shrink-0"
-                onClick={() => handleAcceptOffer(offer)}
-              >
-                <Check className="w-3 h-3 mr-1" />
-                Acceptă
-              </Button>
-              <Button
-                variant="outline"
-                size="xs"
-                className="text-red-500 hover:text-red-700 hover:bg-red-50 flex-shrink-0"
-                onClick={() => handleRejectOffer(offer)}
-              >
-                <XCircle className="w-3 h-3 mr-1" />
-                Respinge
-              </Button>
+          <div className="grid grid-cols-2 gap-2 mb-3">
+            <div>
+              <h4 className="text-xs font-medium text-gray-500">Disponibilitate</h4>
+              <p className="text-sm">{formatDateSafely(offer.availableDate)}</p>
             </div>
-          )}
+            <div>
+              <h4 className="text-xs font-medium text-gray-500">Preț</h4>
+              <p className="text-sm">{offer.price} RON</p>
+            </div>
+          </div>
 
-          {offer.status === "Accepted" && (
+          <div>
+            <h4 className="text-xs font-medium text-gray-500 mb-1">Detalii</h4>
+            <p className="text-sm line-clamp-2">{offer.details}</p>
+          </div>
+        </div>
+
+        {/* Actions section */}
+        <div className="p-4 border-t mt-auto">
+          <div className="flex items-center justify-between gap-2">
             <Button
               variant="outline"
               size="xs"
-              className="text-orange-500 hover:text-orange-700 hover:bg-orange-50 flex-shrink-0"
-              onClick={() => handleCancelOffer(offer)}
+              className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 flex-shrink-0"
+              onClick={() => onMessageService?.(offer.serviceId, offer.requestId)}
             >
-              <RotateCcw className="w-3 h-3 mr-1" />
-              Anulează
+              <MessageSquare className="w-3 h-3 mr-1" />
+              Mesaj
             </Button>
-          )}
+
+            <Button
+              variant="outline"
+              size="xs"
+              className="text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+              onClick={() => {
+                setSelectedOffer(offer);
+                setIsDetailsOpen(true);
+              }}
+            >
+              <Eye className="w-3 h-3 mr-1" />
+              Detalii
+            </Button>
+
+            {offer.status === "Pending" && (
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="xs"
+                  className="text-green-500 hover:text-green-700 hover:bg-green-50 flex-shrink-0"
+                  onClick={() => handleAcceptOffer(offer)}
+                >
+                  <Check className="w-3 h-3 mr-1" />
+                  Acceptă
+                </Button>
+                <Button
+                  variant="outline"
+                  size="xs"
+                  className="text-red-500 hover:text-red-700 hover:bg-red-50 flex-shrink-0"
+                  onClick={() => handleRejectOffer(offer)}
+                >
+                  <XCircle className="w-3 h-3 mr-1" />
+                  Respinge
+                </Button>
+              </div>
+            )}
+
+            {offer.status === "Accepted" && (
+              <Button
+                variant="outline"
+                size="xs"
+                className="text-orange-500 hover:text-orange-700 hover:bg-orange-50 flex-shrink-0"
+                onClick={() => handleCancelOffer(offer)}
+              >
+                <RotateCcw className="w-3 h-3 mr-1" />
+                Anulează
+              </Button>
+            )}
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
 
   if (loading) {
