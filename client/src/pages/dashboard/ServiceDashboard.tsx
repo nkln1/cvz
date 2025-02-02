@@ -200,7 +200,6 @@ export default function ServiceDashboard() {
 
     try {
       console.log("Creating new offer:", { request, formData });
-      // Create the offer document in Firestore
       const newOffer = {
         requestId: request.id,
         serviceId: user.uid,
@@ -218,17 +217,18 @@ export default function ServiceDashboard() {
       const docRef = await addDoc(offersRef, newOffer);
       console.log("Offer created with ID:", docRef.id);
 
-      // No longer update request status here
-      // The request should stay Active until an offer is accepted
+      // Update the request to mark that it has received an offer
+      const requestRef = doc(db, "requests", request.id);
+      await updateDoc(requestRef, {
+        hasReceivedOffer: true
+      });
 
       toast({
         title: "Succes",
         description: "Oferta a fost trimisă cu succes!",
       });
 
-      // Increment the counter to trigger a refresh of the SentOffers component
       setRefreshOffersCounter((prev) => prev + 1);
-      // Switch to the offers tab
       setActiveTab("offers");
     } catch (error) {
       console.error("Error sending offer:", error);

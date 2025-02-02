@@ -108,7 +108,10 @@ export function ClientRequests({
     );
   });
 
-  const sortedRequests = [...filteredRequests].sort((a, b) => {
+  const requestsWithOffers = filteredRequests.filter(request => request.hasReceivedOffer);
+  const requestsWithoutOffers = filteredRequests.filter(request => !request.hasReceivedOffer);
+
+  const sortedRequests = [...requestsWithoutOffers].sort((a, b) => {
     const aValue = a[sortField];
     const bValue = b[sortField];
     const modifier = sortDirection === "asc" ? 1 : -1;
@@ -121,6 +124,7 @@ export function ClientRequests({
     }
     return 0;
   });
+
 
   const totalPages = Math.ceil(sortedRequests.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -240,22 +244,22 @@ export function ClientRequests({
 
   return (
     <>
-      <Card className="border-[#00aff5]/20">
+      <Card className="border-[#00aff5]/20 mb-6">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <CardTitle className="text-[#00aff5] flex items-center gap-2">
                 <Clock className="h-5 w-5" />
-                Cererile Clienților
+                Cereri în Așteptare
               </CardTitle>
-              {clientRequests.filter((req) => !viewedRequests.has(req.id))
+              {clientRequests.filter((req) => !viewedRequests.has(req.id) && !req.hasReceivedOffer)
                 .length > 0 && (
                 <Badge
                   variant="secondary"
                   className="bg-[#00aff5] text-white text-sm font-normal px-2.5 py-1"
                 >
                   {
-                    clientRequests.filter((req) => !viewedRequests.has(req.id))
+                    clientRequests.filter((req) => !viewedRequests.has(req.id) && !req.hasReceivedOffer)
                       .length
                   }
                 </Badge>
@@ -300,7 +304,7 @@ export function ClientRequests({
             </div>
           </div>
           <CardDescription>
-            Vezi și gestionează toate cererile primite de la clienți
+            Vezi și gestionează cererile care așteaptă ofertă
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -422,7 +426,7 @@ export function ClientRequests({
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                   onClick={() => handleSendOfferClick(request)}
+                                  onClick={() => handleSendOfferClick(request)}
                                   className="text-green-500 hover:text-green-700 hover:bg-green-50 flex items-center gap-1"
                                 >
                                   <SendHorizontal className="h-4 w-4" />
@@ -556,6 +560,194 @@ export function ClientRequests({
           </div>
         </CardContent>
       </Card>
+
+      {requestsWithOffers.length > 0 && (
+        <Card className="border-[#00aff5]/20">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <CardTitle className="text-[#00aff5] flex items-center gap-2">
+                <SendHorizontal className="h-5 w-5" />
+                Cereri cu Oferte Trimise
+              </CardTitle>
+              <Badge variant="secondary" className="bg-gray-100 text-gray-800">
+                {requestsWithOffers.length}
+              </Badge>
+            </div>
+            <CardDescription>
+              Cereri pentru care ai trimis deja oferte
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="max-h-[2000px] overflow-y-auto pr-2">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="hover:bg-transparent">
+                      <TableHead>Titlu</TableHead>
+                      <TableHead>Data primirii</TableHead>
+                      <TableHead>Data preferată</TableHead>
+                      <TableHead>Județ</TableHead>
+                      <TableHead>Localități</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Acțiuni</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {requestsWithOffers.map((request) => (
+                      <Fragment key={request.id}>
+                        <TableRow
+                          className={`
+                          hover:bg-blue-50/80 transition-colors relative mb-2 
+                          ${
+                            selectedRequest?.id === request.id
+                              ? "bg-blue-200 border-l-4 border-blue-500"
+                              : ""
+                          }
+                        `}
+                        >
+                          <TableCell className="font-medium">
+                            {request.title}
+                          </TableCell>
+                          <TableCell>
+                            {format(new Date(request.createdAt), "dd.MM.yyyy HH:mm")}
+                          </TableCell>
+                          <TableCell>
+                            {format(new Date(request.preferredDate), "dd.MM.yyyy")}
+                          </TableCell>
+                          <TableCell>{request.county}</TableCell>
+                          <TableCell>{request.cities.join(", ")}</TableCell>
+                          <TableCell>
+                            <span
+                              className={`px-2 py-1 rounded-full text-sm ${
+                                request.status === "Active"
+                                  ? "bg-yellow-100 text-yellow-800"
+                                  : request.status === "Rezolvat"
+                                    ? "bg-green-100 text-green-800"
+                                    : "bg-red-100 text-red-800"
+                              }`}
+                            >
+                              {request.status}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => onViewDetails(request)}
+                                className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 flex items-center gap-1"
+                              >
+                                <Eye className="h-4 w-4" />
+                                Detalii
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => onMessage(request)}
+                                className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 flex items-center gap-1"
+                              >
+                                <MessageSquare className="h-4 w-4" />
+                                Mesaj
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                        {selectedRequest?.id === request.id && (
+                          <TableRow
+                            className={`
+                            hover:bg-transparent
+                            ${selectedRequest?.id === request.id ? "bg-blue-200 border-l-4 border-blue-500" : ""}
+                          `}
+                          >
+                            <TableCell colSpan={7} className="p-0">
+                              <div className="bg-gray-50 p-6 border-t border-b">
+                                <div className="grid gap-6">
+                                  {/* Description Section */}
+                                  <div>
+                                    <h3 className="text-sm font-medium mb-2">
+                                      Descriere Cerere
+                                    </h3>
+                                    <p className="text-sm text-muted-foreground whitespace-pre-wrap bg-white p-4 rounded-lg border">
+                                      {request.description}
+                                    </p>
+                                  </div>
+
+                                  <div className="grid grid-cols-3 gap-6">
+                                    {/* Client Details */}
+                                    <div>
+                                      <h3 className="text-sm font-medium mb-2">
+                                        Client
+                                      </h3>
+                                      <div className="bg-white p-4 rounded-lg border">
+                                        <p className="text-sm">
+                                          {request.clientName}
+                                        </p>
+                                        <p className="text-xs text-muted-foreground">
+                                          {requestClient?.email}
+                                        </p>
+                                      </div>
+                                    </div>
+
+                                    {/* Car Details */}
+                                    <div>
+                                      <h3 className="text-sm font-medium mb-2">
+                                        Mașină
+                                      </h3>
+                                      <div className="bg-white p-4 rounded-lg border">
+                                        <p className="text-sm">
+                                          {cars[request.carId] ? (
+                                            <>
+                                              {cars[request.carId].brand}{" "}
+                                              {cars[request.carId].model} (
+                                              {cars[request.carId].year})
+                                              {cars[request.carId].licensePlate && (
+                                                <span className="text-xs text-muted-foreground block mt-1">
+                                                  Nr.{" "}
+                                                  {cars[request.carId].licensePlate}
+                                                </span>
+                                              )}
+                                              {cars[request.carId].vin && (
+                                                <span className="text-xs text-muted-foreground block mt-1">
+                                                  VIN: {cars[request.carId].vin}
+                                                </span>
+                                              )}
+                                            </>
+                                          ) : (
+                                            "Detalii indisponibile"
+                                          )}
+                                        </p>
+                                      </div>
+                                    </div>
+
+                                    {/* Date Details */}
+                                    <div>
+                                      <h3 className="text-sm font-medium mb-2">
+                                        Data preferată
+                                      </h3>
+                                      <div className="bg-white p-4 rounded-lg border">
+                                        <p className="text-sm">
+                                          {format(
+                                            new Date(request.preferredDate),
+                                            "dd.MM.yyyy",
+                                          )}
+                                        </p>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </Fragment>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {selectedOfferRequest && (
         <SubmitOfferForm
