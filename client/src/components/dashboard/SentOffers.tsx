@@ -378,7 +378,11 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
               </p>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {pendingOffers.map(offer => renderOfferBox(offer))}
+                {pendingOffers.map(offer => (
+                  <div key={offer.id}>
+                    {renderOfferBox(offer)}
+                  </div>
+                ))}
               </div>
             )}
           </TabsContent>
