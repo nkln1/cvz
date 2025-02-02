@@ -69,15 +69,13 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
         console.log("Query snapshot size:", querySnapshot.size);
         const fetchedOffers: Offer[] = [];
 
-        for (const doc of querySnapshot.docs) {
+        const fetchPromises = querySnapshot.docs.map(async (doc) => {
           const data = doc.data();
           try {
-            // Fetch request data directly from Firestore
             const requestDoc = await getDoc(doc(db, "requests", data.requestId));
             const requestData = requestDoc.exists() ? { id: requestDoc.id, ...requestDoc.data() } as Request : null;
-            console.log("Fetched request data:", requestData);
-
-            fetchedOffers.push({
+            
+            return {
               id: doc.id,
               ...data,
               createdAt: data.createdAt?.toDate() || new Date(),
@@ -85,12 +83,15 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
               availableDate: data.availableDate || "Data necunoscută",
               price: data.price || 0,
               status: data.status || "Pending"
-            } as Offer);
+            } as Offer;
           } catch (error) {
-            console.error("Error fetching request data:", error);
+            console.error("Error fetching request data for doc:", doc.id, error);
+            return null;
           }
-        }
+        });
 
+        const results = await Promise.all(fetchPromises);
+        fetchedOffers.push(...results.filter((offer): offer is Offer => offer !== null));
         fetchedOffers.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
         setOffers(fetchedOffers);
       } catch (error) {
