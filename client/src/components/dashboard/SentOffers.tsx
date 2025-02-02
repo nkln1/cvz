@@ -38,6 +38,7 @@ interface Offer {
   status: string;
   createdAt: Date;
   serviceId: string;
+  request: Request | null; // Added request property
 }
 
 export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: SentOffersProps) {
@@ -70,10 +71,13 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
 
         querySnapshot.forEach((doc) => {
           const data = doc.data();
+          const requestData = requests.find((r) => r.id === data.requestId) || null; //Fetch request data here
+
           fetchedOffers.push({
             id: doc.id,
             ...data,
             createdAt: data.createdAt?.toDate() || new Date(),
+            request: requestData, // Assign fetched request data
           } as Offer);
         });
 
@@ -87,10 +91,10 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
     };
 
     fetchOffers();
-  }, [user, refreshCounter]);
+  }, [user, refreshCounter, requests]);
 
   const renderOfferDetails = (offer: Offer) => {
-    const request = requests.find((r) => r.id === offer.requestId);
+    const request = offer.request; // Use the offer's request data
     const car = request ? cars[request.carId] : null;
 
     return (
@@ -188,7 +192,7 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
   };
 
   const renderOfferBox = (offer: Offer) => {
-    const request = requests.find((r) => r.id === offer.requestId);
+    const request = offer.request; // Use the offer's request data
     const car = request ? cars[request.carId] : null;
 
     return (
