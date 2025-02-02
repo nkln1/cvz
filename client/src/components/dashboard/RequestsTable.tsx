@@ -27,19 +27,7 @@ import {
 } from "@/components/ui/dialog";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
-import { type Car } from "@/types/dashboard";
-
-interface Request {
-  id: string;
-  title: string;
-  description: string;
-  carId: string;
-  preferredDate: string;
-  county: string;
-  cities?: string[];
-  status: "Active" | "Rezolvat" | "Anulat";
-  createdAt: string;
-}
+import { type Request, type Car } from "@/types/dashboard";
 
 interface RequestsTableProps {
   requests: Request[];
@@ -125,9 +113,11 @@ export function RequestsTable({
                   className={`px-2 py-1 rounded-full text-sm ${
                     request.status === "Active"
                       ? "bg-yellow-100 text-yellow-800"
-                      : request.status === "Rezolvat"
-                        ? "bg-green-100 text-green-800"
-                        : "bg-red-100 text-red-800"
+                      : request.status === "Trimis Oferta"
+                        ? "bg-blue-100 text-blue-800"
+                        : request.status === "Rezolvat"
+                          ? "bg-green-100 text-green-800"
+                          : "bg-red-100 text-red-800"
                   }`}
                 >
                   {request.status}
@@ -260,9 +250,11 @@ export function RequestsTable({
                   className={`px-2 py-1 rounded-full text-sm ${
                     selectedRequest.status === "Active"
                       ? "bg-yellow-100 text-yellow-800"
-                      : selectedRequest.status === "Rezolvat"
-                        ? "bg-green-100 text-green-800"
-                        : "bg-red-100 text-red-800"
+                      : selectedRequest.status === "Trimis Oferta"
+                        ? "bg-blue-100 text-blue-800"
+                        : selectedRequest.status === "Rezolvat"
+                          ? "bg-green-100 text-green-800"
+                          : "bg-red-100 text-red-800"
                   }`}
                 >
                   {selectedRequest.status}
