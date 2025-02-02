@@ -38,7 +38,6 @@ interface Request {
   county: string;
   cities?: string[];
   status: "Active" | "Rezolvat" | "Anulat";
-  createdAt?: string;
 }
 
 interface RequestsTableProps {
@@ -86,19 +85,13 @@ export function RequestsTable({
     return citiesDisplay ? `${citiesDisplay}, ${request.county}` : request.county;
   };
 
-  // Sort requests by createdAt date, newest first
-  const sortedRequests = [...requests].sort((a, b) => {
-    const dateA = new Date(a.createdAt || a.preferredDate);
-    const dateB = new Date(b.createdAt || b.preferredDate);
-    return dateB.getTime() - dateA.getTime();
-  });
-
   return (
     <>
       <Table>
         <TableHeader>
           <TableRow>
             <TableHead>Titlu</TableHead>
+            <TableHead>Mașină</TableHead>
             <TableHead>Data preferată</TableHead>
             <TableHead>Locație</TableHead>
             <TableHead>Status</TableHead>
@@ -106,13 +99,17 @@ export function RequestsTable({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {sortedRequests.map((request) => (
+          {requests.map((request) => (
             <TableRow
               key={request.id}
               className="hover:bg-gray-50 transition-colors"
             >
               <TableCell className="font-medium">
                 {request.title}
+              </TableCell>
+              <TableCell>
+                {cars[request.carId]?.brand}{" "}
+                {cars[request.carId]?.model}
               </TableCell>
               <TableCell>
                 {format(new Date(request.preferredDate), "dd.MM.yyyy")}
@@ -165,7 +162,7 @@ export function RequestsTable({
           ))}
           {requests.length === 0 && (
             <TableRow>
-              <TableCell colSpan={5} className="text-center text-muted-foreground">
+              <TableCell colSpan={6} className="text-center text-muted-foreground">
                 Nu există cereri în această categorie.
               </TableCell>
             </TableRow>
@@ -219,13 +216,7 @@ export function RequestsTable({
                 </h3>
                 <p>
                   {cars[selectedRequest.carId]?.brand}{" "}
-                  {cars[selectedRequest.carId]?.model} ({cars[selectedRequest.carId]?.year})
-                  <br />
-                  Kilometraj: {cars[selectedRequest.carId]?.mileage} km
-                  <br />
-                  Carburant: {cars[selectedRequest.carId]?.fuelType}
-                  <br />
-                  Transmisie: {cars[selectedRequest.carId]?.transmission}
+                  {cars[selectedRequest.carId]?.model}
                 </p>
               </div>
               <div>

@@ -126,6 +126,7 @@ export function CarForm({ onSubmit, onCancel, initialData }: CarFormProps) {
                 </FormItem>
               )}
             />
+
             <FormField
               control={form.control}
               name="fuelType"

@@ -100,19 +100,6 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
           </DialogHeader>
           <ScrollArea className="h-full max-h-[60vh]">
             <div className="space-y-6 p-4">
-              {/* Request Details Section */}
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <h4 className="text-sm font-medium mb-2">Detalii Cerere</h4>
-                <div className="space-y-2">
-                  <p className="text-sm">
-                    <span className="font-medium">Titlu:</span> {request?.title}
-                  </p>
-                  <p className="text-sm">
-                    <span className="font-medium">Descriere:</span> {request?.description}
-                  </p>
-                </div>
-              </div>
-
               <div>
                 <h4 className="text-sm font-medium mb-2">Detalii Ofertă</h4>
                 <p className="text-sm text-muted-foreground whitespace-pre-wrap">{offer.details}</p>
@@ -130,12 +117,6 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
                   <h4 className="text-sm font-medium mb-2">Mașină</h4>
                   <p className="text-sm text-muted-foreground">
                     {car.brand} {car.model} ({car.year})
-                    <br />
-                    Tip carburant: {car.fuelType}
-                    <br />
-                    Transmisie: {car.transmission}
-                    <br />
-                    Kilometraj: {car.mileage} km
                     {car.licensePlate && (
                       <span className="block text-xs">Nr. {car.licensePlate}</span>
                     )}
