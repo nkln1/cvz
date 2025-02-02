@@ -32,6 +32,7 @@ import {
   X,
   ArrowUpDown,
   Loader2,
+  CheckCircle2,
 } from "lucide-react";
 import {
   Pagination,
@@ -43,10 +44,11 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { format } from "date-fns";
-import type { Request, Car, User } from "@/types/dashboard";
+import type { Request, Car } from "@/types/dashboard";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { SubmitOfferForm } from "./SubmitOfferForm";
+import { Separator } from "@/components/ui/separator";
 
 interface ClientRequestsProps {
   clientRequests: Request[];
@@ -56,7 +58,7 @@ interface ClientRequestsProps {
   onSendOffer: (request: Request, offerData: any) => Promise<void>;
   onRejectRequest: (requestId: string) => void;
   selectedRequest: Request | null;
-  requestClient: User | null;
+  requestClient: { id: string; name: string; email: string } | null;
   cars: Record<string, Car>;
   loading?: boolean;
 }
@@ -82,193 +84,110 @@ export function ClientRequests({
   const [showOfferForm, setShowOfferForm] = useState(false);
   const [selectedOfferRequest, setSelectedOfferRequest] = useState<Request | null>(null);
 
-  const filteredRequests = clientRequests.filter((request) => {
-    if (showOnlyNew && viewedRequests.has(request.id)) {
-      return false;
-    }
+  // Separate active and resolved requests
+  const activeRequests = clientRequests.filter(request => !request.hasOffer);
+  const resolvedRequests = clientRequests.filter(request => request.hasOffer);
 
-    if (!searchQuery) return true;
-
-    const searchLower = searchQuery.toLowerCase();
-    return (
-      (request.title?.toLowerCase() || "").includes(searchLower) ||
-      (request.description?.toLowerCase() || "").includes(searchLower) ||
-      (request.county?.toLowerCase() || "").includes(searchLower) ||
-      (request.cities || []).some((city) =>
-        (city?.toLowerCase() || "").includes(searchLower),
-      ) ||
-      (request.status?.toLowerCase() || "").includes(searchLower) ||
-      (request.clientName?.toLowerCase() || "").includes(searchLower) ||
-      (request.preferredDate &&
-        format(new Date(request.preferredDate), "dd.MM.yyyy").includes(
-          searchQuery,
-        )) ||
-      (request.createdAt &&
-        format(new Date(request.createdAt), "dd.MM.yyyy").includes(searchQuery))
-    );
-  });
-
-  const sortedRequests = [...filteredRequests].sort((a, b) => {
-    const aValue = a[sortField];
-    const bValue = b[sortField];
-    const modifier = sortDirection === "asc" ? 1 : -1;
-
-    if (typeof aValue === "string" && typeof bValue === "string") {
-      return aValue.localeCompare(bValue) * modifier;
-    }
-    if (typeof aValue === "number" && typeof bValue === "number") {
-      return (aValue - bValue) * modifier;
-    }
-    return 0;
-  });
-
-  const totalPages = Math.ceil(sortedRequests.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedRequests = sortedRequests.slice(
-    startIndex,
-    startIndex + itemsPerPage,
-  );
-
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-  };
-
-  const renderPaginationItems = () => {
-    const items = [];
-    const maxVisiblePages = 5;
-    const halfVisible = Math.floor(maxVisiblePages / 2);
-
-    let startPage = Math.max(1, currentPage - halfVisible);
-    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-
-    if (endPage - startPage + 1 < maxVisiblePages) {
-      startPage = Math.max(1, endPage - maxVisiblePages + 1);
-    }
-
-    // Add first page
-    if (startPage > 1) {
-      items.push(
-        <PaginationItem key="1">
-          <PaginationLink onClick={() => handlePageChange(1)}>1</PaginationLink>
-        </PaginationItem>,
-      );
-      if (startPage > 2) {
-        items.push(
-          <PaginationItem key="start-ellipsis">
-            <PaginationEllipsis />
-          </PaginationItem>,
-        );
+  const renderRequestsTable = (requests: Request[], title: string, subtitle: string, showNewToggle: boolean = false) => {
+    const filteredRequests = requests.filter((request) => {
+      if (showOnlyNew && viewedRequests.has(request.id) && showNewToggle) {
+        return false;
       }
-    }
 
-    // Add pages
-    for (let i = startPage; i <= endPage; i++) {
-      items.push(
-        <PaginationItem key={i}>
-          <PaginationLink
-            isActive={currentPage === i}
-            onClick={() => handlePageChange(i)}
-          >
-            {i}
-          </PaginationLink>
-        </PaginationItem>,
+      if (!searchQuery) return true;
+
+      const searchLower = searchQuery.toLowerCase();
+      return (
+        (request.title?.toLowerCase() || "").includes(searchLower) ||
+        (request.description?.toLowerCase() || "").includes(searchLower) ||
+        (request.county?.toLowerCase() || "").includes(searchLower) ||
+        (request.cities || []).some((city) =>
+          (city?.toLowerCase() || "").includes(searchLower)
+        ) ||
+        (request.status?.toLowerCase() || "").includes(searchLower) ||
+        (request.clientName?.toLowerCase() || "").includes(searchLower) ||
+        (request.preferredDate &&
+          format(new Date(request.preferredDate), "dd.MM.yyyy").includes(searchQuery)) ||
+        (request.createdAt &&
+          format(new Date(request.createdAt), "dd.MM.yyyy").includes(searchQuery))
       );
-    }
+    });
 
-    // Add last page
-    if (endPage < totalPages) {
-      if (endPage < totalPages - 1) {
-        items.push(
-          <PaginationItem key="end-ellipsis">
-            <PaginationEllipsis />
-          </PaginationItem>,
-        );
+    const sortedRequests = [...filteredRequests].sort((a, b) => {
+      const aValue = a[sortField];
+      const bValue = b[sortField];
+      const modifier = sortDirection === "asc" ? 1 : -1;
+
+      if (typeof aValue === "string" && typeof bValue === "string") {
+        return aValue.localeCompare(bValue) * modifier;
       }
-      items.push(
-        <PaginationItem key={totalPages}>
-          <PaginationLink onClick={() => handlePageChange(totalPages)}>
-            {totalPages}
-          </PaginationLink>
-        </PaginationItem>,
+      if (typeof aValue === "number" && typeof bValue === "number") {
+        return (aValue - bValue) * modifier;
+      }
+      return 0;
+    });
+
+    const totalPages = Math.ceil(sortedRequests.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const paginatedRequests = sortedRequests.slice(startIndex, startIndex + itemsPerPage);
+
+    if (loading) {
+      return (
+        <Card className="border-[#00aff5]/20 mt-6">
+          <CardContent className="p-6 flex justify-center items-center min-h-[200px]">
+            <div className="flex flex-col items-center gap-2">
+              <Loader2 className="h-8 w-8 animate-spin text-[#00aff5]" />
+              <p className="text-muted-foreground">Loading requests...</p>
+            </div>
+          </CardContent>
+        </Card>
       );
     }
 
-    return items;
-  };
-
-  if (loading) {
-    return (
-      <Card className="border-[#00aff5]/20">
-        <CardContent className="p-6 flex justify-center items-center min-h-[200px]">
-          <div className="flex flex-col items-center gap-2">
-            <Loader2 className="h-8 w-8 animate-spin text-[#00aff5]" />
-            <p className="text-muted-foreground">Loading requests...</p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (!loading && clientRequests.length === 0) {
-    return (
-      <Card className="border-[#00aff5]/20">
-        <CardContent className="p-6 flex justify-center items-center min-h-[200px]">
-          <div className="text-center">
-            <p className="text-muted-foreground">No client requests found.</p>
-            <p className="text-sm text-muted-foreground mt-1">
-              New requests matching your location will appear here.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-  
-  const handleSendOfferClick = (request: Request) => {
-    setSelectedOfferRequest(request);
-    setShowOfferForm(true);
-  };
-
-  const handleOfferSubmit = async (values: any) => {
-    if (selectedOfferRequest) {
-      await onSendOffer(selectedOfferRequest, values);
+    if (!loading && requests.length === 0) {
+      return (
+        <Card className="border-[#00aff5]/20 mt-6">
+          <CardContent className="p-6 flex justify-center items-center min-h-[200px]">
+            <div className="text-center">
+              <p className="text-muted-foreground">No requests found in this section.</p>
+            </div>
+          </CardContent>
+        </Card>
+      );
     }
-  };
 
-  return (
-    <>
-      <Card className="border-[#00aff5]/20">
+    return (
+      <Card className="border-[#00aff5]/20 mt-6">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <CardTitle className="text-[#00aff5] flex items-center gap-2">
-                <Clock className="h-5 w-5" />
-                Cererile Clienților
+                {title === "Cererile Clienților" ? (
+                  <Clock className="h-5 w-5" />
+                ) : (
+                  <CheckCircle2 className="h-5 w-5" />
+                )}
+                {title}
               </CardTitle>
-              {clientRequests.filter((req) => !viewedRequests.has(req.id))
-                .length > 0 && (
-                <Badge
-                  variant="secondary"
-                  className="bg-[#00aff5] text-white text-sm font-normal px-2.5 py-1"
-                >
-                  {
-                    clientRequests.filter((req) => !viewedRequests.has(req.id))
-                      .length
-                  }
+              {showNewToggle && clientRequests.filter((req) => !viewedRequests.has(req.id)).length > 0 && (
+                <Badge variant="secondary" className="bg-[#00aff5] text-white text-sm font-normal px-2.5 py-1">
+                  {clientRequests.filter((req) => !viewedRequests.has(req.id)).length}
                 </Badge>
               )}
             </div>
             <div className="flex items-center gap-10">
-              <div className="flex items-center gap-2">
-                <Switch
-                  id="show-new"
-                  checked={showOnlyNew}
-                  onCheckedChange={setShowOnlyNew}
-                />
-                <Label htmlFor="show-new" className="whitespace-nowrap">
-                  Doar cereri noi
-                </Label>
-              </div>
+              {showNewToggle && (
+                <div className="flex items-center gap-2">
+                  <Switch
+                    id="show-new"
+                    checked={showOnlyNew}
+                    onCheckedChange={setShowOnlyNew}
+                  />
+                  <Label htmlFor="show-new" className="whitespace-nowrap">
+                    Doar cereri noi
+                  </Label>
+                </div>
+              )}
               <div className="flex items-center gap-2">
                 <span className="text-sm text-muted-foreground">Afișează:</span>
                 <Select
@@ -296,9 +215,7 @@ export function ClientRequests({
               />
             </div>
           </div>
-          <CardDescription>
-            Vezi și gestionează toate cererile primite de la clienți
-          </CardDescription>
+          <CardDescription>{subtitle}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -458,7 +375,6 @@ export function ClientRequests({
                                     {request.description}
                                   </p>
                                 </div>
-
                                 <div className="grid grid-cols-3 gap-6">
                                   {/* Client Details */}
                                   <div>
@@ -474,7 +390,6 @@ export function ClientRequests({
                                       </p>
                                     </div>
                                   </div>
-
                                   {/* Car Details */}
                                   <div>
                                     <h3 className="text-sm font-medium mb-2">
@@ -505,7 +420,6 @@ export function ClientRequests({
                                       </p>
                                     </div>
                                   </div>
-
                                   {/* Date Details */}
                                   <div>
                                     <h3 className="text-sm font-medium mb-2">
@@ -553,6 +467,23 @@ export function ClientRequests({
           </div>
         </CardContent>
       </Card>
+    );
+  };
+
+  return (
+    <>
+      {renderRequestsTable(
+        activeRequests,
+        "Cererile Clienților",
+        "Vezi și gestionează toate cererile primite de la clienți",
+        true
+      )}
+
+      {renderRequestsTable(
+        resolvedRequests,
+        "Cereri Rezolvate",
+        "Cereri pentru care ai trimis deja o ofertă"
+      )}
 
       {selectedOfferRequest && (
         <SubmitOfferForm

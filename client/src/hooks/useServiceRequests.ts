@@ -1,8 +1,14 @@
 import { useState, useEffect } from "react";
-import { collection, query, where, doc, getDoc, updateDoc, onSnapshot } from "firebase/firestore";
+import { collection, query, where, doc, getDoc, updateDoc, onSnapshot, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
-import type { Request, Car, User, ServiceData } from "@/types/service";
+import type { Request, Car, ServiceData } from "@/types/service";
+
+interface User {
+  id: string;
+  name: string;
+  email: string;
+}
 
 export function useServiceRequests(userId: string, serviceData: ServiceData | null) {
   const { toast } = useToast();
@@ -41,9 +47,18 @@ export function useServiceRequests(userId: string, serviceData: ServiceData | nu
         const data = docSnapshot.data() as Omit<Request, 'id'>;
         console.log("Processing request:", docSnapshot.id, data);
 
-        // Safely check if cities array exists and includes service city
         if (Array.isArray(data.cities) && data.cities.includes(serviceData.city)) {
           try {
+            // Check if request has an offer
+            const offersQuery = query(
+              collection(db, "offers"),
+              where("requestId", "==", docSnapshot.id),
+              where("serviceId", "==", userId)
+            );
+            const offersSnapshot = await getDocs(offersQuery);
+            const hasOffer = !offersSnapshot.empty;
+
+            // Fetch car data
             const carRef = doc(db, "cars", data.carId);
             const carDoc = await getDoc(carRef);
 
@@ -55,6 +70,7 @@ export function useServiceRequests(userId: string, serviceData: ServiceData | nu
             requests.push({
               ...data,
               id: docSnapshot.id,
+              hasOffer, // Add hasOffer property
             });
           } catch (error) {
             console.error("Error fetching car data for request:", docSnapshot.id, error);
