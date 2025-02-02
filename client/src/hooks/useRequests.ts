@@ -17,15 +17,38 @@ export const useRequests = (userId: string) => {
     setError(null);
 
     try {
+      console.log("Fetching requests for user:", userId);
+
+      // Query requests for all relevant statuses including "Trimis Oferta"
       const requestsQuery = query(
         collection(db, "requests"),
         where("userId", "==", userId)
       );
+
       const querySnapshot = await getDocs(requestsQuery);
       const loadedRequests: Request[] = [];
+
       querySnapshot.forEach((doc) => {
-        loadedRequests.push({ id: doc.id, ...doc.data() } as Request);
+        const request = { id: doc.id, ...doc.data() } as Request;
+        loadedRequests.push(request);
+        console.log("Loaded request:", {
+          id: request.id,
+          title: request.title,
+          status: request.status,
+          hasOffer: request.hasOffer
+        });
       });
+
+      console.log("Loaded requests summary:", {
+        total: loadedRequests.length,
+        byStatus: {
+          active: loadedRequests.filter(r => r.status === "Active").length,
+          trimisOferta: loadedRequests.filter(r => r.status === "Trimis Oferta").length,
+          rezolvat: loadedRequests.filter(r => r.status === "Rezolvat").length,
+          anulat: loadedRequests.filter(r => r.status === "Anulat").length
+        }
+      });
+
       setRequests(loadedRequests);
     } catch (error) {
       const errorMessage = "Nu s-au putut încărca cererile.";
@@ -54,6 +77,7 @@ export const useRequests = (userId: string) => {
         clientName,
         status: "Active" as const,
         createdAt: new Date().toISOString(),
+        hasOffer: false
       };
 
       await addDoc(collection(db, "requests"), requestData);
