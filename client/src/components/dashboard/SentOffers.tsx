@@ -89,6 +89,100 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
     fetchOffers();
   }, [user, refreshCounter]);
 
+  const renderOfferDetails = (offer: Offer) => {
+    const request = requests.find((r) => r.id === offer.requestId);
+    const car = request ? cars[request.carId] : null;
+
+    return (
+      <Dialog open={!!selectedOffer} onOpenChange={() => setSelectedOffer(null)}>
+        <DialogContent className="max-w-[600px] max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle>{offer.title}</DialogTitle>
+            <DialogDescription>
+              Vezi detaliile complete ale ofertei și cererea asociată
+            </DialogDescription>
+          </DialogHeader>
+          <ScrollArea className="h-full max-h-[60vh]">
+            <div className="space-y-6 p-4">
+              {/* Request Details Section - Always visible */}
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  Cererea Inițială
+                </h4>
+                {request && (
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Titlu Cerere:</p>
+                      <p className="text-sm">{request.title}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Descriere:</p>
+                      <p className="text-sm whitespace-pre-wrap">{request.description}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Data Preferată:</p>
+                      <p className="text-sm">{format(new Date(request.preferredDate), "dd.MM.yyyy")}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Locație:</p>
+                      <p className="text-sm">{request.county} - {request.cities.join(", ")}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <Separator className="my-4" />
+
+              {/* Offer Details Section - Full Content */}
+              <div>
+                <h4 className="text-sm font-medium mb-2">Detalii Ofertă</h4>
+                <p className="text-sm text-muted-foreground whitespace-pre-wrap">{offer.details}</p>
+              </div>
+
+              {request && (
+                <div>
+                  <h4 className="text-sm font-medium mb-2">Client</h4>
+                  <p className="text-sm text-muted-foreground">{request.clientName}</p>
+                </div>
+              )}
+
+              {car && (
+                <div>
+                  <h4 className="text-sm font-medium mb-2">Mașină</h4>
+                  <p className="text-sm text-muted-foreground">
+                    {car.brand} {car.model} ({car.year})
+                    {car.licensePlate && (
+                      <span className="block text-xs">Nr. {car.licensePlate}</span>
+                    )}
+                  </p>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h4 className="text-sm font-medium mb-2">Data Disponibilă</h4>
+                  <p className="text-sm text-muted-foreground">{offer.availableDate}</p>
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium mb-2">Preț</h4>
+                  <p className="text-sm text-muted-foreground">{offer.price} RON</p>
+                </div>
+              </div>
+
+              {offer.notes && (
+                <div>
+                  <h4 className="text-sm font-medium mb-2">Observații</h4>
+                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">{offer.notes}</p>
+                </div>
+              )}
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
+    );
+  };
+
   const renderOfferBox = (offer: Offer) => {
     const request = requests.find((r) => r.id === offer.requestId);
     const car = request ? cars[request.carId] : null;
@@ -99,8 +193,8 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
         className="bg-white rounded-lg border-2 hover:border-[#00aff5]/30 transition-all duration-200 flex flex-col overflow-hidden h-[320px]"
       >
         {/* Header section - fixed height */}
-        <div className="p-2 border-b bg-gray-50">
-          <div className="flex items-start justify-between">
+        <div className="p-4 border-b bg-gray-50">
+          <div className="flex items-start justify-between mb-2">
             <h3 className="font-semibold line-clamp-1 flex-1 mr-2">{offer.title}</h3>
             <Badge
               variant="secondary"
@@ -130,15 +224,18 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
         </div>
 
         {/* Content section - scrollable with max height */}
-        <div className="p-2 flex-1 overflow-hidden flex flex-col min-h-0">
-          {car && (
+        <div className="p-4 flex-1 overflow-hidden flex flex-col min-h-0">
+          {request && (
             <div className="bg-gray-50 p-2 rounded-lg mb-3">
               <p className="text-sm font-medium text-gray-600 flex items-center mb-1">
-                <Car className="w-4 h-4 mr-1" />
-                Detalii Mașină
+                <FileText className="w-4 h-4 mr-1" />
+                Cerere
               </p>
               <p className="text-sm line-clamp-1">
-                {car.brand} {car.model} ({car.year})
+                {request.title}
+              </p>
+              <p className="text-xs text-gray-500 mt-1 line-clamp-1">
+                {request.county} - {request.cities.join(", ")}
               </p>
             </div>
           )}
@@ -216,103 +313,6 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
   }
 
 
-    const renderOfferDetails = (offer: Offer) => {
-    const request = requests.find((r) => r.id === offer.requestId);
-    const car = request ? cars[request.carId] : null;
-
-    return (
-      <Dialog open={!!selectedOffer} onOpenChange={() => setSelectedOffer(null)}>
-        <DialogContent className="max-w-[600px] max-h-[80vh]">
-          <DialogHeader>
-            <DialogTitle>{offer.title}</DialogTitle>
-            <DialogDescription>
-              Vezi detaliile complete ale ofertei și cererea asociată
-            </DialogDescription>
-          </DialogHeader>
-          <ScrollArea className="h-full max-h-[60vh]">
-            <div className="space-y-6 p-4">
-              {/* Request Details Section - Always visible */}
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
-                  <FileText className="h-4 w-4" />
-                  Cererea Inițială
-                </h4>
-                {request ? (
-                  <div className="space-y-3">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Titlu Cerere:</p>
-                      <p className="text-sm">{request.title}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Descriere:</p>
-                      <p className="text-sm whitespace-pre-wrap">{request.description}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Data Preferată:</p>
-                      <p className="text-sm">{format(new Date(request.preferredDate), "dd.MM.yyyy")}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Locație:</p>
-                      <p className="text-sm">{request.county} - {request.cities.join(", ")}</p>
-                    </div>
-                  </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground">
-                    Detaliile cererii nu sunt disponibile momentan.
-                  </p>
-                )}
-              </div>
-
-              <Separator className="my-4" />
-
-              {/* Offer Details Section - Full Content */}
-              <div>
-                <h4 className="text-sm font-medium mb-2">Detalii Ofertă</h4>
-                <p className="text-sm text-muted-foreground whitespace-pre-wrap">{offer.details}</p>
-              </div>
-
-              {request && (
-                <div>
-                  <h4 className="text-sm font-medium mb-2">Client</h4>
-                  <p className="text-sm text-muted-foreground">{request.clientName}</p>
-                </div>
-              )}
-
-              {car && (
-                <div>
-                  <h4 className="text-sm font-medium mb-2">Mașină</h4>
-                  <p className="text-sm text-muted-foreground">
-                    {car.brand} {car.model} ({car.year})
-                    {car.licensePlate && (
-                      <span className="block text-xs">Nr. {car.licensePlate}</span>
-                    )}
-                  </p>
-                </div>
-              )}
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <h4 className="text-sm font-medium mb-2">Data Disponibilă</h4>
-                  <p className="text-sm text-muted-foreground">{offer.availableDate}</p>
-                </div>
-                <div>
-                  <h4 className="text-sm font-medium mb-2">Preț</h4>
-                  <p className="text-sm text-muted-foreground">{offer.price} RON</p>
-                </div>
-              </div>
-
-              {offer.notes && (
-                <div>
-                  <h4 className="text-sm font-medium mb-2">Observații</h4>
-                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">{offer.notes}</p>
-                </div>
-              )}
-            </div>
-          </ScrollArea>
-        </DialogContent>
-      </Dialog>
-    );
-  };
   return (
     <Card className="shadow-lg">
       <CardHeader className="border-b bg-gray-50">
