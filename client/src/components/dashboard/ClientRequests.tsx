@@ -383,7 +383,9 @@ export function ClientRequests({
                                 ? "bg-yellow-100 text-yellow-800"
                                 : request.status === "Rezolvat"
                                   ? "bg-green-100 text-green-800"
-                                  : "bg-red-100 text-red-800"
+                                  : request.status === "Trimis Oferta"
+                                    ? "bg-blue-100 text-blue-800"
+                                    : "bg-red-100 text-red-800"
                             }`}
                           >
                             {request.status}
@@ -547,16 +549,16 @@ export function ClientRequests({
   return (
     <>
       {renderRequestsTable(
-        clientRequests,
+        clientRequests.filter(request => request.status === "Active"),
         "Cererile Clienților",
         "Vezi și gestionează toate cererile primite de la clienți",
         true
       )}
 
-      {clientRequests.some(request => request.hasOffer) && (
+      {clientRequests.some(request => request.status === "Trimis Oferta") && (
         renderRequestsTable(
-          clientRequests.filter(request => request.hasOffer),
-          "Cereri Rezolvate",
+          clientRequests.filter(request => request.status === "Trimis Oferta"),
+          "Cereri cu Oferte Trimise",
           "Cereri pentru care ai trimis deja o ofertă"
         )
       )}

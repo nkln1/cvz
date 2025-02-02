@@ -21,7 +21,7 @@ export interface Request {
   preferredDate: string;
   county: string;
   cities: string[];
-  status: "Active" | "Rezolvat" | "Anulat";
+  status: "Active" | "Rezolvat" | "Anulat" | "Trimis Oferta";
   createdAt: string;
   userId: string;
   clientName: string;

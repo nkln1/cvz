@@ -40,10 +40,10 @@ export function useServiceRequests(userId: string, serviceData: ServiceData | nu
       city: serviceData.city
     });
 
-    // Query requests with either Active or Rezolvat status
+    // Query requests with either Active or Trimis Oferta status
     const requestsQuery = query(
       collection(db, "requests"),
-      where("status", "in", ["Active", "Rezolvat"]),
+      where("status", "in", ["Active", "Trimis Oferta"]),
       where("county", "==", serviceData.county)
     );
 
@@ -118,7 +118,7 @@ export function useServiceRequests(userId: string, serviceData: ServiceData | nu
 
     const requestsQuery = query(
       collection(db, "requests"),
-      where("status", "in", ["Active", "Rezolvat"]),
+      where("status", "in", ["Active", "Trimis Oferta"]),
       where("county", "==", serviceData?.county || '')
     );
 
@@ -145,13 +145,13 @@ export function useServiceRequests(userId: string, serviceData: ServiceData | nu
         currentStatus: request.status
       });
 
-      // First update request status to Rezolvat
+      // First update request status to Trimis Oferta
       const requestRef = doc(db, "requests", request.id);
       await updateDoc(requestRef, {
-        status: "Rezolvat",
+        status: "Trimis Oferta",
         hasOffer: true
       });
-      console.log("Updated request status to Rezolvat");
+      console.log("Updated request status to Trimis Oferta");
 
       // Then create the offer
       const newOffer = {
