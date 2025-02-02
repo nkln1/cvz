@@ -48,7 +48,7 @@ interface Offer {
   requestId: string;
   title: string;
   details: string;
-  availableDate: string;
+  availableDate: string | null;
   price: number;
   notes?: string;
   status: string;
@@ -101,17 +101,24 @@ export function ReceivedOffers({ cars, onMessageService }: ReceivedOffersProps) 
 
         for (const docSnap of querySnapshot.docs) {
           const data = docSnap.data();
+          console.log("Raw offer data:", data); // Debug log
+
           const serviceRef = doc(db, "services", data.serviceId);
           const serviceSnap = await getDoc(serviceRef);
           const serviceName = serviceSnap.exists() ? serviceSnap.data().companyName : "Service Necunoscut";
 
-          fetchedOffers.push({
+          // Process dates properly
+          const processedOffer = {
             id: docSnap.id,
             ...data,
             serviceName,
             createdAt: data.createdAt?.toDate() || new Date(),
+            availableDate: data.availableDate || null, // Ensure we pass the raw value
             isNew: !viewedOffers.has(docSnap.id),
-          } as Offer);
+          } as Offer;
+
+          console.log("Processed offer:", processedOffer); // Debug log
+          fetchedOffers.push(processedOffer);
         }
 
         fetchedOffers.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
@@ -123,7 +130,7 @@ export function ReceivedOffers({ cars, onMessageService }: ReceivedOffersProps) 
         setLoading(false);
       }
     };
-
+    
     fetchOffers();
   }, [user, viewedOffers]);
 
@@ -255,10 +262,24 @@ export function ReceivedOffers({ cars, onMessageService }: ReceivedOffersProps) 
     const formatDateSafely = (dateValue: any) => {
         if (!dateValue) return "Data necunoscută";
         try {
-            const date = dateValue && typeof dateValue.toDate === 'function'
-                ? dateValue.toDate()
-                : new Date(dateValue);
-            return format(date, "dd.MM.yyyy");
+            // If it's a Firestore timestamp
+            if (dateValue && typeof dateValue.toDate === 'function') {
+                return format(dateValue.toDate(), "dd.MM.yyyy");
+            }
+            // If it's a string date
+            if (typeof dateValue === 'string') {
+                const parsedDate = new Date(dateValue);
+                if (!isNaN(parsedDate.getTime())) {
+                    return format(parsedDate, "dd.MM.yyyy");
+                }
+            }
+            // If it's already a Date object
+            if (dateValue instanceof Date) {
+                return format(dateValue, "dd.MM.yyyy");
+            }
+
+            console.error("Unhandled date format:", dateValue);
+            return "Data necunoscută";
         } catch (error) {
             console.error("Error formatting date:", error, "Date value:", dateValue);
             return "Data necunoscută";
