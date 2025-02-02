@@ -21,13 +21,13 @@ export function useServiceRequests(userId: string, serviceData: ServiceData | nu
     return saved ? new Set(JSON.parse(saved)) : new Set();
   });
 
-  useEffect(() => {
+  const fetchRequests = async () => {
     if (!userId || !serviceData) {
       console.log("Missing userId or serviceData");
       return;
     }
 
-    console.log("Starting request listener for service:", {
+    console.log("Fetching requests for service:", {
       county: serviceData.county,
       city: serviceData.city
     });
@@ -38,8 +38,8 @@ export function useServiceRequests(userId: string, serviceData: ServiceData | nu
       where("county", "==", serviceData.county)
     );
 
-    const unsubscribe = onSnapshot(requestsQuery, async (snapshot) => {
-      console.log("Received snapshot with", snapshot.docs.length, "documents");
+    try {
+      const snapshot = await getDocs(requestsQuery);
       const requests: Request[] = [];
       const carsData: Record<string, Car> = {};
 
@@ -70,7 +70,7 @@ export function useServiceRequests(userId: string, serviceData: ServiceData | nu
             requests.push({
               ...data,
               id: docSnapshot.id,
-              hasOffer, // Add hasOffer property
+              hasOffer,
             });
           } catch (error) {
             console.error("Error fetching car data for request:", docSnapshot.id, error);
@@ -81,6 +81,27 @@ export function useServiceRequests(userId: string, serviceData: ServiceData | nu
       console.log("Processed requests:", requests.length);
       setClientRequests(requests);
       setCars(carsData);
+    } catch (error) {
+      console.error("Error fetching requests:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Could not load requests. Please refresh the page.",
+      });
+    }
+  };
+
+  useEffect(() => {
+    fetchRequests();
+
+    const requestsQuery = query(
+      collection(db, "requests"),
+      where("status", "==", "Active"),
+      where("county", "==", serviceData?.county || '')
+    );
+
+    const unsubscribe = onSnapshot(requestsQuery, async () => {
+      await fetchRequests();
     }, (error) => {
       console.error("Error in requests listener:", error);
       toast({
@@ -112,7 +133,7 @@ export function useServiceRequests(userId: string, serviceData: ServiceData | nu
           id: userDoc.id,
           name: userData.name || "",
           email: userData.email || "",
-        } as User);
+        });
       }
     } catch (error) {
       console.error("Error fetching client details:", error);
@@ -140,6 +161,8 @@ export function useServiceRequests(userId: string, serviceData: ServiceData | nu
         status: "Anulat",
       });
 
+      await fetchRequests(); // Refresh the requests after rejection
+
       toast({
         title: "Success",
         description: "Request has been rejected.",
@@ -163,5 +186,6 @@ export function useServiceRequests(userId: string, serviceData: ServiceData | nu
     handleViewDetails,
     handleRejectRequest,
     markRequestAsViewed,
+    fetchRequests, // Export fetchRequests to allow manual refresh
   };
 }

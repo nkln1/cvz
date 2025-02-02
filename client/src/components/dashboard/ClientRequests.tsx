@@ -339,13 +339,13 @@ export function ClientRequests({
                     <Fragment key={request.id}>
                       <TableRow
                         className={`
-                        hover:bg-blue-50/80 transition-colors relative mb-2 
-                        ${
-                          selectedRequest?.id === request.id
-                            ? "bg-blue-200 border-l-4 border-blue-500"
-                            : ""
-                        }
-                      `}
+                          hover:bg-blue-50/80 transition-colors relative mb-2 
+                          ${
+                            selectedRequest?.id === request.id
+                              ? "bg-blue-200 border-l-4 border-blue-500"
+                              : ""
+                          }
+                        `}
                       >
                         <TableCell className="font-medium">
                           <div className="flex items-center gap-2">
@@ -555,10 +555,12 @@ export function ClientRequests({
         true
       )}
 
-      {renderRequestsTable(
-        clientRequests.filter(request => request.hasOffer),
-        "Cereri Rezolvate",
-        "Cereri pentru care ai trimis deja o ofertă"
+      {clientRequests.some(request => request.hasOffer) && (
+        renderRequestsTable(
+          clientRequests.filter(request => request.hasOffer),
+          "Cereri Rezolvate",
+          "Cereri pentru care ai trimis deja o ofertă"
+        )
       )}
 
       {selectedOfferRequest && (
