@@ -231,7 +231,7 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
           </DialogHeader>
           <ScrollArea className="h-full max-h-[60vh]">
             <div className="space-y-6 p-4">
-              {/* Request Details Section */}
+              {/* Request Details Section - Always visible */}
               <div className="bg-gray-50 p-4 rounded-lg">
                 <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
                   <FileText className="h-4 w-4" />
