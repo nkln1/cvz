@@ -86,13 +86,40 @@ export function ReceivedOffers({ cars, onMessageService }: ReceivedOffersProps) 
     fetchViewedOffers();
   }, [user]);
 
+  
+  const formatDateSafely = (dateValue: any) => {
+    if (!dateValue) return "Data necunoscută";
+  
+    try {
+      // Handle Firestore Timestamp
+      if (dateValue && typeof dateValue.toDate === 'function') {
+        return format(dateValue.toDate(), "dd.MM.yyyy");
+      }
+  
+      // Handle ISO string date
+      if (typeof dateValue === 'string') {
+        const date = new Date(dateValue);
+        if (!isNaN(date.getTime())) {
+          return format(date, "dd.MM.yyyy");
+        }
+      }
+  
+      console.log("Date value type:", typeof dateValue, "Value:", dateValue);
+      return "Data necunoscută";
+    } catch (error) {
+      console.error("Error formatting date:", error, "Date value:", dateValue);
+      return "Data necunoscută";
+    }
+  };
+
+
   useEffect(() => {
     const fetchOffers = async () => {
       if (!user) {
         console.log("No user found, skipping fetch");
         return;
       }
-
+  
       try {
         setLoading(true);
         console.log("Starting to fetch offers for client:", user.uid);
@@ -100,35 +127,35 @@ export function ReceivedOffers({ cars, onMessageService }: ReceivedOffersProps) 
         const q = query(offersRef, where("clientId", "==", user.uid));
         const querySnapshot = await getDocs(q);
         console.log("Number of offers found:", querySnapshot.size);
-
+  
         const fetchedOffers: Offer[] = [];
-
+  
         for (const docSnap of querySnapshot.docs) {
           const data = docSnap.data();
-          console.log("Raw offer document data:", {
+          console.log("Raw offer data:", {
             id: docSnap.id,
-            ...data,
             availableDate: data.availableDate,
             createdAt: data.createdAt
           });
-
+  
           const serviceRef = doc(db, "services", data.serviceId);
           const serviceSnap = await getDoc(serviceRef);
           const serviceName = serviceSnap.exists() ? serviceSnap.data().companyName : "Service Necunoscut";
-
+  
+          // Process dates properly
           const processedOffer = {
             id: docSnap.id,
             ...data,
             serviceName,
             createdAt: data.createdAt?.toDate() || new Date(),
-            availableDate: data.availableDate,
+            availableDate: data.availableDate, // Keep the original format for now
             isNew: !viewedOffers.has(docSnap.id),
           } as Offer;
-
-          console.log("Processed offer object:", processedOffer);
+  
+          console.log("Processed offer:", processedOffer);
           fetchedOffers.push(processedOffer);
         }
-
+  
         fetchedOffers.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
         console.log("All processed offers:", fetchedOffers);
         setOffers(fetchedOffers);
@@ -266,19 +293,6 @@ export function ReceivedOffers({ cars, onMessageService }: ReceivedOffersProps) 
       console.error("Error canceling offer:", error);
     }
   };
-
-    const formatDateSafely = (dateValue: any) => {
-        if (!dateValue) return "Data necunoscută";
-        try {
-            const date = dateValue && typeof dateValue.toDate === 'function'
-                ? dateValue.toDate()
-                : new Date(dateValue);
-            return format(date, "dd.MM.yyyy");
-        } catch (error) {
-            console.error("Error formatting date:", error, "Date value:", dateValue);
-            return "Data necunoscută";
-        }
-    };
 
   const renderOfferDetails = (offer: Offer) => (
     <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
@@ -449,7 +463,6 @@ export function ReceivedOffers({ cars, onMessageService }: ReceivedOffersProps) 
       </div>
     );
   };
-
 
   if (loading) {
     return (
