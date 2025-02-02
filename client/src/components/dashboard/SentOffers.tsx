@@ -96,21 +96,23 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
     const request = requests.find((r) => r.id === offer.requestId);
     const car = request ? cars[request.carId] : null;
 
-    console.log("Debug - Offer:", offer);
-    console.log("Debug - Found request:", request);
-    console.log("Debug - All requests:", requests);
-
     return (
       <Dialog open={!!selectedOffer} onOpenChange={() => setSelectedOffer(null)}>
         <DialogContent className="max-w-[600px] max-h-[80vh]">
           <DialogHeader>
             <DialogTitle>{offer.title}</DialogTitle>
+            <p className="text-sm text-muted-foreground">
+              Vezi detaliile complete ale ofertei și cererea asociată
+            </p>
           </DialogHeader>
           <ScrollArea className="h-full max-h-[60vh]">
             <div className="space-y-6 p-4">
               {/* Request Details Section */}
               <div className="bg-gray-50 p-4 rounded-lg">
-                <h4 className="text-sm font-medium mb-3">Detalii Cerere Inițială</h4>
+                <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  Cererea Inițială
+                </h4>
                 {request ? (
                   <div className="space-y-3">
                     <div>
