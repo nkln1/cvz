@@ -139,8 +139,21 @@ export function useServiceRequests(userId: string, serviceData: ServiceData | nu
 
   const handleSubmitOffer = async (request: Request, offerData: OfferData) => {
     try {
-      console.log("Submitting offer for request:", request.id);
+      console.log("Starting offer submission for request:", {
+        requestId: request.id,
+        title: request.title,
+        currentStatus: request.status
+      });
 
+      // First update request status to Rezolvat
+      const requestRef = doc(db, "requests", request.id);
+      await updateDoc(requestRef, {
+        status: "Rezolvat",
+        hasOffer: true
+      });
+      console.log("Updated request status to Rezolvat");
+
+      // Then create the offer
       const newOffer = {
         ...offerData,
         requestId: request.id,
@@ -150,15 +163,8 @@ export function useServiceRequests(userId: string, serviceData: ServiceData | nu
         createdAt: new Date().toISOString(),
       };
 
-      // Update request status to Rezolvat
-      const requestRef = doc(db, "requests", request.id);
-      await updateDoc(requestRef, {
-        status: "Rezolvat",
-        hasOffer: true
-      });
-
       const offerRef = await addDoc(collection(db, "offers"), newOffer);
-      console.log("Offer submitted successfully:", offerRef.id);
+      console.log("Created new offer:", offerRef.id);
 
       // Explicitly refresh the requests to update the UI
       await fetchRequests();
