@@ -106,7 +106,7 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
               {/* Request Details Section */}
               <div className="bg-gray-50 p-4 rounded-lg">
                 <h4 className="text-sm font-medium mb-3">Detalii Cerere Inițială</h4>
-                {request && (
+                {request ? (
                   <div className="space-y-3">
                     <div>
                       <p className="text-sm font-medium text-gray-600">Titlu Cerere:</p>
@@ -125,6 +125,10 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
                       <p className="text-sm">{request.county} - {request.cities.join(", ")}</p>
                     </div>
                   </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    Detaliile cererii nu sunt disponibile momentan.
+                  </p>
                 )}
               </div>
 
