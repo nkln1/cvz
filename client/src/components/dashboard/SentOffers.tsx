@@ -110,7 +110,7 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
                   <FileText className="h-4 w-4" />
                   Cererea Inițială
                 </h4>
-                {request && (
+                {request ? (
                   <div className="space-y-3">
                     <div>
                       <p className="text-sm font-medium text-gray-600">Titlu Cerere:</p>
@@ -129,6 +129,8 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
                       <p className="text-sm">{request.county} - {request.cities.join(", ")}</p>
                     </div>
                   </div>
+                ) : (
+                  <p className="text-sm text-gray-500">Detaliile cererii nu mai sunt disponibile.</p>
                 )}
               </div>
 
@@ -140,11 +142,13 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
                 <p className="text-sm text-muted-foreground whitespace-pre-wrap">{offer.details}</p>
               </div>
 
-              {request && (
+              {request ? (
                 <div>
                   <h4 className="text-sm font-medium mb-2">Client</h4>
                   <p className="text-sm text-muted-foreground">{request.clientName}</p>
                 </div>
+              ) : (
+                <p className="text-sm text-gray-500">Detaliile clientului nu mai sunt disponibile.</p>
               )}
 
               {car && (
