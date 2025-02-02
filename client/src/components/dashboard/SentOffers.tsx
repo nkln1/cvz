@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Separator } from "@/components/ui/separator";
 
 interface SentOffersProps {
   requests: Request[];
@@ -102,6 +103,35 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
           </DialogHeader>
           <ScrollArea className="h-full max-h-[60vh]">
             <div className="space-y-6 p-4">
+              {/* Request Details Section */}
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h4 className="text-sm font-medium mb-3">Detalii Cerere Inițială</h4>
+                {request && (
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Titlu Cerere:</p>
+                      <p className="text-sm">{request.title}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Descriere:</p>
+                      <p className="text-sm whitespace-pre-wrap">{request.description}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Data Preferată:</p>
+                      <p className="text-sm">{format(new Date(request.preferredDate), "dd.MM.yyyy")}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Locație:</p>
+                      <p className="text-sm">{request.county} - {request.cities.join(", ")}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Separator between request and offer */}
+              <Separator className="my-4" />
+
+              {/* Offer Details Section */}
               <div>
                 <h4 className="text-sm font-medium mb-2">Detalii Ofertă</h4>
                 <p className="text-sm text-muted-foreground whitespace-pre-wrap">{offer.details}</p>
