@@ -49,7 +49,7 @@ export function MyRequests({
           </TabsList>
           <TabsContent value="active">
             <RequestsTable
-              requests={requests.filter((req) => req.status === "Active" || req.status === "Trimis Oferta")}
+              requests={requests.filter((req) => ["Active", "Trimis Oferta"].includes(req.status))}
               cars={cars}
               onDelete={onDelete}
               refreshRequests={refreshRequests}
