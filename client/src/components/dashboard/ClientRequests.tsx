@@ -411,12 +411,12 @@ export function ClientRequests({
                               <MessageSquare className="h-4 w-4" />
                               Mesaj
                             </Button>
-                            {request.status === "Active" && (
+                            {!request.hasOffer && request.status === "Active" && (
                               <>
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                   onClick={() => handleSendOfferClick(request)}
+                                  onClick={() => handleSendOfferClick(request)}
                                   className="text-green-500 hover:text-green-700 hover:bg-green-50 flex items-center gap-1"
                                 >
                                   <SendHorizontal className="h-4 w-4" />
