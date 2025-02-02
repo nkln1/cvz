@@ -217,10 +217,11 @@ export default function ServiceDashboard() {
       const docRef = await addDoc(offersRef, newOffer);
       console.log("Offer created with ID:", docRef.id);
 
-      // Update the request to mark that it has received an offer
+      // Update the request to mark that it has received an offer, but don't change its status
       const requestRef = doc(db, "requests", request.id);
       await updateDoc(requestRef, {
-        hasReceivedOffer: true
+        hasReceivedOffer: true,
+        lastUpdated: new Date()
       });
 
       toast({
@@ -228,6 +229,7 @@ export default function ServiceDashboard() {
         description: "Oferta a fost trimisă cu succes!",
       });
 
+      // Refresh requests and switch to offers tab
       setRefreshOffersCounter((prev) => prev + 1);
       setActiveTab("offers");
     } catch (error) {
