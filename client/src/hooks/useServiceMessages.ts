@@ -39,8 +39,8 @@ export function useServiceMessages(userId: string) {
 
       setMessages((prevMessages) =>
         prevMessages.map((msg) =>
-          msg.id === messageId ? { ...msg, read: true } : msg
-        )
+          msg.id === messageId ? { ...msg, read: true } : msg,
+        ),
       );
     } catch (error) {
       console.error("Error marking message as read:", error);
@@ -117,9 +117,13 @@ export function useServiceMessages(userId: string) {
 
         const requestData = requestDoc.data();
         const clientDoc = await getDoc(doc(db, "users", requestData.userId));
-        const clientName = requestData.clientName || (clientDoc.exists() 
-          ? clientDoc.data().numeComplet || clientDoc.data().name || `${clientDoc.data().nume || ''} ${clientDoc.data().prenume || ''}`.trim()
-          : "Client necunoscut");
+        const clientName =
+          requestData.clientName ||
+          (clientDoc.exists()
+            ? clientDoc.data().numeComplet ||
+              clientDoc.data().name ||
+              `${clientDoc.data().nume || ""} ${clientDoc.data().prenume || ""}`.trim()
+            : "Client necunoscut");
 
         const requestMessages = currentMessages.filter(
           (m) => m.requestId === requestId,
@@ -132,7 +136,7 @@ export function useServiceMessages(userId: string) {
         });
 
         const unreadCount = requestMessages.filter(
-          (m) => !m.read && m.toId === userId
+          (m) => !m.read && m.toId === userId,
         ).length;
 
         if (unreadCount > 0) {
@@ -152,8 +156,12 @@ export function useServiceMessages(userId: string) {
 
       // Sort groups by latest message
       groups.sort((a, b) => {
-        const aTime = (a.lastMessage.createdAt as unknown as Timestamp).toMillis();
-        const bTime = (b.lastMessage.createdAt as unknown as Timestamp).toMillis();
+        const aTime = (
+          a.lastMessage.createdAt as unknown as Timestamp
+        ).toMillis();
+        const bTime = (
+          b.lastMessage.createdAt as unknown as Timestamp
+        ).toMillis();
         return bTime - aTime;
       });
 
@@ -174,9 +182,13 @@ export function useServiceMessages(userId: string) {
         if (requestDoc.exists()) {
           const requestData = requestDoc.data();
           const clientDoc = await getDoc(doc(db, "users", requestData.userId));
-          const clientName = requestData.clientName || (clientDoc.exists()
-            ? clientDoc.data().numeComplet || clientDoc.data().name || `${clientDoc.data().nume || ''} ${clientDoc.data().prenume || ''}`.trim()
-            : "Client necunoscut");
+          const clientName =
+            requestData.clientName ||
+            (clientDoc.exists()
+              ? clientDoc.data().numeComplet ||
+                clientDoc.data().name ||
+                `${clientDoc.data().nume || ""} ${clientDoc.data().prenume || ""}`.trim()
+              : "Client necunoscut");
 
           setSelectedMessageRequest({
             id: requestId,
@@ -187,7 +199,7 @@ export function useServiceMessages(userId: string) {
 
           // Get all unread messages in this conversation and mark them as read
           const unreadMessages = messages.filter(
-            (m) => m.requestId === requestId && m.toId === userId && !m.read
+            (m) => m.requestId === requestId && m.toId === userId && !m.read,
           );
 
           // Mark all unread messages as read
@@ -197,7 +209,7 @@ export function useServiceMessages(userId: string) {
 
           // Check if this is a new conversation that needs initialization
           const existingMessages = messages.filter(
-            (m) => m.requestId === requestId
+            (m) => m.requestId === requestId,
           );
 
           if (existingMessages.length === 0) {
@@ -205,7 +217,7 @@ export function useServiceMessages(userId: string) {
               requestId,
               fromId: userId,
               toId: requestData.userId,
-              content: `Bună ziua! Sunt reprezentantul service-ului auto și am primit cererea dumneavoastră pentru ${requestData.title}. Cum vă pot ajuta?`,
+              content: `Bună ziua! Sunt reprezentantul service-ului auto și am primit cererea dumneavoastră pentru ${requestData.title}.`,
               createdAt: serverTimestamp(),
               read: false,
               participants: [userId, requestData.userId],

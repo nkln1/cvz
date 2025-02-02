@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
@@ -42,6 +43,7 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
   const [loading, setLoading] = useState(true);
   const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null);
   const [activeTab, setActiveTab] = useState("pending");
+  const [searchTerm, setSearchTerm] = useState("");
   const { user } = useAuth();
 
   useEffect(() => {
@@ -148,6 +150,23 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
     );
   };
 
+  const filterOffers = (offers: Offer[]) => {
+    if (!searchTerm) return offers;
+
+    const searchLower = searchTerm.toLowerCase();
+    return offers.filter(offer =>
+      offer.title.toLowerCase().includes(searchLower) ||
+      offer.details.toLowerCase().includes(searchLower) ||
+      offer.price.toString().includes(searchLower) ||
+      offer.availableDate.toLowerCase().includes(searchLower)
+    );
+  };
+
+
+  const pendingOffers = filterOffers(offers.filter(offer => offer.status === "Pending"));
+  const acceptedOffers = filterOffers(offers.filter(offer => offer.status === "Accepted"));
+  const rejectedOffers = filterOffers(offers.filter(offer => offer.status === "Rejected"));
+
   if (loading) {
     return (
       <Card className="shadow-lg">
@@ -160,10 +179,6 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
       </Card>
     );
   }
-
-  const pendingOffers = offers.filter(offer => offer.status === "Pending");
-  const acceptedOffers = offers.filter(offer => offer.status === "Accepted");
-  const rejectedOffers = offers.filter(offer => offer.status === "Rejected");
 
   const renderOfferBox = (offer: Offer) => {
     const request = requests.find((r) => r.id === offer.requestId);
@@ -277,6 +292,14 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
         <CardDescription>
           Urmărește și gestionează ofertele trimise către clienți
         </CardDescription>
+         <div className="mt-4">
+          <Input
+            placeholder="Caută oferte după titlu, detalii, preț sau dată..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="max-w-md"
+          />
+        </div>
       </CardHeader>
       <CardContent className="p-4">
         <Tabs defaultValue="pending" value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -295,7 +318,7 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
           <TabsContent value="pending">
             {pendingOffers.length === 0 ? (
               <p className="text-center text-muted-foreground py-4">
-                Nu există oferte în așteptare
+                {searchTerm ? "Nu s-au găsit oferte care să corespundă căutării" : "Nu există oferte în așteptare"}
               </p>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -307,7 +330,7 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
           <TabsContent value="accepted">
             {acceptedOffers.length === 0 ? (
               <p className="text-center text-muted-foreground py-4">
-                Nu există oferte acceptate
+                 {searchTerm ? "Nu s-au găsit oferte care să corespundă căutării" : "Nu există oferte acceptate"}
               </p>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -319,7 +342,7 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
           <TabsContent value="rejected">
             {rejectedOffers.length === 0 ? (
               <p className="text-center text-muted-foreground py-4">
-                Nu există oferte respinse
+                 {searchTerm ? "Nu s-au găsit oferte care să corespundă căutării" : "Nu există oferte respinse"}
               </p>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
