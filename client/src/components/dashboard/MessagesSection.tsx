@@ -218,11 +218,16 @@ export function MessagesSection({
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0">
-                        <h4 className="font-medium truncate">{serviceName}</h4>
-                        <p className="text-xs text-muted-foreground truncate">
-                          {group.requestTitle}
-                        </p>
-                        <p className="text-sm text-muted-foreground truncate">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h4 className="font-medium">{serviceName}</h4>
+                            <p className="text-sm text-muted-foreground">{group.requestTitle}</p>
+                          </div>
+                          <span className="text-xs text-muted-foreground whitespace-nowrap ml-2">
+                            {formatMessageDate(group.lastMessage?.createdAt)} {formatMessageTime(group.lastMessage?.createdAt)}
+                          </span>
+                        </div>
+                        <p className="text-sm text-muted-foreground truncate mt-1">
                           {group.lastMessage?.content || "No messages"}
                         </p>
                       </div>
