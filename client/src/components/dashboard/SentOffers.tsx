@@ -191,39 +191,64 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
               {offer.status}
             </Badge>
           </div>
-          <p className="text-sm text-muted-foreground flex items-center">
-            <Clock className="w-4 h-4 mr-1" />
-            {format(offer.createdAt, "dd.MM.yyyy HH:mm")}
-          </p>
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-muted-foreground flex items-center">
+              <Clock className="w-4 h-4 mr-1" />
+              {format(offer.createdAt, "dd.MM.yyyy HH:mm")}
+            </p>
+            {car && (
+              <div className="flex items-center text-sm text-muted-foreground">
+                <Car className="w-4 h-4 mr-1" />
+                <span className="font-medium">{car.licensePlate}</span>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Content */}
         <div className="p-4 flex-grow">
           <div className="space-y-3">
+            {car && (
+              <div className="bg-gray-50 p-2 rounded-lg">
+                <p className="text-sm font-medium text-gray-600 mb-1 flex items-center">
+                  <Car className="w-4 h-4 mr-1" />
+                  Detalii Mașină:
+                </p>
+                <div className="text-sm space-y-1">
+                  <p className="font-medium">
+                    {car.brand} {car.model} ({car.year})
+                  </p>
+                  {car.licensePlate && (
+                    <p className="text-gray-600">Nr. înmatriculare: {car.licensePlate}</p>
+                  )}
+                </div>
+              </div>
+            )}
+
             <div>
-              <p className="text-sm font-medium text-gray-600">Detalii:</p>
+              <p className="text-sm font-medium text-gray-600 mb-1 flex items-center">
+                <FileText className="w-4 h-4 mr-1" />
+                Detalii:
+              </p>
               <p className="text-sm line-clamp-2">{offer.details}</p>
             </div>
 
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <p className="text-sm font-medium text-gray-600">Data:</p>
+                <p className="text-sm font-medium text-gray-600 flex items-center">
+                  <Calendar className="w-4 h-4 mr-1" />
+                  Data:
+                </p>
                 <p className="text-sm">{offer.availableDate}</p>
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-600">Preț:</p>
+                <p className="text-sm font-medium text-gray-600 flex items-center">
+                  <CreditCard className="w-4 h-4 mr-1" />
+                  Preț:
+                </p>
                 <p className="text-sm">{offer.price} RON</p>
               </div>
             </div>
-
-            {car && (
-              <div>
-                <p className="text-sm font-medium text-gray-600">Mașină:</p>
-                <p className="text-sm line-clamp-1">
-                  {car.brand} {car.model} ({car.year})
-                </p>
-              </div>
-            )}
           </div>
         </div>
 
