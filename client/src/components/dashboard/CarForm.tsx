@@ -26,12 +26,18 @@ const currentYear = new Date().getFullYear();
 const carFormSchema = z.object({
   brand: z.string().min(1, "Marca mașinii este obligatorie"),
   model: z.string().min(1, "Modelul mașinii este obligatoriu"),
-  year: z.number()
-    .int()
-    .min(1900, "Anul trebuie să fie după 1900")
-    .max(currentYear, `Anul trebuie să fie până în ${currentYear}`),
+  year: z.string().refine(
+    (val) => {
+      const year = parseInt(val);
+      return year >= 1900 && year <= currentYear;
+    },
+    { message: `Anul trebuie să fie între 1900 și ${currentYear}` }
+  ),
   fuelType: z.enum(["Benzină", "Motorină", "Hibrid", "Electric"], {
     required_error: "Selectează tipul de carburant",
+  }),
+  transmission: z.enum(["Manuală", "Automată"], {
+    required_error: "Selectează tipul transmisiei",
   }),
   vin: z.string().optional(),
   mileage: z.number().min(0, "Kilometrajul nu poate fi negativ"),
@@ -51,8 +57,9 @@ export function CarForm({ onSubmit, onCancel, initialData }: CarFormProps) {
     defaultValues: {
       brand: initialData?.brand || "",
       model: initialData?.model || "",
-      year: initialData?.year || currentYear,
+      year: initialData?.year?.toString() || currentYear.toString(),
       fuelType: initialData?.fuelType as any || undefined,
+      transmission: initialData?.transmission || undefined,
       vin: initialData?.vin || "",
       mileage: initialData?.mileage || 0,
     },
@@ -60,7 +67,18 @@ export function CarForm({ onSubmit, onCancel, initialData }: CarFormProps) {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form 
+        onSubmit={form.handleSubmit((data) => {
+          // Convert form data to match Car type
+          const carData: Omit<Car, "id"> = {
+            ...data,
+            year: data.year.toString(),
+            mileage: Number(data.mileage),
+          };
+          onSubmit(carData);
+        })} 
+        className="space-y-4"
+      >
         <ScrollArea className="h-[400px] pr-4">
           <div className="grid grid-cols-1 gap-4">
             <FormField
@@ -101,7 +119,7 @@ export function CarForm({ onSubmit, onCancel, initialData }: CarFormProps) {
                     <Input
                       type="number"
                       {...field}
-                      onChange={(e) => field.onChange(parseInt(e.target.value))}
+                      onChange={(e) => field.onChange(e.target.value)}
                     />
                   </FormControl>
                   <FormMessage />
@@ -126,6 +144,28 @@ export function CarForm({ onSubmit, onCancel, initialData }: CarFormProps) {
                       <SelectItem value="Motorină">Motorină</SelectItem>
                       <SelectItem value="Hibrid">Hibrid</SelectItem>
                       <SelectItem value="Electric">Electric</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="transmission"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Transmisie</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selectează tipul transmisiei" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="Manuală">Manuală</SelectItem>
+                      <SelectItem value="Automată">Automată</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />

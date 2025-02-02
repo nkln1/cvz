@@ -2,15 +2,7 @@ import { useState, useCallback } from 'react';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
-
-interface Car {
-  id: string;
-  userId: string;
-  brand: string;
-  model: string;
-  year: number;
-  [key: string]: any;
-}
+import type { Car } from '@/types/dashboard';
 
 export const useCars = (userId: string) => {
   const [cars, setCars] = useState<Car[]>([]);

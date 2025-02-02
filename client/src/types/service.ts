@@ -7,6 +7,9 @@ export interface Car {
   year: string;
   vin?: string;
   licensePlate?: string;
+  fuelType: string;
+  transmission: "Manuală" | "Automată";
+  mileage: number;
 }
 
 export interface Request {

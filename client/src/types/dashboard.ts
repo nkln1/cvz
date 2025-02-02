@@ -16,6 +16,7 @@ export interface Car {
   vin?: string;
   licensePlate?: string;
   fuelType: string;
+  transmission: "Manuală" | "Automată";
   mileage: number;
 }
 

@@ -24,16 +24,7 @@ import {
 } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
-
-export interface Car {
-  id: string;
-  brand: string;
-  model: string;
-  year: number;
-  fuelType: string;
-  vin?: string;
-  mileage: number;
-}
+import type { Car as CarType } from "@/types/dashboard";
 
 interface CarManagementProps {
   isDialog?: boolean;
@@ -44,9 +35,9 @@ export default function CarManagement({
   isDialog,
   onBackClick,
 }: CarManagementProps) {
-  const [cars, setCars] = useState<Car[]>([]);
+  const [cars, setCars] = useState<CarType[]>([]);
   const [isOpen, setIsOpen] = useState(false);
-  const [editingCar, setEditingCar] = useState<Car | undefined>();
+  const [editingCar, setEditingCar] = useState<CarType | undefined>();
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
   const { toast } = useToast();
@@ -60,23 +51,15 @@ export default function CarManagement({
 
     const loadCars = async () => {
       try {
-        console.log("Loading cars for user:", user.uid);
-        console.log("User auth state:", {
-          isAuthenticated: !!user,
-          uid: user.uid,
-          email: user.email,
-        });
-
         const carsQuery = query(
           collection(db, "cars"),
           where("userId", "==", user.uid),
         );
         const querySnapshot = await getDocs(carsQuery);
-        const loadedCars: Car[] = [];
+        const loadedCars: CarType[] = [];
         querySnapshot.forEach((doc) => {
-          loadedCars.push({ id: doc.id, ...doc.data() } as Car);
+          loadedCars.push({ id: doc.id, ...doc.data() } as CarType);
         });
-        console.log("Successfully loaded cars:", loadedCars);
         setCars(loadedCars);
       } catch (error) {
         console.error("Error loading cars:", error);
@@ -94,7 +77,7 @@ export default function CarManagement({
     loadCars();
   }, [user, toast]);
 
-  const handleAddCar = async (car: Omit<Car, "id">) => {
+  const handleAddCar = async (car: Omit<CarType, "id">) => {
     if (!user) {
       console.error("No authenticated user found");
       toast({
@@ -106,24 +89,15 @@ export default function CarManagement({
     }
 
     try {
-      console.log("Attempting to add car:", car);
-      console.log("Current user:", {
-        uid: user.uid,
-        email: user.email,
-        isAuthenticated: !!user,
-      });
-
       const carData = {
         ...car,
         userId: user.uid,
         createdAt: new Date().toISOString(),
       };
 
-      console.log("Preparing to add car with data:", carData);
       const docRef = await addDoc(collection(db, "cars"), carData);
-      console.log("Successfully added car with ID:", docRef.id);
 
-      const newCar = {
+      const newCar: CarType = {
         ...car,
         id: docRef.id,
       };
@@ -136,13 +110,7 @@ export default function CarManagement({
         description: "Mașina a fost adăugată cu succes!",
       });
     } catch (error: any) {
-      console.error("Detailed error adding car:", {
-        error,
-        code: error.code,
-        message: error.message,
-        details: error.details,
-        stack: error.stack,
-      });
+      console.error("Error adding car:", error);
 
       let errorMessage = "Nu s-a putut adăuga mașina. ";
       if (error.code === "permission-denied") {
@@ -161,17 +129,15 @@ export default function CarManagement({
     }
   };
 
-  const handleEditCar = async (car: Omit<Car, "id">) => {
+  const handleEditCar = async (car: Omit<CarType, "id">) => {
     if (!user || !editingCar) return;
 
     try {
-      console.log("Attempting to update car:", editingCar.id);
       const carRef = doc(db, "cars", editingCar.id);
       await updateDoc(carRef, {
         ...car,
         updatedAt: new Date().toISOString(),
       });
-      console.log("Successfully updated car");
 
       setCars((prev) =>
         prev.map((c) =>
@@ -201,10 +167,8 @@ export default function CarManagement({
     if (!user) return;
 
     try {
-      console.log("Attempting to delete car:", carId);
       const carRef = doc(db, "cars", carId);
       await deleteDoc(carRef);
-      console.log("Successfully deleted car");
 
       setCars((prev) => prev.filter((c) => c.id !== carId));
 
@@ -222,7 +186,7 @@ export default function CarManagement({
     }
   };
 
-  const startEditing = (car: Car) => {
+  const startEditing = (car: CarType) => {
     setEditingCar(car);
     setIsOpen(true);
   };
@@ -308,6 +272,7 @@ export default function CarManagement({
                   </div>
                   <div className="text-sm">
                     <p>Tip carburant: {car.fuelType}</p>
+                    <p>Transmisie: {car.transmission}</p>
                     <p>Kilometraj: {car.mileage} km</p>
                     {car.vin && <p>Serie șasiu: {car.vin}</p>}
                   </div>
