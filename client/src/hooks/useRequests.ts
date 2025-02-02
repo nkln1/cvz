@@ -19,7 +19,7 @@ export const useRequests = (userId: string) => {
     try {
       console.log("Fetching requests for user:", userId);
 
-      // Query requests for all relevant statuses including "Trimis Oferta"
+      // Query all requests for the user regardless of status
       const requestsQuery = query(
         collection(db, "requests"),
         where("userId", "==", userId)
@@ -49,7 +49,12 @@ export const useRequests = (userId: string) => {
         }
       });
 
-      setRequests(loadedRequests);
+      // Sort requests by creation date (newest first)
+      const sortedRequests = loadedRequests.sort((a, b) => 
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+
+      setRequests(sortedRequests);
     } catch (error) {
       const errorMessage = "Nu s-au putut încărca cererile.";
       console.error("Error loading requests:", error);

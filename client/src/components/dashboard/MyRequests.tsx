@@ -53,6 +53,7 @@ export function MyRequests({
               cars={cars}
               onDelete={onDelete}
               refreshRequests={refreshRequests}
+              hideDeleteButton={false}
             />
           </TabsContent>
           <TabsContent value="solved">
@@ -61,6 +62,7 @@ export function MyRequests({
               cars={cars}
               onDelete={onDelete}
               refreshRequests={refreshRequests}
+              hideDeleteButton={true}
             />
           </TabsContent>
           <TabsContent value="canceled">
@@ -69,6 +71,7 @@ export function MyRequests({
               cars={cars}
               onDelete={onDelete}
               refreshRequests={refreshRequests}
+              hideDeleteButton={true}
             />
           </TabsContent>
         </Tabs>
