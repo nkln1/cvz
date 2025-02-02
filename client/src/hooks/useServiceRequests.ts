@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { collection, query, where, doc, getDoc, updateDoc, onSnapshot, getDocs } from "firebase/firestore";
+import { collection, query, where, doc, getDoc, updateDoc, onSnapshot, getDocs, addDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import type { Request, Car, ServiceData } from "@/types/service";
@@ -8,6 +8,14 @@ interface User {
   id: string;
   name: string;
   email: string;
+}
+
+interface OfferData {
+  title: string;
+  details: string;
+  availableDate: string;
+  price: number;
+  notes?: string;
 }
 
 export function useServiceRequests(userId: string, serviceData: ServiceData | null) {
@@ -57,6 +65,8 @@ export function useServiceRequests(userId: string, serviceData: ServiceData | nu
             );
             const offersSnapshot = await getDocs(offersQuery);
             const hasOffer = !offersSnapshot.empty;
+
+            console.log(`Request ${docSnapshot.id} hasOffer:`, hasOffer);
 
             // Fetch car data
             const carRef = doc(db, "cars", data.carId);
@@ -114,6 +124,40 @@ export function useServiceRequests(userId: string, serviceData: ServiceData | nu
     return () => unsubscribe();
   }, [userId, serviceData, toast]);
 
+  const handleSubmitOffer = async (request: Request, offerData: OfferData) => {
+    try {
+      const newOffer = {
+        ...offerData,
+        requestId: request.id,
+        serviceId: userId,
+        clientId: request.userId,
+        status: "Active",
+        createdAt: new Date().toISOString(),
+      };
+
+      await addDoc(collection(db, "offers"), newOffer);
+      console.log("Offer submitted successfully");
+
+      // Explicitly refresh the requests to update the UI
+      await fetchRequests();
+
+      toast({
+        title: "Success",
+        description: "Offer has been sent successfully.",
+      });
+
+      return true;
+    } catch (error) {
+      console.error("Error submitting offer:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Could not submit the offer. Please try again.",
+      });
+      return false;
+    }
+  };
+
   const handleViewDetails = async (request: Request) => {
     try {
       markRequestAsViewed(request.id);
@@ -161,7 +205,7 @@ export function useServiceRequests(userId: string, serviceData: ServiceData | nu
         status: "Anulat",
       });
 
-      await fetchRequests(); // Refresh the requests after rejection
+      await fetchRequests();
 
       toast({
         title: "Success",
@@ -186,6 +230,7 @@ export function useServiceRequests(userId: string, serviceData: ServiceData | nu
     handleViewDetails,
     handleRejectRequest,
     markRequestAsViewed,
-    fetchRequests, // Export fetchRequests to allow manual refresh
+    fetchRequests,
+    handleSubmitOffer,
   };
 }

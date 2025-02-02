@@ -61,6 +61,7 @@ interface ClientRequestsProps {
   requestClient: { id: string; name: string; email: string } | null;
   cars: Record<string, Car>;
   loading?: boolean;
+  refreshRequests?: () => Promise<void>;
 }
 
 export function ClientRequests({
@@ -74,6 +75,7 @@ export function ClientRequests({
   requestClient,
   cars,
   loading = false,
+  refreshRequests,
 }: ClientRequestsProps) {
   const [sortField, setSortField] = useState<keyof Request>("createdAt");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
@@ -94,6 +96,9 @@ export function ClientRequests({
       await onSendOffer(selectedOfferRequest, values);
       setShowOfferForm(false);
       setSelectedOfferRequest(null);
+      if (refreshRequests) {
+        await refreshRequests();
+      }
     }
   };
 
@@ -113,7 +118,6 @@ export function ClientRequests({
       startPage = Math.max(1, endPage - maxVisiblePages + 1);
     }
 
-    // Add first page
     if (startPage > 1) {
       items.push(
         <PaginationItem key="1">
@@ -129,7 +133,6 @@ export function ClientRequests({
       }
     }
 
-    // Add pages
     for (let i = startPage; i <= endPage; i++) {
       items.push(
         <PaginationItem key={i}>
@@ -143,7 +146,6 @@ export function ClientRequests({
       );
     }
 
-    // Add last page
     if (endPage < totalPages) {
       if (endPage < totalPages - 1) {
         items.push(
@@ -442,7 +444,6 @@ export function ClientRequests({
                           <TableCell colSpan={7} className="p-0">
                             <div className="bg-gray-50 p-6 border-t border-b">
                               <div className="grid gap-6">
-                                {/* Description Section */}
                                 <div>
                                   <h3 className="text-sm font-medium mb-2">
                                     Descriere Cerere
@@ -452,7 +453,6 @@ export function ClientRequests({
                                   </p>
                                 </div>
                                 <div className="grid grid-cols-3 gap-6">
-                                  {/* Client Details */}
                                   <div>
                                     <h3 className="text-sm font-medium mb-2">
                                       Client
@@ -466,7 +466,6 @@ export function ClientRequests({
                                       </p>
                                     </div>
                                   </div>
-                                  {/* Car Details */}
                                   <div>
                                     <h3 className="text-sm font-medium mb-2">
                                       Mașină
@@ -496,7 +495,6 @@ export function ClientRequests({
                                       </p>
                                     </div>
                                   </div>
-                                  {/* Date Details */}
                                   <div>
                                     <h3 className="text-sm font-medium mb-2">
                                       Data preferată
