@@ -89,23 +89,28 @@ export function ReceivedOffers({ cars, onMessageService }: ReceivedOffersProps) 
   
   const formatDateSafely = (dateValue: any) => {
     if (!dateValue) return "Data necunoscută";
-  
+
     try {
+      // If it's already a properly formatted string like "01.03.2002", return it as is
+      if (typeof dateValue === 'string' && dateValue.match(/^\d{2}\.\d{2}\.\d{4}$/)) {
+        return dateValue;
+      }
+
       // Handle Firestore Timestamp
       if (dateValue && typeof dateValue.toDate === 'function') {
         return format(dateValue.toDate(), "dd.MM.yyyy");
       }
-  
-      // Handle ISO string date
+
+      // Handle other date strings
       if (typeof dateValue === 'string') {
         const date = new Date(dateValue);
         if (!isNaN(date.getTime())) {
           return format(date, "dd.MM.yyyy");
         }
       }
-  
-      console.log("Date value type:", typeof dateValue, "Value:", dateValue);
-      return "Data necunoscută";
+
+      console.log("Unhandled date format:", typeof dateValue, dateValue);
+      return dateValue?.toString() || "Data necunoscută";
     } catch (error) {
       console.error("Error formatting date:", error, "Date value:", dateValue);
       return "Data necunoscută";
@@ -142,17 +147,17 @@ export function ReceivedOffers({ cars, onMessageService }: ReceivedOffersProps) 
           const serviceSnap = await getDoc(serviceRef);
           const serviceName = serviceSnap.exists() ? serviceSnap.data().companyName : "Service Necunoscut";
   
-          // Process dates properly
           const processedOffer = {
             id: docSnap.id,
             ...data,
             serviceName,
             createdAt: data.createdAt?.toDate() || new Date(),
-            availableDate: data.availableDate, // Keep the original format for now
+            // Keep availableDate as is, since it's already in the correct string format
+            availableDate: data.availableDate,
             isNew: !viewedOffers.has(docSnap.id),
           } as Offer;
-  
-          console.log("Processed offer:", processedOffer);
+    
+          console.log("Processing offer with availableDate:", data.availableDate);
           fetchedOffers.push(processedOffer);
         }
   
