@@ -10,7 +10,7 @@ interface OfferData {
   serviceId: string;
   price: number;
   description: string;
-  status: "pending" | "accepted" | "rejected";
+  status: "Pending" | "Accepted" | "Rejected";
   createdAt: admin.firestore.Timestamp;
 }
 
@@ -70,6 +70,7 @@ export const onNewRequest = functions.firestore
   .document("requests/{requestId}")
   .onCreate(async (snapshot: DocumentSnapshot, context) => {
     const requestData = snapshot.data();
+    if (!requestData) return;
 
     try {
       // Get all service providers in the same city
@@ -100,7 +101,6 @@ export const onNewRequest = functions.firestore
             console.log(`Notification sent successfully to service ${doc.id}`);
           } catch (error) {
             console.error(`Failed to send notification to service ${doc.id}:`, error);
-            // Log individual failures but continue with other notifications
             if (error instanceof Error) {
               functions.logger.error("Service notification error", {
                 error: error.message,

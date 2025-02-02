@@ -220,7 +220,7 @@ export function ReceivedOffers({ cars, onMessageService, refreshRequests }: Rece
         updatedAt: new Date(),
       });
 
-      // Update the request status to Rezolvat
+      // Update the request status to Rezolvat ONLY when accepting an offer
       const requestRef = doc(db, "requests", offer.requestId);
       await updateDoc(requestRef, {
         status: "Rezolvat",
@@ -263,7 +263,7 @@ export function ReceivedOffers({ cars, onMessageService, refreshRequests }: Rece
         updatedAt: new Date(),
       });
 
-      // Don't update the request status - keep it active
+      // DO NOT update the request status - keep it active
       // This allows other offers to still come in
 
       // Refresh offers
