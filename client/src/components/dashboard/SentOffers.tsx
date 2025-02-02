@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -96,14 +97,21 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
     const request = requests.find((r) => r.id === offer.requestId);
     const car = request ? cars[request.carId] : null;
 
+    console.log("Rendering offer details:", {
+      offer,
+      requestId: offer.requestId,
+      foundRequest: request,
+      availableRequests: requests
+    });
+
     return (
       <Dialog open={!!selectedOffer} onOpenChange={() => setSelectedOffer(null)}>
         <DialogContent className="max-w-[600px] max-h-[80vh]">
           <DialogHeader>
             <DialogTitle>{offer.title}</DialogTitle>
-            <p className="text-sm text-muted-foreground">
+            <DialogDescription>
               Vezi detaliile complete ale ofertei și cererea asociată
-            </p>
+            </DialogDescription>
           </DialogHeader>
           <ScrollArea className="h-full max-h-[60vh]">
             <div className="space-y-6 p-4">
