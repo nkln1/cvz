@@ -11,6 +11,12 @@ interface OfferBoxProps {
   onViewDetails: (offer: Offer) => void;
 }
 
+interface OfferBoxProps {
+  offer: any;
+  cars: Record<string, any>;
+  onViewDetails: (offer: any) => void;
+}
+
 export function OfferBox({ offer, cars, onViewDetails }: OfferBoxProps) {
   const request = offer.request;
   const car = request ? cars[request.carId] : null;

@@ -9,6 +9,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { OfferList } from "./offers/OfferList";
 import { SearchBar } from "./offers/SearchBar";
 import { OfferDetails } from "./offers/OfferDetails";
+import { OfferBox } from "./offers/OfferBox";
 
 interface SentOffersProps {
   requests: Request[];
