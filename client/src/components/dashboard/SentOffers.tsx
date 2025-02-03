@@ -154,14 +154,22 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
       </CardHeader>
       <CardContent className="p-4">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-4">
-            <TabsTrigger value="pending" className="data-[state=active]:bg-[#00aff5] data-[state=active]:text-white">
-              Oferte Trimise ({filteredOffers.filter(o => o.status === "Pending").length})
-            </TabsTrigger>
-            <TabsTrigger value="rejected" className="data-[state=active]:bg-[#00aff5] data-[state=active]:text-white">
-              Oferte Respinse ({filteredOffers.filter(o => o.status === "Rejected").length})
-            </TabsTrigger>
-          </TabsList>
+          {/* Calculate counts */}
+          {(() => {
+            const pendingOffersCount = filterOffers(offers).filter(o => o.status.toLowerCase() === "pending").length;
+            const rejectedOffersCount = filterOffers(offers).filter(o => o.status.toLowerCase() === "rejected").length;
+            
+            return (
+              <TabsList className="grid w-full grid-cols-2 mb-4">
+                <TabsTrigger value="pending" className="data-[state=active]:bg-[#00aff5] data-[state=active]:text-white">
+                  Oferte Trimise ({pendingOffersCount})
+                </TabsTrigger>
+                <TabsTrigger value="rejected" className="data-[state=active]:bg-[#00aff5] data-[state=active]:text-white">
+                  Oferte Respinse ({rejectedOffersCount})
+                </TabsTrigger>
+              </TabsList>
+            );
+          })()}
 
           <TabsContent value={activeTab}>
             <OfferList offers={paginatedOffers} cars={cars} onViewDetails={setSelectedOffer} />
