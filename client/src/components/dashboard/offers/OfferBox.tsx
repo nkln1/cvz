@@ -1,3 +1,4 @@
+
 import { format } from "date-fns";
 import { Clock, Car, FileText, Calendar, CreditCard, Eye } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -8,31 +9,14 @@ interface OfferBoxProps {
   offer: Offer;
   cars: Record<string, CarType>;
   onViewDetails: (offer: Offer) => void;
-  onView?: (offerId: string) => void; // Added onView prop for marking as viewed
 }
 
-export function OfferBox({ offer, cars, onViewDetails, onView }: OfferBoxProps) {
+export function OfferBox({ offer, cars, onViewDetails }: OfferBoxProps) {
   const request = offer.request;
   const car = request ? cars[request.carId] : null;
 
-  const handleViewDetails = () => {
-    if (offer.isNew && onView) {
-      onView(offer.id);
-      offer.isNew = false;
-    }
-    onViewDetails(offer);
-  };
-
   return (
-    <div 
-      className="bg-white rounded-lg border-2 hover:border-[#00aff5]/30 transition-all duration-200 flex flex-col overflow-hidden h-[320px] relative"
-      onMouseEnter={() => offer.isNew && onView?.(offer.id)}
-    >
-      {offer.isNew && (
-        <Badge className="absolute -top-2 -right-2 bg-[#00aff5] text-white">
-          Nou
-        </Badge>
-      )}
+    <div className="bg-white rounded-lg border-2 hover:border-[#00aff5]/30 transition-all duration-200 flex flex-col overflow-hidden h-[320px]">
       <div className="p-4 border-b bg-gray-50">
         <div className="flex items-start justify-between mb-2">
           <h3 className="font-semibold line-clamp-1 flex-1 mr-2">{offer.title}</h3>
@@ -101,7 +85,7 @@ export function OfferBox({ offer, cars, onViewDetails, onView }: OfferBoxProps) 
         <Button
           variant="outline"
           className="w-full"
-          onClick={handleViewDetails}
+          onClick={() => onViewDetails(offer)}
         >
           <Eye className="w-4 h-4 mr-2" />
           Vezi Detalii Complete

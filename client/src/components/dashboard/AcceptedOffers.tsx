@@ -28,51 +28,13 @@ interface Offer {
   createdAt: Date;
   serviceId: string;
   request: Request | null;
-  isNew?: boolean;
 }
 
-export function AcceptedOffers({ requests, cars, refreshRequests, refreshCounter, setNewOffersCount }: AcceptedOffersProps) {
+export function AcceptedOffers({ requests, cars, refreshRequests, refreshCounter }: AcceptedOffersProps) {
   const [offers, setOffers] = useState<Offer[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null);
-  const [viewedOffers, setViewedOffers] = useState<Set<string>>(new Set());
   const { user } = useAuth();
-
-  useEffect(() => {
-    const unviewedCount = offers.filter(offer => !viewedOffers.has(offer.id)).length;
-    setNewOffersCount?.(unviewedCount);
-  }, [offers, viewedOffers, setNewOffersCount]);
-
-  const markOfferAsViewed = async (offerId: string) => {
-    if (!user) return;
-    try {
-      const viewedOffersRef = doc(db, `users/${user.uid}/metadata/viewedOffers`);
-      const newViewedOffers = new Set(viewedOffers).add(offerId);
-      await setDoc(viewedOffersRef, {
-        offerIds: Array.from(newViewedOffers),
-      }, { merge: true });
-      setViewedOffers(newViewedOffers);
-    } catch (error) {
-      console.error("Error marking offer as viewed:", error);
-    }
-  };
-
-  useEffect(() => {
-    const fetchViewedOffers = async () => {
-      if (!user) return;
-      try {
-        const viewedOffersRef = doc(db, `users/${user.uid}/metadata/viewedOffers`);
-        const viewedOffersDoc = await getDoc(viewedOffersRef);
-        if (viewedOffersDoc.exists()) {
-          setViewedOffers(new Set(viewedOffersDoc.data().offerIds || []));
-        }
-      } catch (error) {
-        console.error("Error fetching viewed offers:", error);
-      }
-    };
-
-    fetchViewedOffers();
-  }, [user]);
 
   useEffect(() => {
     const fetchOffers = async () => {
@@ -97,7 +59,7 @@ export function AcceptedOffers({ requests, cars, refreshRequests, refreshCounter
             const requestDoc = await getDoc(requestRef);
             const requestData = requestDoc.exists() ? { id: requestDoc.id, ...requestDoc.data() } as Request : null;
 
-            const offer = {
+            return {
               id: docSnapshot.id,
               ...data,
               createdAt: data.createdAt?.toDate() || new Date(),
@@ -106,9 +68,6 @@ export function AcceptedOffers({ requests, cars, refreshRequests, refreshCounter
               price: data.price || 0,
               status: "Accepted"
             } as Offer;
-            
-            offer.isNew = !viewedOffers.has(docSnapshot.id);
-            return offer;
           } catch (error) {
             console.error("Error fetching request data for doc:", docSnapshot.id, error);
             return null;
