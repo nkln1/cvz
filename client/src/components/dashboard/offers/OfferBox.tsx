@@ -23,7 +23,10 @@ export function OfferBox({ offer, cars, onViewDetails, onView }: OfferBoxProps) 
   };
 
   return (
-    <div className="bg-white rounded-lg border-2 hover:border-[#00aff5]/30 transition-all duration-200 flex flex-col overflow-hidden h-[320px] relative">
+    <div 
+      className="bg-white rounded-lg border-2 hover:border-[#00aff5]/30 transition-all duration-200 flex flex-col overflow-hidden h-[320px] relative"
+      onMouseEnter={() => offer.isNew && onView?.(offer.id)}
+    >
       {offer.isNew && (
         <Badge className="absolute -top-2 -right-2 bg-[#00aff5] text-white">
           Nou

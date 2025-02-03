@@ -97,7 +97,7 @@ export function AcceptedOffers({ requests, cars, refreshRequests, refreshCounter
             const requestDoc = await getDoc(requestRef);
             const requestData = requestDoc.exists() ? { id: requestDoc.id, ...requestDoc.data() } as Request : null;
 
-            return {
+            const offer = {
               id: docSnapshot.id,
               ...data,
               createdAt: data.createdAt?.toDate() || new Date(),
@@ -106,6 +106,9 @@ export function AcceptedOffers({ requests, cars, refreshRequests, refreshCounter
               price: data.price || 0,
               status: "Accepted"
             } as Offer;
+            
+            offer.isNew = !viewedOffers.has(docSnapshot.id);
+            return offer;
           } catch (error) {
             console.error("Error fetching request data for doc:", docSnapshot.id, error);
             return null;
