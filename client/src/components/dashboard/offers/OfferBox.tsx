@@ -3,7 +3,7 @@ import { Clock, Car, FileText, Calendar, CreditCard, Eye } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { Car as CarType } from "@/types/dashboard";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface Offer {
   id: string;
@@ -25,27 +25,37 @@ interface OfferBoxProps {
 }
 
 export function OfferBox({ offer, cars, onViewDetails, onOfferViewed }: OfferBoxProps) {
-  const [isNewLocal, setIsNewLocal] = useState(offer.isNew);
+  const [isVisible, setIsVisible] = useState(true);
   const request = offer.request;
   const car = request ? cars[request.carId] : null;
 
+  useEffect(() => {
+    setIsVisible(offer.isNew || false);
+  }, [offer.isNew]);
+
   const handleViewDetails = () => {
-    if (isNewLocal) {
-      setIsNewLocal(false);
-      onOfferViewed?.(offer.id);
+    if (offer.isNew) {
+      setIsVisible(false);
+      // Wait for fade out animation to complete before calling onOfferViewed
+      setTimeout(() => {
+        onOfferViewed?.(offer.id);
+      }, 300); // Match this with CSS transition duration
     }
     onViewDetails(offer);
   };
 
   return (
     <div className="relative pt-6">
-      {/* New badge positioned above the card */}
-      {isNewLocal && (
-        <Badge 
-          className="absolute top-0 right-4 bg-[#00aff5] text-white z-10 transition-opacity duration-300"
+      {offer.isNew && (
+        <div
+          className={`absolute top-0 right-4 z-10 transition-all duration-300 ${
+            isVisible ? 'opacity-100 transform translate-y-0' : 'opacity-0 transform -translate-y-2'
+          }`}
         >
-          Nou
-        </Badge>
+          <Badge className="bg-[#00aff5] text-white">
+            Nou
+          </Badge>
+        </div>
       )}
 
       <div className="bg-white rounded-lg border-2 hover:border-[#00aff5]/30 transition-all duration-200 flex flex-col overflow-hidden h-[320px]">

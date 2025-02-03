@@ -37,6 +37,7 @@ export function AcceptedOffers({ requests, cars, refreshRequests, refreshCounter
   const [viewedOffers, setViewedOffers] = useState<Set<string>>(new Set());
   const { user } = useAuth();
 
+  // Effect to fetch viewed offers
   useEffect(() => {
     const fetchViewedOffers = async () => {
       if (!user) return;
@@ -54,6 +55,20 @@ export function AcceptedOffers({ requests, cars, refreshRequests, refreshCounter
 
     fetchViewedOffers();
   }, [user]);
+
+  // Effect to update counter
+  useEffect(() => {
+    const newOffersCount = offers.filter(offer => offer.isNew).length;
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('newAcceptedOffersCount', { detail: newOffersCount }));
+    }
+
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('newAcceptedOffersCount', { detail: 0 }));
+      }
+    };
+  }, [offers]);
 
   const markOfferAsViewed = async (offerId: string) => {
     if (!user) return;
@@ -133,11 +148,6 @@ export function AcceptedOffers({ requests, cars, refreshRequests, refreshCounter
   const handleViewDetails = (offer: Offer) => {
     if (offer.isNew) {
       markOfferAsViewed(offer.id);
-      setOffers(prevOffers => 
-        prevOffers.map(o => 
-          o.id === offer.id ? { ...o, isNew: false } : o
-        )
-      );
     }
     setSelectedOffer(offer);
   };
@@ -153,12 +163,6 @@ export function AcceptedOffers({ requests, cars, refreshRequests, refreshCounter
         </CardContent>
       </Card>
     );
-  }
-
-  // Calculate number of new offers for the parent component
-  const newOffersCount = offers.filter(offer => offer.isNew).length;
-  if (typeof window !== 'undefined') {
-    window.dispatchEvent(new CustomEvent('newAcceptedOffersCount', { detail: newOffersCount }));
   }
 
   return (
@@ -185,6 +189,7 @@ export function AcceptedOffers({ requests, cars, refreshRequests, refreshCounter
                 offer={offer}
                 cars={cars}
                 onViewDetails={handleViewDetails}
+                onOfferViewed={markOfferAsViewed}
               />
             ))}
           </div>

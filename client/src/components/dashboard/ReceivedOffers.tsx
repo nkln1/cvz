@@ -17,11 +17,20 @@ import {
   Check,
   XCircle,
   Eye,
-  RotateCcw
+  RotateCcw,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { collection, query, where, getDocs, doc, getDoc, updateDoc, setDoc } from "firebase/firestore";
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  doc,
+  getDoc,
+  updateDoc,
+  setDoc,
+} from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/context/AuthContext";
 import { useEffect, useState } from "react";
@@ -59,7 +68,11 @@ interface Offer {
   isNew?: boolean;
 }
 
-export function ReceivedOffers({ cars, onMessageService, refreshRequests }: ReceivedOffersProps) {
+export function ReceivedOffers({
+  cars,
+  onMessageService,
+  refreshRequests,
+}: ReceivedOffersProps) {
   const [offers, setOffers] = useState<Offer[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewedOffers, setViewedOffers] = useState<Set<string>>(new Set());
@@ -74,7 +87,10 @@ export function ReceivedOffers({ cars, onMessageService, refreshRequests }: Rece
       if (!user) return;
 
       try {
-        const viewedOffersRef = doc(db, `users/${user.uid}/metadata/viewedOffers`);
+        const viewedOffersRef = doc(
+          db,
+          `users/${user.uid}/metadata/viewedOffers`,
+        );
         const viewedOffersDoc = await getDoc(viewedOffersRef);
         if (viewedOffersDoc.exists()) {
           setViewedOffers(new Set(viewedOffersDoc.data().offerIds || []));
@@ -86,23 +102,26 @@ export function ReceivedOffers({ cars, onMessageService, refreshRequests }: Rece
 
     fetchViewedOffers();
   }, [user]);
-  
+
   const formatDateSafely = (dateValue: any) => {
     if (!dateValue) return "Data necunoscută";
 
     try {
       // If it's already a properly formatted string like "01.03.2002", return it as is
-      if (typeof dateValue === 'string' && dateValue.match(/^\d{2}\.\d{2}\.\d{4}$/)) {
+      if (
+        typeof dateValue === "string" &&
+        dateValue.match(/^\d{2}\.\d{2}\.\d{4}$/)
+      ) {
         return dateValue;
       }
 
       // Handle Firestore Timestamp
-      if (dateValue && typeof dateValue.toDate === 'function') {
+      if (dateValue && typeof dateValue.toDate === "function") {
         return format(dateValue.toDate(), "dd.MM.yyyy");
       }
 
       // Handle other date strings
-      if (typeof dateValue === 'string') {
+      if (typeof dateValue === "string") {
         const date = new Date(dateValue);
         if (!isNaN(date.getTime())) {
           return format(date, "dd.MM.yyyy");
@@ -117,14 +136,13 @@ export function ReceivedOffers({ cars, onMessageService, refreshRequests }: Rece
     }
   };
 
-
   useEffect(() => {
     const fetchOffers = async () => {
       if (!user) {
         console.log("No user found, skipping fetch");
         return;
       }
-  
+
       try {
         setLoading(true);
         console.log("Starting to fetch offers for client:", user.uid);
@@ -132,21 +150,23 @@ export function ReceivedOffers({ cars, onMessageService, refreshRequests }: Rece
         const q = query(offersRef, where("clientId", "==", user.uid));
         const querySnapshot = await getDocs(q);
         console.log("Number of offers found:", querySnapshot.size);
-  
+
         const fetchedOffers: Offer[] = [];
-  
+
         for (const docSnap of querySnapshot.docs) {
           const data = docSnap.data();
           console.log("Raw offer data:", {
             id: docSnap.id,
             availableDate: data.availableDate,
-            createdAt: data.createdAt
+            createdAt: data.createdAt,
           });
-  
+
           const serviceRef = doc(db, "services", data.serviceId);
           const serviceSnap = await getDoc(serviceRef);
-          const serviceName = serviceSnap.exists() ? serviceSnap.data().companyName : "Service Necunoscut";
-  
+          const serviceName = serviceSnap.exists()
+            ? serviceSnap.data().companyName
+            : "Service Necunoscut";
+
           const processedOffer = {
             id: docSnap.id,
             ...data,
@@ -156,12 +176,17 @@ export function ReceivedOffers({ cars, onMessageService, refreshRequests }: Rece
             availableDate: data.availableDate,
             isNew: !viewedOffers.has(docSnap.id),
           } as Offer;
-    
-          console.log("Processing offer with availableDate:", data.availableDate);
+
+          console.log(
+            "Processing offer with availableDate:",
+            data.availableDate,
+          );
           fetchedOffers.push(processedOffer);
         }
-  
-        fetchedOffers.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+
+        fetchedOffers.sort(
+          (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
+        );
         console.log("All processed offers:", fetchedOffers);
         setOffers(fetchedOffers);
       } catch (error) {
@@ -178,11 +203,18 @@ export function ReceivedOffers({ cars, onMessageService, refreshRequests }: Rece
     if (!user) return;
 
     try {
-      const viewedOffersRef = doc(db, `users/${user.uid}/metadata/viewedOffers`);
+      const viewedOffersRef = doc(
+        db,
+        `users/${user.uid}/metadata/viewedOffers`,
+      );
       const newViewedOffers = new Set(viewedOffers).add(offerId);
-      await setDoc(viewedOffersRef, {
-        offerIds: Array.from(newViewedOffers),
-      }, { merge: true });
+      await setDoc(
+        viewedOffersRef,
+        {
+          offerIds: Array.from(newViewedOffers),
+        },
+        { merge: true },
+      );
       setViewedOffers(newViewedOffers);
     } catch (error) {
       console.error("Error marking offer as viewed:", error);
@@ -198,7 +230,7 @@ export function ReceivedOffers({ cars, onMessageService, refreshRequests }: Rece
       const q = query(
         offersRef,
         where("requestId", "==", offer.requestId),
-        where("status", "==", "Accepted")
+        where("status", "==", "Accepted"),
       );
 
       const existingAcceptedOffers = await getDocs(q);
@@ -206,7 +238,8 @@ export function ReceivedOffers({ cars, onMessageService, refreshRequests }: Rece
       if (!existingAcceptedOffers.empty) {
         toast({
           title: "Nu se poate accepta oferta",
-          description: "Există deja o ofertă acceptată pentru această cerere. Anulați oferta acceptată înainte de a accepta una nouă.",
+          description:
+            "Există deja o ofertă acceptată pentru această cerere. Anulați oferta acceptată înainte de a accepta una nouă.",
           variant: "destructive",
         });
         return;
@@ -227,8 +260,8 @@ export function ReceivedOffers({ cars, onMessageService, refreshRequests }: Rece
       });
 
       // Refresh offers in UI
-      const updatedOffers = offers.map(o => 
-        o.id === offer.id ? { ...o, status: "Accepted" } : o
+      const updatedOffers = offers.map((o) =>
+        o.id === offer.id ? { ...o, status: "Accepted" } : o,
       );
       setOffers(updatedOffers);
 
@@ -245,7 +278,8 @@ export function ReceivedOffers({ cars, onMessageService, refreshRequests }: Rece
       console.error("Error accepting offer:", error);
       toast({
         title: "Eroare",
-        description: "A apărut o eroare la acceptarea ofertei. Încercați din nou.",
+        description:
+          "A apărut o eroare la acceptarea ofertei. Încercați din nou.",
         variant: "destructive",
       });
     }
@@ -266,8 +300,8 @@ export function ReceivedOffers({ cars, onMessageService, refreshRequests }: Rece
       // This allows other offers to still come in
 
       // Refresh offers
-      const updatedOffers = offers.map(o => 
-        o.id === offer.id ? { ...o, status: "Rejected" } : o
+      const updatedOffers = offers.map((o) =>
+        o.id === offer.id ? { ...o, status: "Rejected" } : o,
       );
       setOffers(updatedOffers);
 
@@ -279,7 +313,8 @@ export function ReceivedOffers({ cars, onMessageService, refreshRequests }: Rece
       console.error("Error rejecting offer:", error);
       toast({
         title: "Eroare",
-        description: "A apărut o eroare la respingerea ofertei. Încercați din nou.",
+        description:
+          "A apărut o eroare la respingerea ofertei. Încercați din nou.",
         variant: "destructive",
       });
     }
@@ -304,8 +339,8 @@ export function ReceivedOffers({ cars, onMessageService, refreshRequests }: Rece
       });
 
       // Refresh offers
-      const updatedOffers = offers.map(o => 
-        o.id === offer.id ? { ...o, status: "Pending" } : o
+      const updatedOffers = offers.map((o) =>
+        o.id === offer.id ? { ...o, status: "Pending" } : o,
       );
       setOffers(updatedOffers);
 
@@ -317,13 +352,14 @@ export function ReceivedOffers({ cars, onMessageService, refreshRequests }: Rece
       console.error("Error canceling offer:", error);
       toast({
         title: "Eroare",
-        description: "A apărut o eroare la anularea ofertei. Încercați din nou.",
+        description:
+          "A apărut o eroare la anularea ofertei. Încercați din nou.",
         variant: "destructive",
       });
     }
   };
-  
-    const renderOfferBox = (offer: Offer) => {
+
+  const renderOfferBox = (offer: Offer) => {
     return (
       <div
         key={offer.id}
@@ -331,7 +367,7 @@ export function ReceivedOffers({ cars, onMessageService, refreshRequests }: Rece
         onMouseEnter={() => offer.isNew && markOfferAsViewed(offer.id)}
       >
         {offer.isNew && (
-          <Badge className="absolute -top-2 -right-2 bg-[#00aff5] text-white">
+          <Badge className="absolute -top-0 -right-0 bg-[#00aff5] text-white">
             Nou
           </Badge>
         )}
@@ -339,15 +375,17 @@ export function ReceivedOffers({ cars, onMessageService, refreshRequests }: Rece
         {/* Header section - fixed height */}
         <div className="p-3 border-b bg-gray-50">
           <div className="flex justify-between items-start mb-2">
-            <h3 className="text-md font-semibold line-clamp-1 flex-1 mr-2">{offer.title}</h3>
+            <h3 className="text-md font-semibold line-clamp-1 flex-1 mr-2">
+              {offer.title}
+            </h3>
             <Badge
               variant="secondary"
               className={`${
                 offer.status === "Pending"
                   ? "bg-yellow-100 text-yellow-800"
                   : offer.status === "Accepted"
-                  ? "bg-green-100 text-green-800"
-                  : "bg-red-100 text-red-800"
+                    ? "bg-green-100 text-green-800"
+                    : "bg-red-100 text-red-800"
               } flex-shrink-0`}
             >
               {offer.status}
@@ -364,14 +402,20 @@ export function ReceivedOffers({ cars, onMessageService, refreshRequests }: Rece
           <div className="mb-2">
             <h4 className="text-sm font-medium flex items-center gap-2 mb-1">
               <User className="w-4 h-4 text-blue-500" /> Service:
-              <span className="font-normal line-clamp-1">{offer.serviceName}</span>
+              <span className="font-normal line-clamp-1">
+                {offer.serviceName}
+              </span>
             </h4>
           </div>
 
           <div className="grid grid-cols-2 gap-2 mb-2">
             <div>
-              <h4 className="text-xs font-medium text-gray-500">Disponibilitate</h4>
-              <p className="text-sm truncate">{formatDateSafely(offer.availableDate)}</p>
+              <h4 className="text-xs font-medium text-gray-500">
+                Disponibilitate
+              </h4>
+              <p className="text-sm truncate">
+                {formatDateSafely(offer.availableDate)}
+              </p>
             </div>
             <div>
               <h4 className="text-xs font-medium text-gray-500">Preț</h4>
@@ -392,7 +436,9 @@ export function ReceivedOffers({ cars, onMessageService, refreshRequests }: Rece
               variant="outline"
               size="sm"
               className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 flex-shrink-0"
-              onClick={() => onMessageService?.(offer.serviceId, offer.requestId)}
+              onClick={() =>
+                onMessageService?.(offer.serviceId, offer.requestId)
+              }
             >
               <MessageSquare className="w-3 h-3 mr-1" />
               Mesaj
@@ -460,19 +506,29 @@ export function ReceivedOffers({ cars, onMessageService, refreshRequests }: Rece
         <ScrollArea className="h-full max-h-[60vh] pr-4">
           <div className="space-y-6 p-2">
             <div>
-              <h3 className="text-sm font-medium text-gray-700 mb-2">Service Auto</h3>
+              <h3 className="text-sm font-medium text-gray-700 mb-2">
+                Service Auto
+              </h3>
               <p className="text-sm text-gray-600">{offer.serviceName}</p>
             </div>
 
             <div>
-              <h3 className="text-sm font-medium text-gray-700 mb-2">Detalii Ofertă</h3>
-              <p className="text-sm text-gray-600 whitespace-pre-wrap">{offer.details}</p>
+              <h3 className="text-sm font-medium text-gray-700 mb-2">
+                Detalii Ofertă
+              </h3>
+              <p className="text-sm text-gray-600 whitespace-pre-wrap">
+                {offer.details}
+              </p>
             </div>
 
             <div className="flex gap-4">
               <div>
-                <h3 className="text-sm font-medium text-gray-700">Data Disponibilă</h3>
-                <p className="text-sm text-gray-600">{formatDateSafely(offer.availableDate)}</p>
+                <h3 className="text-sm font-medium text-gray-700">
+                  Data Disponibilă
+                </h3>
+                <p className="text-sm text-gray-600">
+                  {formatDateSafely(offer.availableDate)}
+                </p>
               </div>
               <div>
                 <h3 className="text-sm font-medium text-gray-700">Preț</h3>
@@ -482,8 +538,12 @@ export function ReceivedOffers({ cars, onMessageService, refreshRequests }: Rece
 
             {offer.notes && (
               <div>
-                <h3 className="text-sm font-medium text-gray-700 mb-2">Observații</h3>
-                <p className="text-sm text-gray-600 whitespace-pre-wrap">{offer.notes}</p>
+                <h3 className="text-sm font-medium text-gray-700 mb-2">
+                  Observații
+                </h3>
+                <p className="text-sm text-gray-600 whitespace-pre-wrap">
+                  {offer.notes}
+                </p>
               </div>
             )}
           </div>
@@ -491,7 +551,6 @@ export function ReceivedOffers({ cars, onMessageService, refreshRequests }: Rece
       </DialogContent>
     </Dialog>
   );
-
 
   if (loading) {
     return (
@@ -506,9 +565,9 @@ export function ReceivedOffers({ cars, onMessageService, refreshRequests }: Rece
     );
   }
 
-  const pendingOffers = offers.filter(offer => offer.status === "Pending");
-  const acceptedOffers = offers.filter(offer => offer.status === "Accepted");
-  const rejectedOffers = offers.filter(offer => offer.status === "Rejected");
+  const pendingOffers = offers.filter((offer) => offer.status === "Pending");
+  const acceptedOffers = offers.filter((offer) => offer.status === "Accepted");
+  const rejectedOffers = offers.filter((offer) => offer.status === "Rejected");
 
   return (
     <Card className="shadow-lg">
@@ -522,15 +581,29 @@ export function ReceivedOffers({ cars, onMessageService, refreshRequests }: Rece
         </CardDescription>
       </CardHeader>
       <CardContent className="p-4">
-        <Tabs defaultValue="pending" value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <Tabs
+          defaultValue="pending"
+          value={activeTab}
+          onValueChange={setActiveTab}
+          className="w-full"
+        >
           <TabsList className="grid w-full grid-cols-3 mb-4">
-            <TabsTrigger value="pending" className="data-[state=active]:bg-[#00aff5] data-[state=active]:text-white">
+            <TabsTrigger
+              value="pending"
+              className="data-[state=active]:bg-[#00aff5] data-[state=active]:text-white"
+            >
               Oferte Primite ({pendingOffers.length})
             </TabsTrigger>
-            <TabsTrigger value="accepted" className="data-[state=active]:bg-[#00aff5] data-[state=active]:text-white">
+            <TabsTrigger
+              value="accepted"
+              className="data-[state=active]:bg-[#00aff5] data-[state=active]:text-white"
+            >
               Oferte Acceptate ({acceptedOffers.length})
             </TabsTrigger>
-            <TabsTrigger value="rejected" className="data-[state=active]:bg-[#00aff5] data-[state=active]:text-white">
+            <TabsTrigger
+              value="rejected"
+              className="data-[state=active]:bg-[#00aff5] data-[state=active]:text-white"
+            >
               Oferte Respinse ({rejectedOffers.length})
             </TabsTrigger>
           </TabsList>
@@ -542,7 +615,7 @@ export function ReceivedOffers({ cars, onMessageService, refreshRequests }: Rece
               </p>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {pendingOffers.map(offer => renderOfferBox(offer))}
+                {pendingOffers.map((offer) => renderOfferBox(offer))}
               </div>
             )}
           </TabsContent>
@@ -554,7 +627,7 @@ export function ReceivedOffers({ cars, onMessageService, refreshRequests }: Rece
               </p>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {acceptedOffers.map(offer => renderOfferBox(offer))}
+                {acceptedOffers.map((offer) => renderOfferBox(offer))}
               </div>
             )}
           </TabsContent>
@@ -566,7 +639,7 @@ export function ReceivedOffers({ cars, onMessageService, refreshRequests }: Rece
               </p>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {rejectedOffers.map(offer => renderOfferBox(offer))}
+                {rejectedOffers.map((offer) => renderOfferBox(offer))}
               </div>
             )}
           </TabsContent>
