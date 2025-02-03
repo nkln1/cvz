@@ -18,6 +18,7 @@ export function OfferBox({ offer, cars, onViewDetails, onView }: OfferBoxProps) 
   const handleViewDetails = () => {
     if (offer.isNew && onView) {
       onView(offer.id);
+      offer.isNew = false;
     }
     onViewDetails(offer);
   };
