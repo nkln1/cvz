@@ -56,11 +56,11 @@ export function AcceptedOffers({ requests, cars, refreshRequests, refreshCounter
     fetchViewedOffers();
   }, [user]);
 
-  // Effect to update counter
+  // Effect to update counter and check for new offers periodically
   useEffect(() => {
     const updateCounter = async () => {
       if (!user) return;
-      
+
       try {
         const offersRef = collection(db, "offers");
         const q = query(
@@ -68,10 +68,11 @@ export function AcceptedOffers({ requests, cars, refreshRequests, refreshCounter
           where("serviceId", "==", user.uid),
           where("status", "==", "Accepted")
         );
-        
+
         const querySnapshot = await getDocs(q);
         const newOffersCount = querySnapshot.docs.filter(doc => !viewedOffers.has(doc.id)).length;
-        
+
+        // Dispatch event with new count
         if (typeof window !== 'undefined') {
           window.dispatchEvent(new CustomEvent('newAcceptedOffersCount', { detail: newOffersCount }));
         }
@@ -80,14 +81,14 @@ export function AcceptedOffers({ requests, cars, refreshRequests, refreshCounter
       }
     };
 
+    // Initial update
     updateCounter();
-    const interval = setInterval(updateCounter, 5000);
+
+    // Set up periodic updates
+    const interval = setInterval(updateCounter, 5000); // Check every 5 seconds
 
     return () => {
       clearInterval(interval);
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('newAcceptedOffersCount', { detail: 0 }));
-      }
     };
   }, [user, viewedOffers]);
 
@@ -101,13 +102,6 @@ export function AcceptedOffers({ requests, cars, refreshRequests, refreshCounter
         offerIds: Array.from(newViewedOffers),
       }, { merge: true });
       setViewedOffers(newViewedOffers);
-
-      // Update local state to reflect the change
-      setOffers(prevOffers => 
-        prevOffers.map(offer => 
-          offer.id === offerId ? { ...offer, isNew: false } : offer
-        )
-      );
     } catch (error) {
       console.error("Error marking offer as viewed:", error);
     }
@@ -166,14 +160,9 @@ export function AcceptedOffers({ requests, cars, refreshRequests, refreshCounter
     fetchOffers();
   }, [user, refreshCounter, viewedOffers]);
 
-  const handleViewDetails = async (offer: Offer) => {
+  const handleViewDetails = (offer: Offer) => {
     if (offer.isNew) {
-      await markOfferAsViewed(offer.id);
-      setOffers(prevOffers => 
-        prevOffers.map(o => 
-          o.id === offer.id ? { ...o, isNew: false } : o
-        )
-      );
+      markOfferAsViewed(offer.id);
     }
     setSelectedOffer(offer);
   };
