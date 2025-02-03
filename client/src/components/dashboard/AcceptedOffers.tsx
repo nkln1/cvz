@@ -131,10 +131,15 @@ export function AcceptedOffers({ requests, cars, refreshRequests, refreshCounter
   }, [user, refreshCounter, viewedOffers]);
 
   const handleViewDetails = (offer: Offer) => {
-    setSelectedOffer(offer);
     if (offer.isNew) {
       markOfferAsViewed(offer.id);
+      setOffers(prevOffers => 
+        prevOffers.map(o => 
+          o.id === offer.id ? { ...o, isNew: false } : o
+        )
+      );
     }
+    setSelectedOffer(offer);
   };
 
   if (loading) {

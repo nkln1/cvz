@@ -20,11 +20,20 @@ interface OfferBoxProps {
   offer: Offer;
   cars: Record<string, CarType>;
   onViewDetails: (offer: Offer) => void;
+  // Add function to update isNew state.  Implementation depends on the application's state management.
+  onOfferViewed?: (offerId: string) => void;
 }
 
-export function OfferBox({ offer, cars, onViewDetails }: OfferBoxProps) {
+export function OfferBox({ offer, cars, onViewDetails, onOfferViewed }: OfferBoxProps) {
   const request = offer.request;
   const car = request ? cars[request.carId] : null;
+
+  const handleViewDetails = () => {
+    if (offer.isNew && onOfferViewed) {
+      onOfferViewed(offer.id);
+    }
+    onViewDetails(offer);
+  };
 
   return (
     <div className="bg-white rounded-lg border-2 hover:border-[#00aff5]/30 transition-all duration-200 flex flex-col overflow-hidden h-[320px] relative">
@@ -102,7 +111,7 @@ export function OfferBox({ offer, cars, onViewDetails }: OfferBoxProps) {
         <Button
           variant="outline"
           className="w-full"
-          onClick={() => onViewDetails(offer)}
+          onClick={handleViewDetails}
         >
           <Eye className="w-4 h-4 mr-2" />
           Vezi Detalii Complete
