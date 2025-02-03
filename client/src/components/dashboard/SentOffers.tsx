@@ -50,14 +50,13 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
   const { user } = useAuth();
 
   useEffect(() => {
+    let isMounted = true;
+
     const fetchOffers = async () => {
-      if (!user) {
-        console.log("No user found, skipping fetch");
+      if (!user || !isMounted) {
+        console.log("No user found or component unmounted, skipping fetch");
         return;
       }
-      
-      // Prevent page refresh during fetch
-      const abortController = new AbortController();
 
       try {
         console.log("Starting to fetch offers, serviceId:", user.uid);
@@ -106,8 +105,11 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
     };
 
     fetchOffers();
-    // We don't need the abortController here since we're not using it in fetchOffers
-  }, [user, refreshCounter]);
+    
+    return () => {
+      isMounted = false;
+    };
+  }, [user?.uid, refreshCounter]);
 
   const filterOffers = (offers: Offer[]) => {
     if (!searchTerm) return offers;
