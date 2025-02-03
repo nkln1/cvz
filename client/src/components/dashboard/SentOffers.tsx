@@ -139,12 +139,9 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
       </CardHeader>
       <CardContent className="p-4">
         <Tabs defaultValue="pending" value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-4">
+          <TabsList className="grid w-full grid-cols-2 mb-4">
             <TabsTrigger value="pending" className="data-[state=active]:bg-[#00aff5] data-[state=active]:text-white">
               Oferte Trimise ({filteredOffers.filter(o => o.status === "Pending").length})
-            </TabsTrigger>
-            <TabsTrigger value="accepted" className="data-[state=active]:bg-[#00aff5] data-[state=active]:text-white">
-              Oferte Acceptate ({filteredOffers.filter(o => o.status === "Accepted").length})
             </TabsTrigger>
             <TabsTrigger value="rejected" className="data-[state=active]:bg-[#00aff5] data-[state=active]:text-white">
               Oferte Respinse ({filteredOffers.filter(o => o.status === "Rejected").length})
@@ -158,13 +155,7 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
               onViewDetails={setSelectedOffer}
             />
           </TabsContent>
-          <TabsContent value="accepted">
-            <OfferList
-              offers={filteredOffers.filter(o => o.status === "Accepted")}
-              cars={cars}
-              onViewDetails={setSelectedOffer}
-            />
-          </TabsContent>
+          
           <TabsContent value="rejected">
             <OfferList
               offers={filteredOffers.filter(o => o.status === "Rejected")}
