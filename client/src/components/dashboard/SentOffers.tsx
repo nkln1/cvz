@@ -204,9 +204,8 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
     );
   };
 
-  const renderOfferBox = (offer: Offer) => ( // Updated renderOfferBox function
+  const renderOfferBox = (offer: Offer) => (
     <OfferBox
-      key={offer.id}
       offer={offer}
       cars={cars}
       onViewDetails={setSelectedOffer}
