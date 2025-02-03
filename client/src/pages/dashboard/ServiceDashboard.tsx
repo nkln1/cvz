@@ -14,6 +14,7 @@ import {
   Bell,
   BellOff,
   Loader2,
+  SendHorizontal,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
