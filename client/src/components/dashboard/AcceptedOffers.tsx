@@ -7,6 +7,7 @@ import { db } from "@/lib/firebase";
 import { useAuth } from "@/context/AuthContext";
 import { useEffect, useState } from "react";
 import { OfferBox } from "./offers/OfferBox";
+import { OfferDetails } from "./offers/OfferDetails";
 
 interface AcceptedOffersProps {
   requests: Request[];
@@ -32,6 +33,7 @@ interface Offer {
 export function AcceptedOffers({ requests, cars, refreshRequests, refreshCounter }: AcceptedOffersProps) {
   const [offers, setOffers] = useState<Offer[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -122,12 +124,19 @@ export function AcceptedOffers({ requests, cars, refreshRequests, refreshCounter
                 key={offer.id}
                 offer={offer}
                 cars={cars}
-                onViewDetails={() => {}}
+                onViewDetails={setSelectedOffer}
               />
             ))}
           </div>
         )}
       </CardContent>
+
+      <OfferDetails 
+        offer={selectedOffer}
+        cars={cars}
+        open={!!selectedOffer}
+        onOpenChange={(open) => !open && setSelectedOffer(null)}
+      />
     </Card>
   );
 }
