@@ -5,7 +5,7 @@ import { collection, query, getDocs, getDoc, where, doc } from "firebase/firesto
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/context/AuthContext";
 import { useEffect, useState } from "react";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { OfferList } from "./offers/OfferList";
 import { SearchBar } from "./offers/SearchBar";
 import { OfferDetails } from "./offers/OfferDetails";
