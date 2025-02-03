@@ -151,24 +151,27 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
             </TabsTrigger>
           </TabsList>
 
-          <OfferList
-            offers={filteredOffers}
-            status="pending"
-            cars={cars}
-            onViewDetails={setSelectedOffer}
-          />
-          <OfferList
-            offers={filteredOffers}
-            status="accepted"
-            cars={cars}
-            onViewDetails={setSelectedOffer}
-          />
-          <OfferList
-            offers={filteredOffers}
-            status="rejected"
-            cars={cars}
-            onViewDetails={setSelectedOffer}
-          />
+          <TabsContent value="pending">
+            <OfferList
+              offers={filteredOffers.filter(o => o.status === "Pending")}
+              cars={cars}
+              onViewDetails={setSelectedOffer}
+            />
+          </TabsContent>
+          <TabsContent value="accepted">
+            <OfferList
+              offers={filteredOffers.filter(o => o.status === "Accepted")}
+              cars={cars}
+              onViewDetails={setSelectedOffer}
+            />
+          </TabsContent>
+          <TabsContent value="rejected">
+            <OfferList
+              offers={filteredOffers.filter(o => o.status === "Rejected")}
+              cars={cars}
+              onViewDetails={setSelectedOffer}
+            />
+          </TabsContent>
         </Tabs>
       </CardContent>
 

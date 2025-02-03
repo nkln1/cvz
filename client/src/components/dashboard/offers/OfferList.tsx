@@ -6,21 +6,16 @@ import { OfferBox } from "./OfferBox";
 
 interface OfferListProps {
   offers: Offer[];
-  status: "pending" | "accepted" | "rejected";
   cars: Record<string, CarType>;
   onViewDetails: (offer: Offer) => void;
 }
 
-export function OfferList({ offers, status, cars, onViewDetails }: OfferListProps) {
-  const filteredOffers = offers.filter(offer => offer.status === status);
-
-  if (filteredOffers.length === 0) {
+export function OfferList({ offers, cars, onViewDetails }: OfferListProps) {
+  if (offers.length === 0) {
     return (
-      <TabsContent value={status}>
-        <p className="text-center text-muted-foreground py-4">
-          {`Nu există oferte ${status === "pending" ? "în așteptare" : status === "accepted" ? "acceptate" : "respinse"}`}
-        </p>
-      </TabsContent>
+      <p className="text-center text-muted-foreground py-4">
+        Nu există oferte
+      </p>
     );
   }
 
