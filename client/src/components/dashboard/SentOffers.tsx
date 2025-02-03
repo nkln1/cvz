@@ -53,13 +53,12 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
     let isMounted = true;
 
     const fetchOffers = async () => {
-      if (!user || !isMounted) {
-        console.log("No user found or component unmounted, skipping fetch");
+      if (!user?.uid) {
+        console.log("No user found, skipping fetch");
         return;
       }
 
       try {
-        console.log("Starting to fetch offers, serviceId:", user.uid);
         setLoading(true);
         const offersRef = collection(db, "offers");
         const q = query(
@@ -68,7 +67,8 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
         );
 
         const querySnapshot = await getDocs(q);
-        console.log("Query snapshot size:", querySnapshot.size);
+        if (!isMounted) return;
+
         const fetchedOffers: Offer[] = [];
 
         const fetchPromises = querySnapshot.docs.map(async (docSnapshot) => {
@@ -105,7 +105,7 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
     };
 
     fetchOffers();
-    
+
     return () => {
       isMounted = false;
     };
@@ -138,7 +138,7 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
       </Card>
     );
   }
-  
+
   const filteredOffers = filterOffers(offers);
   const totalPages = Math.ceil(filteredOffers.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
@@ -206,7 +206,7 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
               </div>
             )}
           </TabsContent>
-          
+
           <TabsContent value="rejected">
             <OfferList
               offers={paginatedOffers.filter(o => o.status === "Rejected")}
