@@ -23,6 +23,7 @@ import Footer from "@/components/Footer";
 import { ServiceProfileSection } from "@/components/dashboard/ServiceProfileSection";
 import { ClientRequests } from "@/components/dashboard/ClientRequests";
 import { SentOffers } from "@/components/dashboard/SentOffers";
+import { AcceptedOffers } from "@/components/dashboard/AcceptedOffers";
 import { ServiceMessagesSection } from "@/components/dashboard/ServiceMessagesSection";
 import { AppointmentsSection } from "@/components/dashboard/AppointmentsSection";
 import { ReviewsSection } from "@/components/dashboard/ReviewsSection";
@@ -36,6 +37,7 @@ import { addDoc, collection } from "firebase/firestore";
 type TabType =
   | "requests"
   | "offers"
+  | "accepted-offers"
   | "messages"
   | "appointments"
   | "reviews"
@@ -302,6 +304,13 @@ export default function ServiceDashboard() {
               onClick={setActiveTab}
             />
             <NavigationButton
+              tab="accepted-offers"
+              activeTab={activeTab}
+              icon={<SendHorizontal className="w-4 h-4 mr-2 flex-shrink-0" />}
+              label="Oferte acceptate"
+              onClick={setActiveTab}
+            />
+            <NavigationButton
               tab="messages"
               activeTab={activeTab}
               icon={<MessageSquare className="w-4 h-4 mr-2 flex-shrink-0" />}
@@ -347,6 +356,16 @@ export default function ServiceDashboard() {
         )}
         {activeTab === "offers" && (
           <SentOffers
+            requests={clientRequests}
+            cars={cars}
+            refreshRequests={async () => {
+              setRefreshOffersCounter((prev) => prev + 1);
+            }}
+            refreshCounter={refreshOffersCounter}
+          />
+        )}
+        {activeTab === "accepted-offers" && (
+          <AcceptedOffers
             requests={clientRequests}
             cars={cars}
             refreshRequests={async () => {
