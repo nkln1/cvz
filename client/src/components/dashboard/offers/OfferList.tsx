@@ -2,6 +2,7 @@
 import { Badge } from "@/components/ui/badge";
 import { TabsContent } from "@/components/ui/tabs";
 import type { Offer, Car as CarType } from "@/types/dashboard";
+import { OfferBox } from "./OfferBox";
 
 interface OfferListProps {
   offers: Offer[];
