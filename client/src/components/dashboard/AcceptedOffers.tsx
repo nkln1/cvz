@@ -1,8 +1,7 @@
-
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { SendHorizontal, Loader2 } from "lucide-react";
 import type { Request, Car as CarType } from "@/types/dashboard";
-import { collection, query, getDocs, where, doc, getDoc } from "firebase/firestore";
+import { collection, query, getDocs, where, doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/context/AuthContext";
 import { useEffect, useState } from "react";
@@ -28,13 +27,55 @@ interface Offer {
   createdAt: Date;
   serviceId: string;
   request: Request | null;
+  isNew?: boolean;
 }
 
 export function AcceptedOffers({ requests, cars, refreshRequests, refreshCounter }: AcceptedOffersProps) {
   const [offers, setOffers] = useState<Offer[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null);
+  const [viewedOffers, setViewedOffers] = useState<Set<string>>(new Set());
   const { user } = useAuth();
+
+  useEffect(() => {
+    const fetchViewedOffers = async () => {
+      if (!user) return;
+
+      try {
+        const viewedOffersRef = doc(db, `users/${user.uid}/metadata/viewedAcceptedOffers`);
+        const viewedOffersDoc = await getDoc(viewedOffersRef);
+        if (viewedOffersDoc.exists()) {
+          setViewedOffers(new Set(viewedOffersDoc.data().offerIds || []));
+        }
+      } catch (error) {
+        console.error("Error fetching viewed offers:", error);
+      }
+    };
+
+    fetchViewedOffers();
+  }, [user]);
+
+  const markOfferAsViewed = async (offerId: string) => {
+    if (!user) return;
+
+    try {
+      const viewedOffersRef = doc(db, `users/${user.uid}/metadata/viewedAcceptedOffers`);
+      const newViewedOffers = new Set(viewedOffers).add(offerId);
+      await setDoc(viewedOffersRef, {
+        offerIds: Array.from(newViewedOffers),
+      }, { merge: true });
+      setViewedOffers(newViewedOffers);
+
+      // Update local state to reflect the change
+      setOffers(prevOffers => 
+        prevOffers.map(offer => 
+          offer.id === offerId ? { ...offer, isNew: false } : offer
+        )
+      );
+    } catch (error) {
+      console.error("Error marking offer as viewed:", error);
+    }
+  };
 
   useEffect(() => {
     const fetchOffers = async () => {
@@ -66,7 +107,8 @@ export function AcceptedOffers({ requests, cars, refreshRequests, refreshCounter
               request: requestData,
               availableDate: data.availableDate || "Data necunoscută",
               price: data.price || 0,
-              status: "Accepted"
+              status: "Accepted",
+              isNew: !viewedOffers.has(docSnapshot.id)
             } as Offer;
           } catch (error) {
             console.error("Error fetching request data for doc:", docSnapshot.id, error);
@@ -86,7 +128,14 @@ export function AcceptedOffers({ requests, cars, refreshRequests, refreshCounter
     };
 
     fetchOffers();
-  }, [user, refreshCounter]);
+  }, [user, refreshCounter, viewedOffers]);
+
+  const handleViewDetails = (offer: Offer) => {
+    setSelectedOffer(offer);
+    if (offer.isNew) {
+      markOfferAsViewed(offer.id);
+    }
+  };
 
   if (loading) {
     return (
@@ -99,6 +148,12 @@ export function AcceptedOffers({ requests, cars, refreshRequests, refreshCounter
         </CardContent>
       </Card>
     );
+  }
+
+  // Calculate number of new offers for the parent component
+  const newOffersCount = offers.filter(offer => offer.isNew).length;
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('newAcceptedOffersCount', { detail: newOffersCount }));
   }
 
   return (
@@ -124,7 +179,7 @@ export function AcceptedOffers({ requests, cars, refreshRequests, refreshCounter
                 key={offer.id}
                 offer={offer}
                 cars={cars}
-                onViewDetails={setSelectedOffer}
+                onViewDetails={handleViewDetails}
               />
             ))}
           </div>

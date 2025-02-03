@@ -100,6 +100,7 @@ export default function ServiceDashboard() {
     return (localStorage.getItem("activeTab") as TabType) || "requests";
   });
   const [refreshOffersCounter, setRefreshOffersCounter] = useState(0);
+  const [newAcceptedOffersCount, setNewAcceptedOffersCount] = useState(0);
 
   const {
     messages,
@@ -182,7 +183,17 @@ export default function ServiceDashboard() {
 
     fetchServiceData();
   }, [user, toast, setLocation]);
+    useEffect(() => {
+    const handleNewOffersCount = (event: CustomEvent<number>) => {
+      setNewAcceptedOffersCount(event.detail);
+    };
 
+    window.addEventListener('newAcceptedOffersCount', handleNewOffersCount as EventListener);
+
+    return () => {
+      window.removeEventListener('newAcceptedOffersCount', handleNewOffersCount as EventListener);
+    };
+  }, []);
   const switchToMessagesAndOpenConversation = (request: ServiceRequest) => {
     setActiveTab("messages");
     if (request) {
@@ -310,6 +321,7 @@ export default function ServiceDashboard() {
               icon={<SendHorizontal className="w-4 h-4 mr-2 flex-shrink-0" />}
               label="Oferte acceptate"
               onClick={setActiveTab}
+              notificationCount={newAcceptedOffersCount}
             />
             <NavigationButton
               tab="messages"
