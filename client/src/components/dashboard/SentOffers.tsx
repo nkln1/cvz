@@ -105,12 +105,9 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
       }
     };
 
-    const abortController = new AbortController();
     fetchOffers();
-    return () => {
-      abortController.abort();
-    };
-  }, [user, refreshCounter, requests]);
+    // We don't need the abortController here since we're not using it in fetchOffers
+  }, [user, refreshCounter]);
 
   const filterOffers = (offers: Offer[]) => {
     if (!searchTerm) return offers;
