@@ -115,6 +115,9 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
     );
   };
 
+  const ITEMS_PER_PAGE = 6;
+  const [currentPage, setCurrentPage] = useState(1);
+
   if (loading) {
     return (
       <Card className="shadow-lg">
@@ -127,9 +130,6 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
       </Card>
     );
   }
-
-  const ITEMS_PER_PAGE = 6;
-  const [currentPage, setCurrentPage] = useState(1);
   
   const filteredOffers = filterOffers(offers);
   const totalPages = Math.ceil(filteredOffers.length / ITEMS_PER_PAGE);
