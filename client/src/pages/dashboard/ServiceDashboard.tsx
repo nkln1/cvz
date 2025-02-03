@@ -109,6 +109,8 @@ export default function ServiceDashboard() {
   });
   const [refreshOffersCounter, setRefreshOffersCounter] = useState(0);
   const [newAcceptedOffersCount, setNewAcceptedOffersCount] = useState(0);
+    const [refreshSentOffers, setRefreshSentOffers] = useState(0);
+
 
   const {
     messages,
@@ -192,8 +194,8 @@ export default function ServiceDashboard() {
     fetchServiceData();
   }, [user, toast, setLocation]);
   
-  useEffect(() => {
-    const checkNewAcceptedOffers = async () => {
+    useEffect(() => {
+    const checkOffersUpdates = async () => {
       if (!user) return;
 
       try {
@@ -215,17 +217,21 @@ export default function ServiceDashboard() {
         const querySnapshot = await getDocs(q);
         const newOffersCount = querySnapshot.docs.filter(doc => !viewedOfferIds.has(doc.id)).length;
 
+        // Update the counter
         setNewAcceptedOffersCount(newOffersCount);
+
+        // Trigger a refresh of the offers list
+        setRefreshSentOffers(prev => prev + 1);
       } catch (error) {
-        console.error("Error checking new accepted offers:", error);
+        console.error("Error checking offers updates:", error);
       }
     };
 
     // Initial check
-    checkNewAcceptedOffers();
+    checkOffersUpdates();
 
-    // Set up periodic checks
-    const interval = setInterval(checkNewAcceptedOffers, 5000);
+    // Set up periodic checks every 5 seconds
+    const interval = setInterval(checkOffersUpdates, 5000);
 
     return () => clearInterval(interval);
   }, [user]);
@@ -410,7 +416,7 @@ export default function ServiceDashboard() {
             refreshRequests={async () => {
               setRefreshOffersCounter((prev) => prev + 1);
             }}
-            refreshCounter={refreshOffersCounter}
+             refreshCounter={refreshSentOffers}
           />
         )}
         {activeTab === "accepted-offers" && (
@@ -420,7 +426,7 @@ export default function ServiceDashboard() {
             refreshRequests={async () => {
               setRefreshOffersCounter((prev) => prev + 1);
             }}
-            refreshCounter={refreshOffersCounter}
+            refreshCounter={refreshSentOffers}
           />
         )}
         {activeTab === "messages" && (
