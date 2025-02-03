@@ -24,12 +24,7 @@ interface OfferBoxProps {
   onOfferViewed?: (offerId: string) => void;
 }
 
-export function OfferBox({
-  offer,
-  cars,
-  onViewDetails,
-  onOfferViewed,
-}: OfferBoxProps) {
+export function OfferBox({ offer, cars, onViewDetails, onOfferViewed }: OfferBoxProps) {
   const request = offer.request;
   const car = request ? cars[request.carId] : null;
 
@@ -50,17 +45,15 @@ export function OfferBox({
 
       <div className="p-4 border-b bg-gray-50">
         <div className="flex items-start justify-between mb-2">
-          <h3 className="font-semibold line-clamp-1 flex-1 mr-2">
-            {offer.title}
-          </h3>
+          <h3 className="font-semibold line-clamp-1 flex-1 mr-2">{offer.title}</h3>
           <Badge
             variant="secondary"
             className={`${
               offer.status === "Pending"
                 ? "bg-yellow-100 text-yellow-800"
                 : offer.status === "Accepted"
-                  ? "bg-green-100 text-green-800"
-                  : "bg-red-100 text-red-800"
+                ? "bg-green-100 text-green-800"
+                : "bg-red-100 text-red-800"
             } ml-2 flex-shrink-0`}
           >
             {offer.status}

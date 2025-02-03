@@ -6,8 +6,7 @@ import {
   PaginationItem,
   PaginationLink,
   PaginationNext,
-  PaginationPrevious,
-  PaginationEllipsis,
+  PaginationPrevious
 } from "@/components/ui/pagination";
 import type { Request, Car as CarType } from "@/types/dashboard";
 import { collection, query, getDocs, getDoc, where, doc } from "firebase/firestore";
@@ -18,7 +17,6 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { OfferList } from "./offers/OfferList";
 import { SearchBar } from "./offers/SearchBar";
 import { OfferDetails } from "./offers/OfferDetails";
-import { OfferBox } from "./offers/OfferBox";
 
 interface SentOffersProps {
   requests: Request[];
@@ -47,24 +45,21 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
   const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null);
   const [activeTab, setActiveTab] = useState("pending");
   const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
   const { user } = useAuth();
+
+  const ITEMS_PER_PAGE = 9; // Modificat pentru a afișa 9 oferte pe pagină
 
   useEffect(() => {
     let isMounted = true;
 
     const fetchOffers = async () => {
-      if (!user?.uid) {
-        console.log("No user found, skipping fetch");
-        return;
-      }
+      if (!user?.uid) return;
 
       try {
         setLoading(true);
         const offersRef = collection(db, "offers");
-        const q = query(
-          offersRef,
-          where("serviceId", "==", user.uid),
-        );
+        const q = query(offersRef, where("serviceId", "==", user.uid));
 
         const querySnapshot = await getDocs(q);
         if (!isMounted) return;
@@ -111,6 +106,10 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
     };
   }, [user?.uid, refreshCounter]);
 
+  useEffect(() => {
+    setCurrentPage(1); // Resetare paginare la schimbarea tab-ului sau a termenului de căutare
+  }, [searchTerm, activeTab]);
+
   const filterOffers = (offers: Offer[]) => {
     if (!searchTerm) return offers;
 
@@ -123,8 +122,10 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
     );
   };
 
-  const ITEMS_PER_PAGE = 6;
-  const [currentPage, setCurrentPage] = useState(1);
+  const filteredOffers = filterOffers(offers).filter(o => o.status.toLowerCase() === activeTab);
+  const totalPages = Math.ceil(filteredOffers.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const paginatedOffers = filteredOffers.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
   if (loading) {
     return (
@@ -139,11 +140,6 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
     );
   }
 
-  const filteredOffers = filterOffers(offers);
-  const totalPages = Math.ceil(filteredOffers.length / ITEMS_PER_PAGE);
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const paginatedOffers = filteredOffers.slice(startIndex, startIndex + ITEMS_PER_PAGE);
-
   return (
     <Card className="shadow-lg">
       <CardHeader className="border-b bg-gray-50">
@@ -151,15 +147,13 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
           <SendHorizontal className="h-5 w-5" />
           Oferte Trimise
         </CardTitle>
-        <CardDescription>
-          Urmărește și gestionează ofertele trimise către clienți
-        </CardDescription>
+        <CardDescription>Urmărește și gestionează ofertele trimise către clienți</CardDescription>
         <div className="mt-4">
           <SearchBar value={searchTerm} onChange={setSearchTerm} />
         </div>
       </CardHeader>
       <CardContent className="p-4">
-        <Tabs defaultValue="pending" value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-4">
             <TabsTrigger value="pending" className="data-[state=active]:bg-[#00aff5] data-[state=active]:text-white">
               Oferte Trimise ({filteredOffers.filter(o => o.status === "Pending").length})
@@ -169,75 +163,24 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="pending">
-            <OfferList
-              offers={paginatedOffers.filter(o => o.status === "Pending")}
-              cars={cars}
-              onViewDetails={setSelectedOffer}
-            />
+          <TabsContent value={activeTab}>
+            <OfferList offers={paginatedOffers} cars={cars} onViewDetails={setSelectedOffer} />
             {totalPages > 1 && (
               <div className="flex justify-center mt-4">
                 <Pagination>
                   <PaginationContent>
                     <PaginationItem>
-                      <PaginationPrevious
-                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                        disabled={currentPage === 1}
-                      />
+                      <PaginationPrevious onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1} />
                     </PaginationItem>
                     {Array.from({ length: totalPages }).map((_, index) => (
                       <PaginationItem key={index}>
-                        <PaginationLink
-                          onClick={() => setCurrentPage(index + 1)}
-                          isActive={currentPage === index + 1}
-                        >
+                        <PaginationLink onClick={() => setCurrentPage(index + 1)} isActive={currentPage === index + 1}>
                           {index + 1}
                         </PaginationLink>
                       </PaginationItem>
                     ))}
                     <PaginationItem>
-                      <PaginationNext
-                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                        disabled={currentPage === totalPages}
-                      />
-                    </PaginationItem>
-                  </PaginationContent>
-                </Pagination>
-              </div>
-            )}
-          </TabsContent>
-
-          <TabsContent value="rejected">
-            <OfferList
-              offers={paginatedOffers.filter(o => o.status === "Rejected")}
-              cars={cars}
-              onViewDetails={setSelectedOffer}
-            />
-            {totalPages > 1 && (
-              <div className="flex justify-center mt-4">
-                <Pagination>
-                  <PaginationContent>
-                    <PaginationItem>
-                      <PaginationPrevious
-                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                        disabled={currentPage === 1}
-                      />
-                    </PaginationItem>
-                    {Array.from({ length: totalPages }).map((_, index) => (
-                      <PaginationItem key={index}>
-                        <PaginationLink
-                          onClick={() => setCurrentPage(index + 1)}
-                          isActive={currentPage === index + 1}
-                        >
-                          {index + 1}
-                        </PaginationLink>
-                      </PaginationItem>
-                    ))}
-                    <PaginationItem>
-                      <PaginationNext
-                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                        disabled={currentPage === totalPages}
-                      />
+                      <PaginationNext onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages} />
                     </PaginationItem>
                   </PaginationContent>
                 </Pagination>
@@ -246,13 +189,7 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
           </TabsContent>
         </Tabs>
       </CardContent>
-
-      <OfferDetails 
-        offer={selectedOffer}
-        cars={cars}
-        open={!!selectedOffer}
-        onOpenChange={(open) => !open && setSelectedOffer(null)}
-      />
+      <OfferDetails offer={selectedOffer} cars={cars} open={!!selectedOffer} onOpenChange={(open) => !open && setSelectedOffer(null)} />
     </Card>
   );
 }
