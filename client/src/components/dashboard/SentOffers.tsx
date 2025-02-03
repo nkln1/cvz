@@ -1,5 +1,14 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { SendHorizontal, Loader2 } from "lucide-react";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+  PaginationEllipsis,
+} from "@/components/ui/pagination";
 import type { Request, Car as CarType } from "@/types/dashboard";
 import { collection, query, getDocs, getDoc, where, doc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
