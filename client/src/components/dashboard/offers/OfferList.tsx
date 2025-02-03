@@ -20,14 +20,12 @@ export function OfferList({ offers, cars, onViewDetails }: OfferListProps) {
   }
 
   return (
-    <TabsContent value={status}>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredOffers.map(offer => (
-          <div key={offer.id}>
-            <OfferBox offer={offer} cars={cars} onViewDetails={onViewDetails} />
-          </div>
-        ))}
-      </div>
-    </TabsContent>
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      {offers.map(offer => (
+        <div key={offer.id}>
+          <OfferBox offer={offer} cars={cars} onViewDetails={onViewDetails} />
+        </div>
+      ))}
+    </div>
   );
 }
