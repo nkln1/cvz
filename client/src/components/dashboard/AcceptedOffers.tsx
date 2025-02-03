@@ -31,14 +31,17 @@ interface Offer {
   isNew?: boolean;
 }
 
-export function AcceptedOffers({ requests, cars, refreshRequests, refreshCounter }: AcceptedOffersProps) {
+export function AcceptedOffers({ requests, cars, refreshRequests, refreshCounter, setNewOffersCount }: AcceptedOffersProps) {
   const [offers, setOffers] = useState<Offer[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null);
   const [viewedOffers, setViewedOffers] = useState<Set<string>>(new Set());
   const { user } = useAuth();
 
-  const newOffersCount = offers.filter(offer => !viewedOffers.has(offer.id)).length;
+  useEffect(() => {
+    const unviewedCount = offers.filter(offer => !viewedOffers.has(offer.id)).length;
+    setNewOffersCount?.(unviewedCount);
+  }, [offers, viewedOffers, setNewOffersCount]);
 
   const markOfferAsViewed = async (offerId: string) => {
     if (!user) return;

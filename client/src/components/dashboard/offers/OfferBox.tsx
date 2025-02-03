@@ -15,8 +15,15 @@ export function OfferBox({ offer, cars, onViewDetails, onView }: OfferBoxProps) 
   const request = offer.request;
   const car = request ? cars[request.carId] : null;
 
+  const handleViewDetails = () => {
+    if (offer.isNew && onView) {
+      onView(offer.id);
+    }
+    onViewDetails(offer);
+  };
+
   return (
-    <div className="bg-white rounded-lg border-2 hover:border-[#00aff5]/30 transition-all duration-200 flex flex-col overflow-hidden h-[320px] relative" onMouseEnter={() => offer.isNew && onView?.(offer.id)}>
+    <div className="bg-white rounded-lg border-2 hover:border-[#00aff5]/30 transition-all duration-200 flex flex-col overflow-hidden h-[320px] relative">
       {offer.isNew && (
         <Badge className="absolute -top-2 -right-2 bg-[#00aff5] text-white">
           Nou
@@ -90,7 +97,7 @@ export function OfferBox({ offer, cars, onViewDetails, onView }: OfferBoxProps) 
         <Button
           variant="outline"
           className="w-full"
-          onClick={() => onViewDetails(offer)}
+          onClick={handleViewDetails}
         >
           <Eye className="w-4 h-4 mr-2" />
           Vezi Detalii Complete
