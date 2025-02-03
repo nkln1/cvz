@@ -58,17 +58,23 @@ export function AcceptedOffers({ requests, cars, refreshRequests, refreshCounter
 
   // Effect to update counter
   useEffect(() => {
-    const newOffersCount = offers.filter(offer => offer.isNew).length;
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('newAcceptedOffersCount', { detail: newOffersCount }));
-    }
+    const updateCounter = () => {
+      const newOffersCount = offers.filter(offer => offer.isNew).length;
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('newAcceptedOffersCount', { detail: newOffersCount }));
+      }
+    };
+
+    updateCounter();
+    const interval = setInterval(updateCounter, 5000); // Check every 5 seconds
 
     return () => {
+      clearInterval(interval);
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('newAcceptedOffersCount', { detail: 0 }));
       }
     };
-  }, [offers]);
+  }, [offers, viewedOffers]);
 
   const markOfferAsViewed = async (offerId: string) => {
     if (!user) return;
@@ -145,9 +151,14 @@ export function AcceptedOffers({ requests, cars, refreshRequests, refreshCounter
     fetchOffers();
   }, [user, refreshCounter, viewedOffers]);
 
-  const handleViewDetails = (offer: Offer) => {
+  const handleViewDetails = async (offer: Offer) => {
     if (offer.isNew) {
-      markOfferAsViewed(offer.id);
+      await markOfferAsViewed(offer.id);
+      setOffers(prevOffers => 
+        prevOffers.map(o => 
+          o.id === offer.id ? { ...o, isNew: false } : o
+        )
+      );
     }
     setSelectedOffer(offer);
   };
