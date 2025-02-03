@@ -58,15 +58,30 @@ export function AcceptedOffers({ requests, cars, refreshRequests, refreshCounter
 
   // Effect to update counter
   useEffect(() => {
-    const updateCounter = () => {
-      const newOffersCount = offers.filter(offer => offer.isNew).length;
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('newAcceptedOffersCount', { detail: newOffersCount }));
+    const updateCounter = async () => {
+      if (!user) return;
+      
+      try {
+        const offersRef = collection(db, "offers");
+        const q = query(
+          offersRef,
+          where("serviceId", "==", user.uid),
+          where("status", "==", "Accepted")
+        );
+        
+        const querySnapshot = await getDocs(q);
+        const newOffersCount = querySnapshot.docs.filter(doc => !viewedOffers.has(doc.id)).length;
+        
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('newAcceptedOffersCount', { detail: newOffersCount }));
+        }
+      } catch (error) {
+        console.error("Error updating counter:", error);
       }
     };
 
     updateCounter();
-    const interval = setInterval(updateCounter, 5000); // Check every 5 seconds
+    const interval = setInterval(updateCounter, 5000);
 
     return () => {
       clearInterval(interval);
@@ -74,7 +89,7 @@ export function AcceptedOffers({ requests, cars, refreshRequests, refreshCounter
         window.dispatchEvent(new CustomEvent('newAcceptedOffersCount', { detail: 0 }));
       }
     };
-  }, [offers, viewedOffers]);
+  }, [user, viewedOffers]);
 
   const markOfferAsViewed = async (offerId: string) => {
     if (!user) return;
