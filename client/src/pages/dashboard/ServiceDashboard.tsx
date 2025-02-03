@@ -109,7 +109,8 @@ export default function ServiceDashboard() {
   });
   const [refreshOffersCounter, setRefreshOffersCounter] = useState(0);
   const [newAcceptedOffersCount, setNewAcceptedOffersCount] = useState(0);
-    const [refreshSentOffers, setRefreshSentOffers] = useState(0);
+  const [refreshSentOffers, setRefreshSentOffers] = useState(0);
+  const [lastOffersSnapshot, setLastOffersSnapshot] = useState<string>("");
 
 
   const {
@@ -193,8 +194,8 @@ export default function ServiceDashboard() {
 
     fetchServiceData();
   }, [user, toast, setLocation]);
-  
-    useEffect(() => {
+
+  useEffect(() => {
     const checkOffersUpdates = async () => {
       if (!user) return;
 
@@ -206,22 +207,33 @@ export default function ServiceDashboard() {
           ? new Set(viewedOffersDoc.data().offerIds || [])
           : new Set();
 
-        // Query accepted offers
+        // Query all offers for the service
         const offersRef = collection(db, "offers");
         const q = query(
           offersRef,
-          where("serviceId", "==", user.uid),
-          where("status", "==", "Accepted")
+          where("serviceId", "==", user.uid)
         );
 
         const querySnapshot = await getDocs(q);
-        const newOffersCount = querySnapshot.docs.filter(doc => !viewedOfferIds.has(doc.id)).length;
 
-        // Update the counter
-        setNewAcceptedOffersCount(newOffersCount);
+        // Create a snapshot string of current offers state
+        const currentSnapshot = JSON.stringify(querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          status: doc.data().status,
+          updatedAt: doc.data().updatedAt?.toMillis()
+        })));
 
-        // Trigger a refresh of the offers list
-        setRefreshSentOffers(prev => prev + 1);
+        // Only update if the offers have changed
+        if (currentSnapshot !== lastOffersSnapshot) {
+          // Count new accepted offers
+          const newAcceptedOffersCount = querySnapshot.docs.filter(
+            doc => doc.data().status === "Accepted" && !viewedOfferIds.has(doc.id)
+          ).length;
+
+          setNewAcceptedOffersCount(newAcceptedOffersCount);
+          setRefreshSentOffers(prev => prev + 1);
+          setLastOffersSnapshot(currentSnapshot);
+        }
       } catch (error) {
         console.error("Error checking offers updates:", error);
       }
@@ -234,7 +246,7 @@ export default function ServiceDashboard() {
     const interval = setInterval(checkOffersUpdates, 5000);
 
     return () => clearInterval(interval);
-  }, [user]);
+  }, [user, lastOffersSnapshot]);
 
   const switchToMessagesAndOpenConversation = (request: ServiceRequest) => {
     setActiveTab("messages");
