@@ -100,6 +100,7 @@ export default function ServiceDashboard() {
     return (localStorage.getItem("activeTab") as TabType) || "requests";
   });
   const [refreshOffersCounter, setRefreshOffersCounter] = useState(0);
+  const [newOffersCount, setNewOffersCount] = useState(0); // Added state for new offers count
 
   const {
     messages,
@@ -308,7 +309,7 @@ export default function ServiceDashboard() {
               tab="accepted-offers"
               activeTab={activeTab}
               icon={<SendHorizontal className="w-4 h-4 mr-2 flex-shrink-0" />}
-              label="Oferte acceptate"
+              label={`Oferte acceptate${newOffersCount > 0 ? ` (${newOffersCount})` : ''}`}
               onClick={setActiveTab}
             />
             <NavigationButton
@@ -373,6 +374,7 @@ export default function ServiceDashboard() {
               setRefreshOffersCounter((prev) => prev + 1);
             }}
             refreshCounter={refreshOffersCounter}
+            setNewOffersCount={setNewOffersCount} // Pass the function to update the counter
           />
         )}
         {activeTab === "messages" && (

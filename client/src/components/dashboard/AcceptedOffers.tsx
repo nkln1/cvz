@@ -28,13 +28,48 @@ interface Offer {
   createdAt: Date;
   serviceId: string;
   request: Request | null;
+  isNew?: boolean;
 }
 
 export function AcceptedOffers({ requests, cars, refreshRequests, refreshCounter }: AcceptedOffersProps) {
   const [offers, setOffers] = useState<Offer[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null);
+  const [viewedOffers, setViewedOffers] = useState<Set<string>>(new Set());
   const { user } = useAuth();
+
+  const newOffersCount = offers.filter(offer => !viewedOffers.has(offer.id)).length;
+
+  const markOfferAsViewed = async (offerId: string) => {
+    if (!user) return;
+    try {
+      const viewedOffersRef = doc(db, `users/${user.uid}/metadata/viewedOffers`);
+      const newViewedOffers = new Set(viewedOffers).add(offerId);
+      await setDoc(viewedOffersRef, {
+        offerIds: Array.from(newViewedOffers),
+      }, { merge: true });
+      setViewedOffers(newViewedOffers);
+    } catch (error) {
+      console.error("Error marking offer as viewed:", error);
+    }
+  };
+
+  useEffect(() => {
+    const fetchViewedOffers = async () => {
+      if (!user) return;
+      try {
+        const viewedOffersRef = doc(db, `users/${user.uid}/metadata/viewedOffers`);
+        const viewedOffersDoc = await getDoc(viewedOffersRef);
+        if (viewedOffersDoc.exists()) {
+          setViewedOffers(new Set(viewedOffersDoc.data().offerIds || []));
+        }
+      } catch (error) {
+        console.error("Error fetching viewed offers:", error);
+      }
+    };
+
+    fetchViewedOffers();
+  }, [user]);
 
   useEffect(() => {
     const fetchOffers = async () => {
