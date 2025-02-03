@@ -128,7 +128,13 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
     );
   }
 
+  const ITEMS_PER_PAGE = 6;
+  const [currentPage, setCurrentPage] = useState(1);
+  
   const filteredOffers = filterOffers(offers);
+  const totalPages = Math.ceil(filteredOffers.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const paginatedOffers = filteredOffers.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
   return (
     <Card className="shadow-lg">
@@ -157,18 +163,78 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
 
           <TabsContent value="pending">
             <OfferList
-              offers={filteredOffers.filter(o => o.status === "Pending")}
+              offers={paginatedOffers.filter(o => o.status === "Pending")}
               cars={cars}
               onViewDetails={setSelectedOffer}
             />
+            {totalPages > 1 && (
+              <div className="flex justify-center mt-4">
+                <Pagination>
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious
+                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                        disabled={currentPage === 1}
+                      />
+                    </PaginationItem>
+                    {Array.from({ length: totalPages }).map((_, index) => (
+                      <PaginationItem key={index}>
+                        <PaginationLink
+                          onClick={() => setCurrentPage(index + 1)}
+                          isActive={currentPage === index + 1}
+                        >
+                          {index + 1}
+                        </PaginationLink>
+                      </PaginationItem>
+                    ))}
+                    <PaginationItem>
+                      <PaginationNext
+                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                        disabled={currentPage === totalPages}
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              </div>
+            )}
           </TabsContent>
           
           <TabsContent value="rejected">
             <OfferList
-              offers={filteredOffers.filter(o => o.status === "Rejected")}
+              offers={paginatedOffers.filter(o => o.status === "Rejected")}
               cars={cars}
               onViewDetails={setSelectedOffer}
             />
+            {totalPages > 1 && (
+              <div className="flex justify-center mt-4">
+                <Pagination>
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious
+                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                        disabled={currentPage === 1}
+                      />
+                    </PaginationItem>
+                    {Array.from({ length: totalPages }).map((_, index) => (
+                      <PaginationItem key={index}>
+                        <PaginationLink
+                          onClick={() => setCurrentPage(index + 1)}
+                          isActive={currentPage === index + 1}
+                        >
+                          {index + 1}
+                        </PaginationLink>
+                      </PaginationItem>
+                    ))}
+                    <PaginationItem>
+                      <PaginationNext
+                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                        disabled={currentPage === totalPages}
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              </div>
+            )}
           </TabsContent>
         </Tabs>
       </CardContent>
