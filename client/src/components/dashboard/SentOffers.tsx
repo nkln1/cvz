@@ -46,6 +46,9 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
         console.log("No user found, skipping fetch");
         return;
       }
+      
+      // Prevent page refresh during fetch
+      const abortController = new AbortController();
 
       try {
         console.log("Starting to fetch offers, serviceId:", user.uid);
@@ -93,7 +96,11 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
       }
     };
 
+    const abortController = new AbortController();
     fetchOffers();
+    return () => {
+      abortController.abort();
+    };
   }, [user, refreshCounter, requests]);
 
   const filterOffers = (offers: Offer[]) => {
