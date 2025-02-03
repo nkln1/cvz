@@ -1,6 +1,15 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import {
+  doc,
+  getDoc,
+  updateDoc,
+  collection,
+  query,
+  where,
+  getDocs,
+  addDoc,
+} from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -33,7 +42,6 @@ import { useServiceMessages } from "@/hooks/useServiceMessages";
 import { useServiceRequests } from "@/hooks/useServiceRequests";
 import { useNotifications } from "@/hooks/useNotifications";
 import type { ServiceData, Request as ServiceRequest } from "@/types/service";
-import { addDoc, collection } from "firebase/firestore";
 
 type TabType =
   | "requests"
@@ -183,17 +191,45 @@ export default function ServiceDashboard() {
 
     fetchServiceData();
   }, [user, toast, setLocation]);
-    useEffect(() => {
-    const handleNewOffersCount = (event: CustomEvent<number>) => {
-      setNewAcceptedOffersCount(event.detail);
+  
+  useEffect(() => {
+    const checkNewAcceptedOffers = async () => {
+      if (!user) return;
+
+      try {
+        // Get viewed offers
+        const viewedOffersRef = doc(db, `users/${user.uid}/metadata/viewedAcceptedOffers`);
+        const viewedOffersDoc = await getDoc(viewedOffersRef);
+        const viewedOfferIds = viewedOffersDoc.exists() 
+          ? new Set(viewedOffersDoc.data().offerIds || [])
+          : new Set();
+
+        // Query accepted offers
+        const offersRef = collection(db, "offers");
+        const q = query(
+          offersRef,
+          where("serviceId", "==", user.uid),
+          where("status", "==", "Accepted")
+        );
+
+        const querySnapshot = await getDocs(q);
+        const newOffersCount = querySnapshot.docs.filter(doc => !viewedOfferIds.has(doc.id)).length;
+
+        setNewAcceptedOffersCount(newOffersCount);
+      } catch (error) {
+        console.error("Error checking new accepted offers:", error);
+      }
     };
 
-    window.addEventListener('newAcceptedOffersCount', handleNewOffersCount as EventListener);
+    // Initial check
+    checkNewAcceptedOffers();
 
-    return () => {
-      window.removeEventListener('newAcceptedOffersCount', handleNewOffersCount as EventListener);
-    };
-  }, []);
+    // Set up periodic checks
+    const interval = setInterval(checkNewAcceptedOffers, 5000);
+
+    return () => clearInterval(interval);
+  }, [user]);
+
   const switchToMessagesAndOpenConversation = (request: ServiceRequest) => {
     setActiveTab("messages");
     if (request) {

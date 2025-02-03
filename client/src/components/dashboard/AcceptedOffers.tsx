@@ -56,42 +56,6 @@ export function AcceptedOffers({ requests, cars, refreshRequests, refreshCounter
     fetchViewedOffers();
   }, [user]);
 
-  // Effect to update counter and check for new offers periodically
-  useEffect(() => {
-    const updateCounter = async () => {
-      if (!user) return;
-
-      try {
-        const offersRef = collection(db, "offers");
-        const q = query(
-          offersRef,
-          where("serviceId", "==", user.uid),
-          where("status", "==", "Accepted")
-        );
-
-        const querySnapshot = await getDocs(q);
-        const newOffersCount = querySnapshot.docs.filter(doc => !viewedOffers.has(doc.id)).length;
-
-        // Dispatch event with new count
-        if (typeof window !== 'undefined') {
-          window.dispatchEvent(new CustomEvent('newAcceptedOffersCount', { detail: newOffersCount }));
-        }
-      } catch (error) {
-        console.error("Error updating counter:", error);
-      }
-    };
-
-    // Initial update
-    updateCounter();
-
-    // Set up periodic updates
-    const interval = setInterval(updateCounter, 5000); // Check every 5 seconds
-
-    return () => {
-      clearInterval(interval);
-    };
-  }, [user, viewedOffers]);
-
   const markOfferAsViewed = async (offerId: string) => {
     if (!user) return;
 
