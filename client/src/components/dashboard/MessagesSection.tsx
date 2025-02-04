@@ -199,56 +199,67 @@ export function MessagesSection({
             Nu există conversații active
           </p>
         ) : (
-          messageGroups.map((group) => {
-            const serviceId = group.lastMessage.fromId === userId
-              ? group.lastMessage.toId
-              : group.lastMessage.fromId;
-            const serviceName = messageServices[serviceId]?.companyName || "Service Auto";
-            const requestTitle = getRequestTitle(group.requestId);
+          // Sort message groups to show newest conversations first
+          [...messageGroups]
+            .sort((a, b) => {
+              const dateA = a.lastMessage.createdAt && typeof a.lastMessage.createdAt.toDate === 'function'
+                ? a.lastMessage.createdAt.toDate().getTime()
+                : new Date(a.lastMessage.createdAt).getTime();
+              const dateB = b.lastMessage.createdAt && typeof b.lastMessage.createdAt.toDate === 'function'
+                ? b.lastMessage.createdAt.toDate().getTime()
+                : new Date(b.lastMessage.createdAt).getTime();
+              return dateB - dateA; // Sort newest first
+            })
+            .map((group) => {
+              const serviceId = group.lastMessage.fromId === userId
+                ? group.lastMessage.toId
+                : group.lastMessage.fromId;
+              const serviceName = messageServices[serviceId]?.companyName || "Service Auto";
+              const requestTitle = getRequestTitle(group.requestId);
 
-            return (
-              <motion.div
-                key={group.requestId}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3 }}
-              >
-                <Card
-                  className="cursor-pointer hover:bg-gray-50 transition-colors"
-                  onClick={() => onSelectConversation(group.requestId, serviceId)}
+              return (
+                <motion.div
+                  key={group.requestId}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
                 >
-                  <CardContent className="p-4">
-                    <div className="flex items-start gap-4">
-                      <Avatar>
-                        <AvatarFallback className="bg-blue-100 text-blue-600">
-                          {getInitials(serviceName)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <h4 className="font-medium">{serviceName}</h4>
-                            <p className="text-sm text-muted-foreground">{requestTitle}</p>
+                  <Card
+                    className="cursor-pointer hover:bg-gray-50 transition-colors"
+                    onClick={() => onSelectConversation(group.requestId, serviceId)}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex items-start gap-4">
+                        <Avatar>
+                          <AvatarFallback className="bg-blue-100 text-blue-600">
+                            {getInitials(serviceName)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <h4 className="font-medium">{serviceName}</h4>
+                              <p className="text-sm text-muted-foreground">{requestTitle}</p>
+                            </div>
+                            <span className="text-xs text-muted-foreground whitespace-nowrap ml-2">
+                              {formatMessageDate(group.lastMessage?.createdAt)} {formatMessageTime(group.lastMessage?.createdAt)}
+                            </span>
                           </div>
-                          <span className="text-xs text-muted-foreground whitespace-nowrap ml-2">
-                            {formatMessageDate(group.lastMessage?.createdAt)} {formatMessageTime(group.lastMessage?.createdAt)}
-                          </span>
+                          <p className="text-sm text-muted-foreground truncate mt-1">
+                            {group.lastMessage?.content || "No messages"}
+                          </p>
                         </div>
-                        <p className="text-sm text-muted-foreground truncate mt-1">
-                          {group.lastMessage?.content || "No messages"}
-                        </p>
+                        {group.unreadCount > 0 && (
+                          <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
+                            {group.unreadCount}
+                          </span>
+                        )}
                       </div>
-                      {group.unreadCount > 0 && (
-                        <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
-                          {group.unreadCount}
-                        </span>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            );
-          })
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              );
+            })
         )}
       </div>
     </ScrollArea>
@@ -258,19 +269,21 @@ export function MessagesSection({
     if (!selectedMessageRequest) return null;
 
     const conversationMessages = messages
-    .filter((msg) => msg.requestId === selectedMessageRequest)
-    .sort((a, b) => {
-      const dateA = a.createdAt && typeof a.createdAt.toDate === 'function'
-        ? a.createdAt.toDate().getTime()
-        : new Date(a.createdAt).getTime();
-      const dateB = b.createdAt && typeof b.createdAt.toDate === 'function'
-        ? b.createdAt.toDate().getTime()
-        : new Date(b.createdAt).getTime();
-      return dateA - dateB;
-    });
-    console.log("Mesaje sortate:", conversationMessages);
+      .filter((msg) => msg.requestId === selectedMessageRequest)
+      .sort((a, b) => {
+        const dateA = a.createdAt && typeof a.createdAt.toDate === 'function'
+          ? a.createdAt.toDate().getTime()
+          : new Date(a.createdAt).getTime();
+        const dateB = b.createdAt && typeof b.createdAt.toDate === 'function'
+          ? b.createdAt.toDate().getTime()
+          : new Date(b.createdAt).getTime();
+        return dateB - dateA; // Sort newest first
+      });
 
-
+    console.log("Sorted messages:", conversationMessages.map(m => ({
+      content: m.content,
+      date: m.createdAt
+    })));
 
     const request = requests.find(r => r.id === selectedMessageRequest);
     const currentGroup = messageGroups.find(
@@ -364,14 +377,14 @@ export function MessagesSection({
         )}
 
         {/* Messages Area */}
-            <ScrollArea
-              className="flex-1 pr-4"
-              style={{ height: "calc(600px - 180px)", position: "relative" }}
-              onScrollCapture={handleScroll}
-            >
-              <div className="space-y-4 flex flex-col">
-                <AnimatePresence>
-                  {conversationMessages.map((message) => ( // ❌ Elimină `.reverse()`
+        <ScrollArea
+          className="flex-1 pr-4"
+          style={{ height: "calc(600px - 180px)", position: "relative" }}
+          onScrollCapture={handleScroll}
+        >
+          <div className="space-y-4 flex flex-col">
+            <AnimatePresence>
+              {conversationMessages.map((message) => (
                 <motion.div
                   key={message.id}
                   initial={{ opacity: 0, y: 20 }}
