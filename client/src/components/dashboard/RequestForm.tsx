@@ -67,8 +67,8 @@ const formSchema = z.object({
     .min(1, {
       message: "Te rugăm să selectezi cel puțin o localitate.",
     })
-    .max(3, {
-      message: "Poți selecta maxim 3 localități.",
+    .max(2, {
+      message: "Poți selecta maxim 2 localități.",
     }),
 });
 
@@ -294,7 +294,7 @@ ${form.getValues("description").split("\n\nDetalii mașină:")[0] || ""}`;
               name="cities"
               render={() => (
                 <FormItem>
-                  <FormLabel>Localități (selectați maxim 3)</FormLabel>
+                  <FormLabel>Localități (selectați maxim 2)</FormLabel>
                   <div className="space-y-2">
                     {availableCities.map((city) => (
                       <div key={city} className="flex items-center space-x-2">
@@ -304,7 +304,7 @@ ${form.getValues("description").split("\n\nDetalii mașină:")[0] || ""}`;
                             const currentCities =
                               form.getValues("cities") || [];
                             if (checked) {
-                              if (currentCities.length < 3) {
+                              if (currentCities.length < 2) {
                                 form.setValue("cities", [
                                   ...currentCities,
                                   city,
