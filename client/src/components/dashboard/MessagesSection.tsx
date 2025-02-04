@@ -259,9 +259,13 @@ export function MessagesSection({
     const conversationMessages = messages
       .filter((msg) => msg.requestId === selectedMessageRequest)
       .sort((a, b) => {
-        const dateA = new Date(a.createdAt).getTime();
-        const dateB = new Date(b.createdAt).getTime();
-        return dateA - dateB; // Changed from dateB - dateA to dateA - dateB for newest messages at the top
+        const dateA = a.createdAt && typeof a.createdAt.toDate === 'function'
+          ? a.createdAt.toDate().getTime()
+          : new Date(a.createdAt).getTime();
+        const dateB = b.createdAt && typeof b.createdAt.toDate === 'function'
+          ? b.createdAt.toDate().getTime()
+          : new Date(b.createdAt).getTime();
+        return dateB - dateA; // Newest messages first
       });
 
     const request = requests.find(r => r.id === selectedMessageRequest);
@@ -361,7 +365,7 @@ export function MessagesSection({
           style={{ height: "calc(600px - 180px)" }}
           onScrollCapture={handleScroll}
         >
-          <div className="space-y-4 flex flex-col-reverse"> {/* Added flex-col-reverse */}
+          <div className="space-y-4"> {/* Removed flex-col-reverse */}
             <AnimatePresence>
               {conversationMessages.map((message) => (
                 <motion.div
