@@ -266,8 +266,9 @@ export function MessagesSection({
       const dateB = b.createdAt && typeof b.createdAt.toDate === 'function'
         ? b.createdAt.toDate().getTime()
         : new Date(b.createdAt).getTime();
-      return dateB - dateA; // ✅ Acum cel mai recent mesaj este primul
-    });
+      return dateB - dateA;
+    })
+    .reverse();
     console.log("Mesaje sortate:", conversationMessages);
 
 
@@ -366,10 +367,10 @@ export function MessagesSection({
         {/* Messages Area */}
             <ScrollArea
               className="flex-1 pr-4"
-              style={{ height: "calc(600px - 180px)", display: "flex", flexDirection: "column-reverse" }}
+              style={{ height: "calc(600px - 180px)", position: "relative" }}
               onScrollCapture={handleScroll}
             >
-              <div className="space-y-4">
+              <div className="space-y-4 flex flex-col">
                 <AnimatePresence>
                   {conversationMessages.map((message) => ( // ❌ Elimină `.reverse()`
                 <motion.div
