@@ -27,6 +27,8 @@ import type { Request, Message } from "@/types/service";
 import { Separator } from "@/components/ui/separator";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { Dialog, DialogHeader, DialogTitle, DialogContent, DialogTrigger } from "@/components/ui/dialog"; // Added Dialog imports
+
 
 interface MessageGroup {
   requestId: string;
@@ -99,6 +101,7 @@ export function ServiceMessagesSection({
   const [offer, setOffer] = useState<Offer | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [isScrolledToBottom, setIsScrolledToBottom] = useState(true);
+  const [showRequestDetails, setShowRequestDetails] = useState(false); // Added state for dialog
 
   useEffect(() => {
     const fetchOffer = async () => {
@@ -265,17 +268,17 @@ export function ServiceMessagesSection({
               </p>
             </div>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() =>
-              selectedMessageRequest && onViewRequestDetails(selectedMessageRequest.id)
-            }
-            className="text-blue-500 hover:text-blue-700 hover:bg-blue-50"
-          >
-            <Eye className="h-4 w-4 mr-2" />
-            Detalii cerere
-          </Button>
+          <DialogTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowRequestDetails(true)}
+              className="text-blue-500 hover:text-blue-700 hover:bg-blue-50"
+            >
+              <Eye className="h-4 w-4 mr-2" />
+              Detalii cerere
+            </Button>
+          </DialogTrigger> {/* Changed to DialogTrigger */}
         </div>
 
         {selectedMessageRequest && offer && (
@@ -480,6 +483,33 @@ export function ServiceMessagesSection({
       </CardHeader>
       <CardContent>
         {isViewingConversation ? renderConversation() : renderMessagesList()}
+        <Dialog open={showRequestDetails} onOpenChange={setShowRequestDetails}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Detalii Cerere</DialogTitle>
+            </DialogHeader>
+            {selectedMessageRequest && (
+              <div className="space-y-4">
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h3 className="font-medium text-sm text-muted-foreground mb-2">Titlu</h3>
+                  <p>{selectedMessageRequest.title}</p>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h3 className="font-medium text-sm text-muted-foreground mb-2">Descriere</h3>
+                  <p className="whitespace-pre-wrap">{selectedMessageRequest.description}</p>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h3 className="font-medium text-sm text-muted-foreground mb-2">Data Preferată</h3>
+                  <p>{formatDateSafely(selectedMessageRequest.preferredDate)}</p>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h3 className="font-medium text-sm text-muted-foreground mb-2">Locație</h3>
+                  <p>{selectedMessageRequest.county} - {selectedMessageRequest.cities?.join(", ")}</p>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   );
