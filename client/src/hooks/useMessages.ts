@@ -71,16 +71,14 @@ export const useMessages = (userId: string) => {
               requestId: message.requestId,
               requestTitle: message.requestTitle || "Untitled Request",
               lastMessage: message,
-              unreadCount: message.toId === userId && !message.read ? 1 : 0,
+              unreadCount: 0,
             };
-            if (message.toId === userId && !message.read) {
-              unreadServices.add(message.fromId);
-            }
-          } else {
-            if (message.toId === userId && !message.read) {
-              groups[message.requestId].unreadCount++;
-              unreadServices.add(message.fromId);
-            }
+          }
+          
+          if (message.toId === userId && !message.read) {
+            groups[message.requestId].unreadCount++;
+            unreadServices.add(message.requestId);
+          }
             if (
               new Date(message.createdAt) >
               new Date(groups[message.requestId].lastMessage.createdAt)
