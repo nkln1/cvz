@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
+import { generateSlug } from "@/lib/utils";
 import romanianCitiesData from "../../../../attached_assets/municipii_orase_romania.json";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
@@ -331,14 +332,16 @@ export default function ServiceDashboard() {
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
           <h1 className="text-2xl font-bold">Service Dashboard</h1>
           <div className="flex items-center gap-4">
-            <Button
-              variant="outline"
-              onClick={() => setLocation(`/service/${user?.uid}`)}
-              className="flex items-center gap-2 text-[#00aff5] hover:text-[#0099d6]"
-            >
-              <Building2 className="h-4 w-4" />
-              Vezi Profil Public
-            </Button>
+            {serviceData && (
+              <Button
+                variant="outline"
+                onClick={() => setLocation(`/service/${generateSlug(serviceData.companyName)}`)}
+                className="flex items-center gap-2 text-[#00aff5] hover:text-[#0099d6]"
+              >
+                <Building2 className="h-4 w-4" />
+                Vezi Profil Public
+              </Button>
+            )}
             {notificationPermission !== "granted" ? (
               <Button
                 variant="outline"

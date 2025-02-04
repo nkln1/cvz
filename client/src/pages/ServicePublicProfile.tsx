@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { doc, getDoc } from "firebase/firestore";
+import { collection, query, where, getDocs, updateDoc, doc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -27,6 +27,7 @@ import { Separator } from "@/components/ui/separator";
 import type { ServiceData } from "@/types/service";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
+import { decodeSlug } from "@/lib/utils";
 
 interface WorkingHours {
   monday: string;
@@ -39,10 +40,10 @@ interface WorkingHours {
 }
 
 interface ServicePublicProfileProps {
-  serviceId: string;
+  slug: string;
 }
 
-export function ServicePublicProfile({ serviceId }: ServicePublicProfileProps) {
+export function ServicePublicProfile({ slug }: ServicePublicProfileProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [serviceData, setServiceData] = useState<ServiceData | null>(null);
@@ -58,20 +59,34 @@ export function ServicePublicProfile({ serviceId }: ServicePublicProfileProps) {
     sunday: "Închis",
   });
 
-  const isOwner = user?.uid === serviceId;
-
   useEffect(() => {
     async function fetchServiceData() {
       try {
-        const serviceRef = doc(db, "services", serviceId);
-        const serviceDoc = await getDoc(serviceRef);
+        // Decode the slug to get the company name
+        const decodedCompanyName = decodeSlug(slug);
 
-        if (serviceDoc.exists()) {
+        // Query services collection by company name
+        const servicesRef = collection(db, "services");
+        const q = query(
+          servicesRef,
+          where("companyName", "==", decodedCompanyName)
+        );
+
+        const querySnapshot = await getDocs(q);
+
+        if (!querySnapshot.empty) {
+          const serviceDoc = querySnapshot.docs[0];
           const data = serviceDoc.data() as ServiceData;
-          setServiceData(data);
+          setServiceData({ ...data, id: serviceDoc.id });
           if (data.workingHours) {
             setWorkingHours(data.workingHours as WorkingHours);
           }
+        } else {
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Service not found",
+          });
         }
       } catch (error) {
         console.error("Error fetching service data:", error);
@@ -85,14 +100,18 @@ export function ServicePublicProfile({ serviceId }: ServicePublicProfileProps) {
       }
     }
 
-    fetchServiceData();
-  }, [serviceId, toast]);
+    if (slug) {
+      fetchServiceData();
+    }
+  }, [slug, toast]);
+
+  const isOwner = user?.uid === serviceData?.id;
 
   const handleSave = async () => {
-    if (!serviceId || !isOwner) return;
+    if (!serviceData?.id || !isOwner) return;
 
     try {
-      const serviceRef = doc(db, "services", serviceId);
+      const serviceRef = doc(db, "services", serviceData.id);
       await updateDoc(serviceRef, {
         workingHours,
       });

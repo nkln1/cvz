@@ -38,10 +38,10 @@ function Router() {
             </ErrorBoundary>
           )}
         </Route>
-        <Route path="/service/:serviceId">
+        <Route path="/service/:slug">
           {(params) => (
             <ErrorBoundary>
-              <ServicePublicProfile serviceId={params.serviceId} />
+              <ServicePublicProfile slug={params.slug} />
             </ErrorBoundary>
           )}
         </Route>
