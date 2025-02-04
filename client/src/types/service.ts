@@ -27,6 +27,23 @@ export interface Request {
   clientName: string;
 }
 
+export interface Rating {
+  id: number;
+  serviceId: number;
+  clientId: number;
+  offerId: string;
+  rating: number;
+  review?: string;
+  createdAt: string;
+  clientName?: string;
+}
+
+export interface ServiceRatingStats {
+  averageRating: number;
+  totalRatings: number;
+  ratingDistribution: { [key: number]: number };
+}
+
 export interface User {
   id: string;
   name: string;
@@ -78,6 +95,12 @@ export interface EditableField {
 export interface ValidationErrors {
   [key: string]: string;
 }
+
+export const ratingSchema = z.object({
+  rating: z.number().min(1).max(5),
+  review: z.string().optional(),
+  offerId: z.string(),
+});
 
 export const serviceDataSchema = z.object({
   companyName: z

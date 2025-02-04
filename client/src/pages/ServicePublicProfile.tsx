@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { collection, query, where, getDocs, updateDoc, doc } from "firebase/firestore";
+import { collection, query, where, getDocs, updateDoc, doc, addDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/context/AuthContext";
 import {
   Building2,
@@ -24,7 +25,7 @@ import {
   Pen,
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
-import type { ServiceData } from "@/types/service";
+import type { ServiceData, Rating, ServiceRatingStats } from "@/types/service";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { decodeSlug } from "@/lib/utils";
@@ -48,7 +49,6 @@ const normalizeCompanyName = (companyName: string | undefined): string => {
   return companyName.toLowerCase().trim();
 };
 
-
 export function ServicePublicProfile({ slug }: ServicePublicProfileProps) {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -64,27 +64,34 @@ export function ServicePublicProfile({ slug }: ServicePublicProfileProps) {
     saturday: "09:00-14:00",
     sunday: "Închis",
   });
+  const [ratings, setRatings] = useState<Rating[]>([]);
+  const [ratingStats, setRatingStats] = useState<ServiceRatingStats>({
+    averageRating: 0,
+    totalRatings: 0,
+    ratingDistribution: {},
+  });
+  const [userRating, setUserRating] = useState<number>(0);
+  const [userReview, setUserReview] = useState<string>("");
+  const [canRate, setCanRate] = useState(false);
+  const [submittingRating, setSubmittingRating] = useState(false);
+  const [serviceId, setServiceId] = useState<string>("");
+  const [acceptedOffers, setAcceptedOffers] = useState<string[]>([]);
 
   useEffect(() => {
     async function fetchServiceData() {
       try {
         setLoading(true);
-        // Decode and normalize the slug to get the company name
         const decodedCompanyName = decodeSlug(slug);
-
-        // Query services collection by company name
         const servicesRef = collection(db, "services");
         const querySnapshot = await getDocs(servicesRef);
-
-        // Find the service with matching normalized company name
         const matchingDoc = querySnapshot.docs.find(doc => {
           const data = doc.data() as ServiceData;
           return normalizeCompanyName(data.companyName) === normalizeCompanyName(decodedCompanyName);
         });
-
         if (matchingDoc) {
           const data = matchingDoc.data() as ServiceData;
           setServiceData({ ...data, id: matchingDoc.id });
+          setServiceId(matchingDoc.id);
           if (data.workingHours) {
             setWorkingHours(data.workingHours as WorkingHours);
           }
@@ -107,7 +114,6 @@ export function ServicePublicProfile({ slug }: ServicePublicProfileProps) {
         setLoading(false);
       }
     }
-
     if (slug) {
       fetchServiceData();
     }
@@ -117,7 +123,6 @@ export function ServicePublicProfile({ slug }: ServicePublicProfileProps) {
 
   const handleSave = async () => {
     if (!serviceData?.id || !isOwner) return;
-
     try {
       const serviceRef = doc(db, "services", serviceData.id);
       await updateDoc(serviceRef, {
@@ -136,6 +141,112 @@ export function ServicePublicProfile({ slug }: ServicePublicProfileProps) {
         description: "Could not update working hours",
       });
     }
+  };
+
+  useEffect(() => {
+    async function fetchRatings() {
+      if (!serviceId) return;
+      try {
+        const ratingsRef = collection(db, "ratings");
+        const q = query(ratingsRef, where("serviceId", "==", serviceId));
+        const querySnapshot = await getDocs(q);
+        const fetchedRatings: Rating[] = [];
+        let totalRating = 0;
+        const distribution: { [key: number]: number } = {};
+        querySnapshot.forEach((doc) => {
+          const rating = doc.data() as Rating;
+          fetchedRatings.push({ ...rating, id: doc.id });
+          totalRating += rating.rating;
+          distribution[rating.rating] = (distribution[rating.rating] || 0) + 1;
+        });
+        setRatings(fetchedRatings);
+        setRatingStats({
+          averageRating: fetchedRatings.length > 0 ? totalRating / fetchedRatings.length : 0,
+          totalRatings: fetchedRatings.length,
+          ratingDistribution: distribution,
+        });
+        if (user) {
+          const offersRef = collection(db, "offers");
+          const offersQuery = query(
+            offersRef,
+            where("clientId", "==", user.uid),
+            where("serviceId", "==", serviceId),
+            where("status", "==", "Accepted")
+          );
+          const offersSnapshot = await getDocs(offersQuery);
+          const acceptedOfferIds = offersSnapshot.docs.map(doc => doc.id);
+          setAcceptedOffers(acceptedOfferIds);
+          const userRatingQuery = query(
+            ratingsRef,
+            where("clientId", "==", user.uid),
+            where("serviceId", "==", serviceId)
+          );
+          const userRatingSnapshot = await getDocs(userRatingQuery);
+          setCanRate(acceptedOfferIds.length > 0 && userRatingSnapshot.empty);
+        }
+      } catch (error) {
+        console.error("Error fetching ratings:", error);
+      }
+    }
+    fetchRatings();
+  }, [serviceId, user]);
+
+  const handleRatingSubmit = async () => {
+    if (!user || !serviceId || userRating === 0 || acceptedOffers.length === 0) return;
+    setSubmittingRating(true);
+    try {
+      const ratingData = {
+        serviceId,
+        clientId: user.uid,
+        offerId: acceptedOffers[0],
+        rating: userRating,
+        review: userReview.trim(),
+        createdAt: new Date(),
+      };
+      const ratingsRef = collection(db, "ratings");
+      await addDoc(ratingsRef, ratingData);
+      toast({
+        title: "Succes",
+        description: "Recenzia dvs. a fost adăugată cu succes.",
+      });
+      const q = query(ratingsRef, where("serviceId", "==", serviceId));
+      const querySnapshot = await getDocs(q);
+      const updatedRatings: Rating[] = [];
+      querySnapshot.forEach((doc) => {
+        updatedRatings.push({ ...doc.data() as Rating, id: doc.id });
+      });
+      setRatings(updatedRatings);
+      setCanRate(false);
+      setUserRating(0);
+      setUserReview("");
+    } catch (error) {
+      console.error("Error submitting rating:", error);
+      toast({
+        variant: "destructive",
+        title: "Eroare",
+        description: "Nu am putut adăuga recenzia. Vă rugăm să încercați din nou.",
+      });
+    } finally {
+      setSubmittingRating(false);
+    }
+  };
+
+  const renderRatingStars = (rating: number, onRatingClick?: (rating: number) => void) => {
+    return (
+      <div className="flex items-center">
+        {[1, 2, 3, 4, 5].map((star) => (
+          <Star
+            key={star}
+            className={`h-5 w-5 ${
+              star <= rating
+                ? "text-yellow-400 fill-yellow-400"
+                : "text-gray-300"
+            } ${onRatingClick ? "cursor-pointer" : ""}`}
+            onClick={() => onRatingClick && onRatingClick(star)}
+          />
+        ))}
+      </div>
+    );
   };
 
   if (loading) {
@@ -159,7 +270,6 @@ export function ServicePublicProfile({ slug }: ServicePublicProfileProps) {
       <Navigation />
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto space-y-8">
-          {/* Service Info */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-[#00aff5]">
@@ -186,8 +296,6 @@ export function ServicePublicProfile({ slug }: ServicePublicProfileProps) {
                     {serviceData.email}
                   </p>
                 </div>
-
-                {/* Working Hours */}
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="font-medium flex items-center gap-2">
@@ -242,12 +350,9 @@ export function ServicePublicProfile({ slug }: ServicePublicProfileProps) {
                   )}
                 </div>
               </div>
-
-              {/* Google Maps */}
               <div>
                 <h3 className="font-medium mb-2">Locație</h3>
                 <div className="aspect-video bg-gray-100 rounded-lg">
-                  {/* Google Maps integration will go here */}
                   <div className="w-full h-full flex items-center justify-center text-gray-500">
                     Google Maps placeholder
                   </div>
@@ -255,18 +360,74 @@ export function ServicePublicProfile({ slug }: ServicePublicProfileProps) {
               </div>
             </CardContent>
           </Card>
-
-          {/* Reviews */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-[#00aff5]">
                 <Star className="h-6 w-6" />
-                Recenzii
+                Recenzii ({ratingStats.totalRatings})
               </CardTitle>
+              <CardDescription>
+                Media: {ratingStats.averageRating.toFixed(1)} din 5
+                {renderRatingStars(Math.round(ratingStats.averageRating))}
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-center text-gray-500 py-8">
-                Nu există recenzii încă
+              {canRate && (
+                <div className="mb-8 p-4 bg-gray-50 rounded-lg">
+                  <h3 className="text-lg font-medium mb-4">Adaugă o recenzie</h3>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Rating</label>
+                      {renderRatingStars(userRating, setUserRating)}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Recenzie</label>
+                      <Textarea
+                        value={userReview}
+                        onChange={(e) => setUserReview(e.target.value)}
+                        placeholder="Descrieți experiența dvs. cu acest service auto..."
+                        className="min-h-[100px]"
+                      />
+                    </div>
+                    <Button
+                      onClick={handleRatingSubmit}
+                      disabled={userRating === 0 || submittingRating}
+                      className="bg-[#00aff5] hover:bg-[#0099d6]"
+                    >
+                      {submittingRating ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Se trimite...
+                        </>
+                      ) : (
+                        "Trimite recenzia"
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              )}
+              <div className="space-y-4">
+                {ratings.length === 0 ? (
+                  <div className="text-center text-gray-500 py-8">
+                    Nu există recenzii încă
+                  </div>
+                ) : (
+                  ratings.map((rating) => (
+                    <div key={rating.id} className="border-b pb-4 last:border-0">
+                      <div className="flex items-center justify-between mb-2">
+                        <div>
+                          {renderRatingStars(rating.rating)}
+                          <p className="text-sm text-gray-600 mt-1">
+                            {new Date(rating.createdAt).toLocaleDateString()}
+                          </p>
+                        </div>
+                      </div>
+                      {rating.review && (
+                        <p className="text-gray-700">{rating.review}</p>
+                      )}
+                    </div>
+                  ))
+                )}
               </div>
             </CardContent>
           </Card>
