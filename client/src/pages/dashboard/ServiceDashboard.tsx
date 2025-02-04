@@ -391,7 +391,7 @@ export default function ServiceDashboard() {
               icon={<MessageSquare className="w-4 h-4 mr-2 flex-shrink-0" />}
               label="Mesaje"
               onClick={setActiveTab}
-              notificationCount={unreadClientsCount}
+              notificationCount={unreadClientsCount > 0 ? unreadClientsCount : undefined}
             />
             <NavigationButton
               tab="account"
