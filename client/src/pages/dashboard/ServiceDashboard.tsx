@@ -203,7 +203,7 @@ export default function ServiceDashboard() {
         // Get viewed offers
         const viewedOffersRef = doc(db, `users/${user.uid}/metadata/viewedAcceptedOffers`);
         const viewedOffersDoc = await getDoc(viewedOffersRef);
-        const viewedOfferIds = viewedOffersDoc.exists() 
+        const viewedOfferIds = viewedOffersDoc.exists()
           ? new Set(viewedOffersDoc.data().offerIds || [])
           : new Set();
 
@@ -428,7 +428,7 @@ export default function ServiceDashboard() {
             refreshRequests={async () => {
               setRefreshOffersCounter((prev) => prev + 1);
             }}
-             refreshCounter={refreshSentOffers}
+            refreshCounter={refreshSentOffers}
           />
         )}
         {activeTab === "accepted-offers" && (
@@ -439,6 +439,7 @@ export default function ServiceDashboard() {
               setRefreshOffersCounter((prev) => prev + 1);
             }}
             refreshCounter={refreshSentOffers}
+            onMessageService={(serviceId, requestId) => switchToMessagesAndOpenConversation({ id: requestId } as ServiceRequest)}
           />
         )}
         {activeTab === "messages" && (

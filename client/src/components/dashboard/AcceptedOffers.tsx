@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { SendHorizontal, Loader2 } from "lucide-react";
+import { SendHorizontal, Loader2, MessageSquare, Eye } from "lucide-react";
 import type { Request, Car as CarType } from "@/types/dashboard";
 import { collection, query, getDocs, where, doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -7,12 +7,15 @@ import { useAuth } from "@/context/AuthContext";
 import { useEffect, useState } from "react";
 import { OfferBox } from "./offers/OfferBox";
 import { OfferDetails } from "./offers/OfferDetails";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 interface AcceptedOffersProps {
   requests: Request[];
   cars: Record<string, CarType>;
   refreshRequests: () => Promise<void>;
   refreshCounter: number;
+  onMessageService?: (serviceId: string, requestId: string) => void;
 }
 
 interface Offer {
@@ -30,7 +33,7 @@ interface Offer {
   isNew?: boolean;
 }
 
-export function AcceptedOffers({ requests, cars, refreshRequests, refreshCounter }: AcceptedOffersProps) {
+export function AcceptedOffers({ requests, cars, refreshRequests, refreshCounter, onMessageService }: AcceptedOffersProps) {
   const [offers, setOffers] = useState<Offer[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null);
@@ -163,19 +166,59 @@ export function AcceptedOffers({ requests, cars, refreshRequests, refreshCounter
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {offers.map(offer => (
-              <OfferBox 
+              <div
                 key={offer.id}
-                offer={offer}
-                cars={cars}
-                onViewDetails={handleViewDetails}
-                onOfferViewed={markOfferAsViewed}
-              />
+                className="bg-white border-2 border-gray-200 rounded-lg hover:border-[#00aff5]/30 transition-all duration-200 relative p-4"
+              >
+                <div className="flex justify-between items-start mb-3">
+                  <h3 className="text-lg font-semibold">{offer.title}</h3>
+                  {offer.isNew && (
+                    <Badge className="bg-[#00aff5] text-white">Nou</Badge>
+                  )}
+                </div>
+
+                <div className="space-y-2 mb-4">
+                  <p className="text-sm text-gray-600 line-clamp-2">{offer.details}</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <p className="text-xs text-gray-500">Disponibilitate</p>
+                      <p className="text-sm font-medium">{offer.availableDate}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500">Preț</p>
+                      <p className="text-sm font-medium">{offer.price} RON</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex gap-2 mt-auto">
+                  {onMessageService && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-blue-500 hover:text-blue-700 hover:bg-blue-50"
+                      onClick={() => onMessageService(offer.serviceId, offer.requestId)}
+                    >
+                      <MessageSquare className="w-4 h-4 mr-1" />
+                      Mesaj
+                    </Button>
+                  )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleViewDetails(offer)}
+                  >
+                    <Eye className="w-4 h-4 mr-1" />
+                    Detalii
+                  </Button>
+                </div>
+              </div>
             ))}
           </div>
         )}
       </CardContent>
 
-      <OfferDetails 
+      <OfferDetails
         offer={selectedOffer}
         cars={cars}
         open={!!selectedOffer}
