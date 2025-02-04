@@ -7,6 +7,7 @@ import { Mail } from "lucide-react";
 export default function Navigation() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [, setLocation] = useLocation();
+  const [unreadClientsCount, setUnreadClientsCount] = useState(0); // Added state for message count
 
   useEffect(() => {
     const handleScroll = () => {
@@ -16,6 +17,22 @@ export default function Navigation() {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  useEffect(() => {
+    // Fetch unread message count (replace with your actual logic)
+    // Example:
+    const fetchUnreadCount = async () => {
+      try {
+        const response = await fetch('/api/messages/unread');
+        const data = await response.json();
+        setUnreadClientsCount(data.count);
+      } catch (error) {
+        console.error("Error fetching unread message count:", error);
+      }
+    };
+    fetchUnreadCount();
+  }, []);
+
 
   const handleContactClick = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -63,6 +80,15 @@ export default function Navigation() {
               <span className="hidden sm:inline">Contactează-ne</span>
               <span className="sm:hidden">Contact</span>
             </Button>
+            {/* Added Message Counter */}
+            <div className="flex items-center">
+              <span className="text-gray-600">Mesaje</span>
+              {unreadClientsCount > 0 && (
+                <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded-full ml-1">
+                  {unreadClientsCount}
+                </span>
+              )}
+            </div>
             <LoginDropdown />
           </div>
         </div>
