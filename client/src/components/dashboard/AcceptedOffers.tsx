@@ -1,14 +1,16 @@
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { SendHorizontal, Loader2, MessageSquare, Eye } from "lucide-react";
-import type { Request, Car as CarType } from "@/types/dashboard";
-import { collection, query, getDocs, where, doc, getDoc, setDoc } from "firebase/firestore";
+import { useState, useEffect } from "react";
+import { collection, query, where, doc, getDoc, getDocs, setDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/context/AuthContext";
-import { useEffect, useState } from "react";
-import { OfferBox } from "./offers/OfferBox";
-import { OfferDetails } from "./offers/OfferDetails";
+import type { Request, Car as CarType } from "@/types/dashboard";
+import { useToast } from "@/hooks/use-toast";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { SendHorizontal, Loader2, MessageSquare, Eye } from "lucide-react";
+import { generateSlug } from "@/lib/utils";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface AcceptedOffersProps {
   requests: Request[];
@@ -30,6 +32,7 @@ interface Offer {
   createdAt: Date;
   serviceId: string;
   request: Request | null;
+  clientPhone?: string;
   isNew?: boolean;
 }
 
@@ -37,42 +40,7 @@ export function AcceptedOffers({ requests, cars, refreshRequests, refreshCounter
   const [offers, setOffers] = useState<Offer[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null);
-  const [viewedOffers, setViewedOffers] = useState<Set<string>>(new Set());
   const { user } = useAuth();
-
-  // Effect to fetch viewed offers
-  useEffect(() => {
-    const fetchViewedOffers = async () => {
-      if (!user) return;
-
-      try {
-        const viewedOffersRef = doc(db, `users/${user.uid}/metadata/viewedAcceptedOffers`);
-        const viewedOffersDoc = await getDoc(viewedOffersRef);
-        if (viewedOffersDoc.exists()) {
-          setViewedOffers(new Set(viewedOffersDoc.data().offerIds || []));
-        }
-      } catch (error) {
-        console.error("Error fetching viewed offers:", error);
-      }
-    };
-
-    fetchViewedOffers();
-  }, [user]);
-
-  const markOfferAsViewed = async (offerId: string) => {
-    if (!user) return;
-
-    try {
-      const viewedOffersRef = doc(db, `users/${user.uid}/metadata/viewedAcceptedOffers`);
-      const newViewedOffers = new Set(viewedOffers).add(offerId);
-      await setDoc(viewedOffersRef, {
-        offerIds: Array.from(newViewedOffers),
-      }, { merge: true });
-      setViewedOffers(newViewedOffers);
-    } catch (error) {
-      console.error("Error marking offer as viewed:", error);
-    }
-  };
 
   useEffect(() => {
     const fetchOffers = async () => {
@@ -93,19 +61,31 @@ export function AcceptedOffers({ requests, cars, refreshRequests, refreshCounter
         const fetchPromises = querySnapshot.docs.map(async (docSnapshot) => {
           const data = docSnapshot.data();
           try {
+            // Fetch request data
             const requestRef = doc(db, "requests", data.requestId);
             const requestDoc = await getDoc(requestRef);
             const requestData = requestDoc.exists() ? { id: requestDoc.id, ...requestDoc.data() } as Request : null;
+
+            // Fetch client data to get phone number
+            let clientPhone;
+            if (requestData?.userId) {
+              const userRef = doc(db, "users", requestData.userId);
+              const userDoc = await getDoc(userRef);
+              if (userDoc.exists()) {
+                clientPhone = userDoc.data().phone;
+              }
+            }
 
             return {
               id: docSnapshot.id,
               ...data,
               createdAt: data.createdAt?.toDate() || new Date(),
               request: requestData,
+              clientPhone,
               availableDate: data.availableDate || "Data necunoscută",
               price: data.price || 0,
               status: "Accepted",
-              isNew: !viewedOffers.has(docSnapshot.id)
+              isNew: false
             } as Offer;
           } catch (error) {
             console.error("Error fetching request data for doc:", docSnapshot.id, error);
@@ -125,12 +105,9 @@ export function AcceptedOffers({ requests, cars, refreshRequests, refreshCounter
     };
 
     fetchOffers();
-  }, [user, refreshCounter, viewedOffers]);
+  }, [user, refreshCounter]);
 
   const handleViewDetails = (offer: Offer) => {
-    if (offer.isNew) {
-      markOfferAsViewed(offer.id);
-    }
     setSelectedOffer(offer);
   };
 
@@ -218,12 +195,70 @@ export function AcceptedOffers({ requests, cars, refreshRequests, refreshCounter
         )}
       </CardContent>
 
-      <OfferDetails
-        offer={selectedOffer}
-        cars={cars}
+      <Dialog
         open={!!selectedOffer}
         onOpenChange={(open) => !open && setSelectedOffer(null)}
-      />
+      >
+        <DialogContent className="max-w-[600px] max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle>{selectedOffer?.title}</DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="h-full max-h-[60vh] pr-4">
+            <div className="space-y-6 p-2">
+              <div>
+                <h3 className="text-sm font-medium text-gray-700 mb-2">
+                  Detalii client
+                </h3>
+                <div className="space-y-1">
+                  <p className="text-sm text-gray-600">
+                    <span className="font-medium">Nume:</span> {selectedOffer?.request?.clientName || 'N/A'}
+                  </p>
+                  {selectedOffer?.clientPhone && (
+                    <p className="text-sm text-gray-600">
+                      <span className="font-medium">Telefon:</span> {selectedOffer.clientPhone}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-sm font-medium text-gray-700 mb-2">
+                  Detalii Ofertă
+                </h3>
+                <p className="text-sm text-gray-600 whitespace-pre-wrap">
+                  {selectedOffer?.details}
+                </p>
+              </div>
+
+              <div className="flex gap-4">
+                <div>
+                  <h3 className="text-sm font-medium text-gray-700">
+                    Data Disponibilă
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    {selectedOffer?.availableDate}
+                  </p>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-gray-700">Preț</h3>
+                  <p className="text-sm text-gray-600">{selectedOffer?.price} RON</p>
+                </div>
+              </div>
+
+              {selectedOffer?.notes && (
+                <div>
+                  <h3 className="text-sm font-medium text-gray-700 mb-2">
+                    Observații
+                  </h3>
+                  <p className="text-sm text-gray-600 whitespace-pre-wrap">
+                    {selectedOffer.notes}
+                  </p>
+                </div>
+              )}
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
