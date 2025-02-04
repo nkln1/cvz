@@ -79,12 +79,9 @@ export const useMessages = (userId: string) => {
             groups[message.requestId].unreadCount++;
             unreadServices.add(message.requestId);
           }
-            if (
-              new Date(message.createdAt) >
-              new Date(groups[message.requestId].lastMessage.createdAt)
-            ) {
-              groups[message.requestId].lastMessage = message;
-            }
+          
+          if (new Date(message.createdAt) > new Date(groups[message.requestId].lastMessage.createdAt)) {
+            groups[message.requestId].lastMessage = message;
           }
         });
 
