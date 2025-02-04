@@ -7,10 +7,12 @@ import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { SendHorizontal, Loader2, MessageSquare, Eye } from "lucide-react";
+import { SendHorizontal, Loader2, MessageSquare, Eye, Calendar, FileText, Phone, CreditCard, User } from "lucide-react";
 import { generateSlug } from "@/lib/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { format } from "date-fns";
+import { Separator } from "@/components/ui/separator";
 
 interface AcceptedOffersProps {
   requests: Request[];
@@ -41,6 +43,19 @@ export function AcceptedOffers({ requests, cars, refreshRequests, refreshCounter
   const [loading, setLoading] = useState(true);
   const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null);
   const { user } = useAuth();
+
+  const formatDateSafely = (dateValue: any) => {
+    if (!dateValue) return "Data necunoscută";
+    try {
+      const date = dateValue && typeof dateValue.toDate === 'function'
+        ? dateValue.toDate()
+        : new Date(dateValue);
+      return format(date, "dd.MM.yyyy");
+    } catch (error) {
+      console.error("Error formatting date:", error);
+      return "Data necunoscută";
+    }
+  };
 
   useEffect(() => {
     const fetchOffers = async () => {
@@ -205,43 +220,82 @@ export function AcceptedOffers({ requests, cars, refreshRequests, refreshCounter
           </DialogHeader>
           <ScrollArea className="h-full max-h-[60vh] pr-4">
             <div className="space-y-6 p-2">
+              {/* Client Details Section */}
               <div>
-                <h3 className="text-sm font-medium text-gray-700 mb-2">
+                <h3 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                  <User className="h-4 w-4 text-blue-500" />
                   Detalii client
                 </h3>
-                <div className="space-y-1">
+                <div className="space-y-1 ml-6">
                   <p className="text-sm text-gray-600">
                     <span className="font-medium">Nume:</span> {selectedOffer?.request?.clientName || 'N/A'}
                   </p>
                   {selectedOffer?.clientPhone && (
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-gray-600 flex items-center gap-2">
+                      <Phone className="h-4 w-4 text-green-500" />
                       <span className="font-medium">Telefon:</span> {selectedOffer.clientPhone}
                     </p>
                   )}
                 </div>
               </div>
 
+              <Separator />
+
+              {/* Initial Request Section */}
               <div>
-                <h3 className="text-sm font-medium text-gray-700 mb-2">
-                  Detalii Ofertă
+                <h3 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-orange-500" />
+                  Cererea inițială
                 </h3>
-                <p className="text-sm text-gray-600 whitespace-pre-wrap">
-                  {selectedOffer?.details}
-                </p>
+                <div className="space-y-2 ml-6">
+                  {selectedOffer?.request && (
+                    <>
+                      <p className="text-sm text-gray-600">
+                        <span className="font-medium">Titlu:</span> {selectedOffer.request.title}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        <span className="font-medium">Descriere:</span> {selectedOffer.request.description}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        <span className="font-medium">Data preferată:</span> {formatDateSafely(selectedOffer.request.preferredDate)}
+                      </p>
+                    </>
+                  )}
+                </div>
               </div>
 
-              <div className="flex gap-4">
-                <div>
-                  <h3 className="text-sm font-medium text-gray-700">
-                    Data Disponibilă
-                  </h3>
-                  <p className="text-sm text-gray-600">
-                    {selectedOffer?.availableDate}
+              <Separator />
+
+              {/* Offer Details Section */}
+              <div>
+                <h3 className="text-sm font-medium text-gray-700 mb-2">
+                  Detalii Ofertă Acceptată
+                </h3>
+                <div className="space-y-4">
+                  <p className="text-sm text-gray-600 whitespace-pre-wrap">
+                    {selectedOffer?.details}
                   </p>
-                </div>
-                <div>
-                  <h3 className="text-sm font-medium text-gray-700">Preț</h3>
-                  <p className="text-sm text-gray-600">{selectedOffer?.price} RON</p>
+
+                  <div className="flex gap-4">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-blue-500" />
+                      <div>
+                        <h4 className="text-xs font-medium text-gray-500">
+                          Data Disponibilă
+                        </h4>
+                        <p className="text-sm text-gray-600">
+                          {selectedOffer?.availableDate}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <CreditCard className="h-4 w-4 text-green-500" />
+                      <div>
+                        <h4 className="text-xs font-medium text-gray-500">Preț</h4>
+                        <p className="text-sm text-gray-600">{selectedOffer?.price} RON</p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
