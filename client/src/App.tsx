@@ -8,6 +8,7 @@ import Contact from "@/pages/Contact";
 import { AuthProvider } from "@/context/AuthContext";
 import ClientDashboard from "@/pages/dashboard/ClientDashboard";
 import ServiceDashboard from "@/pages/dashboard/ServiceDashboard";
+import { ServicePublicProfile } from "@/pages/ServicePublicProfile";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { Provider } from 'react-redux';
 import { store } from '@/store/store';
@@ -34,6 +35,13 @@ function Router() {
               <ProtectedRoute allowedRoles={["service"]}>
                 <ServiceDashboard />
               </ProtectedRoute>
+            </ErrorBoundary>
+          )}
+        </Route>
+        <Route path="/service/:serviceId">
+          {(params) => (
+            <ErrorBoundary>
+              <ServicePublicProfile serviceId={params.serviceId} />
             </ErrorBoundary>
           )}
         </Route>
