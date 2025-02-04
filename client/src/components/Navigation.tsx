@@ -83,11 +83,6 @@ export default function Navigation() {
             {/* Added Message Counter */}
             <div className="flex items-center">
               <span className="text-gray-600">Mesaje</span>
-              {unreadClientsCount > 0 && (
-                <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded-full ml-1">
-                  {unreadClientsCount}
-                </span>
-              )}
             </div>
             <LoginDropdown />
           </div>
