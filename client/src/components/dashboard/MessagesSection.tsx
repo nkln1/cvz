@@ -266,7 +266,8 @@ export function MessagesSection({
           ? b.createdAt.toDate().getTime()
           : new Date(b.createdAt).getTime();
         return dateB - dateA; // Newest messages first
-      });
+      })
+      .reverse();
 
     const request = requests.find(r => r.id === selectedMessageRequest);
     const currentGroup = messageGroups.find(
