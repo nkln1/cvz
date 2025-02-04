@@ -162,7 +162,7 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
           {(() => {
             const pendingOffersCount = filterOffers(offers).filter(o => o.status.toLowerCase() === "pending").length;
             const rejectedOffersCount = filterOffers(offers).filter(o => o.status.toLowerCase() === "rejected").length;
-            
+
             return (
               <TabsList className="grid w-full grid-cols-2 mb-4">
                 <TabsTrigger value="pending" className="data-[state=active]:bg-[#00aff5] data-[state=active]:text-white">
