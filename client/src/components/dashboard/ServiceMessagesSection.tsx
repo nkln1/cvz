@@ -27,8 +27,7 @@ import type { Request, Message } from "@/types/service";
 import { Separator } from "@/components/ui/separator";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { Dialog, DialogHeader, DialogTitle, DialogContent, DialogTrigger } from "@/components/ui/dialog"; // Added Dialog imports
-
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface MessageGroup {
   requestId: string;
@@ -101,7 +100,7 @@ export function ServiceMessagesSection({
   const [offer, setOffer] = useState<Offer | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [isScrolledToBottom, setIsScrolledToBottom] = useState(true);
-  const [showRequestDetails, setShowRequestDetails] = useState(false); // Added state for dialog
+  const [showRequestDetails, setShowRequestDetails] = useState(false);
 
   useEffect(() => {
     const fetchOffer = async () => {
@@ -268,17 +267,15 @@ export function ServiceMessagesSection({
               </p>
             </div>
           </div>
-          <DialogTrigger asChild>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowRequestDetails(true)}
-              className="text-blue-500 hover:text-blue-700 hover:bg-blue-50"
-            >
-              <Eye className="h-4 w-4 mr-2" />
-              Detalii cerere
-            </Button>
-          </DialogTrigger> {/* Changed to DialogTrigger */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowRequestDetails(true)}
+            className="text-blue-500 hover:text-blue-700 hover:bg-blue-50"
+          >
+            <Eye className="h-4 w-4 mr-2" />
+            Detalii cerere
+          </Button>
         </div>
 
         {selectedMessageRequest && offer && (
@@ -352,7 +349,6 @@ export function ServiceMessagesSection({
     });
 
     let currentDate: Date | null = null;
-
 
     return (
       <div className="space-y-4 h-full flex flex-col">
@@ -506,6 +502,20 @@ export function ServiceMessagesSection({
                   <h3 className="font-medium text-sm text-muted-foreground mb-2">Locație</h3>
                   <p>{selectedMessageRequest.county} - {selectedMessageRequest.cities?.join(", ")}</p>
                 </div>
+                {selectedMessageRequest.carDetails && (
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <h3 className="font-medium text-sm text-muted-foreground mb-2">Detalii Mașină</h3>
+                    <div className="space-y-2">
+                      <p><span className="text-gray-600">Marcă:</span> {selectedMessageRequest.carDetails.make}</p>
+                      <p><span className="text-gray-600">Model:</span> {selectedMessageRequest.carDetails.model}</p>
+                      <p><span className="text-gray-600">An:</span> {selectedMessageRequest.carDetails.year}</p>
+                      <p><span className="text-gray-600">Kilometraj:</span> {selectedMessageRequest.carDetails.mileage} km</p>
+                      {selectedMessageRequest.carDetails.vin && (
+                        <p><span className="text-gray-600">VIN:</span> {selectedMessageRequest.carDetails.vin}</p>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </DialogContent>
