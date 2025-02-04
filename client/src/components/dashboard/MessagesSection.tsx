@@ -27,30 +27,6 @@ import { collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { generateSlug } from "@/lib/utils";
 
-interface MessagesSectionProps {
-  messages: Message[];
-  messageGroups: {
-    requestId: string;
-    requestTitle: string;
-    lastMessage: Message;
-    unreadCount: number;
-  }[];
-  messageServices: Record<string, { companyName: string }>;
-  selectedMessageRequest: string | null;
-  selectedServiceId: string | null;
-  isViewingConversation: boolean;
-  messageContent: string;
-  sendingMessage: boolean;
-  userId: string;
-  userName: string;
-  onMessageContentChange: (content: string) => void;
-  onSendMessage: () => Promise<void>;
-  onSelectConversation: (requestId: string, serviceId?: string) => void;
-  onBackToList: () => void;
-  markMessageAsRead: (messageId: string) => Promise<void>;
-  requests: Request[];
-}
-
 interface Offer {
   id: string;
   requestId: string;
@@ -78,6 +54,30 @@ const formatDateSafely = (dateValue: any) => {
   }
 };
 
+interface MessagesSectionProps {
+  messages: Message[];
+  messageGroups: {
+    requestId: string;
+    requestTitle: string;
+    lastMessage: Message;
+    unreadCount: number;
+  }[];
+  messageServices: Record<string, { companyName: string }>;
+  selectedMessageRequest: string | null;
+  selectedServiceId: string | null;
+  isViewingConversation: boolean;
+  messageContent: string;
+  sendingMessage: boolean;
+  userId: string;
+  userName: string;
+  onMessageContentChange: (content: string) => void;
+  onSendMessage: () => Promise<void>;
+  onSelectConversation: (requestId: string, serviceId?: string) => void;
+  onBackToList: () => void;
+  markMessageAsRead: (messageId: string) => Promise<void>;
+  requests: Request[];
+}
+
 export function MessagesSection({
   messages,
   messageGroups,
@@ -96,8 +96,6 @@ export function MessagesSection({
   markMessageAsRead,
   requests,
 }: MessagesSectionProps) {
-  const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
-  const [selectedRequest, setSelectedRequest] = useState<Request | null>(null);
   const [offer, setOffer] = useState<Offer | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [isScrolledToBottom, setIsScrolledToBottom] = useState(true);
@@ -110,7 +108,7 @@ export function MessagesSection({
         const offersRef = collection(db, "offers");
         const q = query(
           offersRef,
-          where("requestId", "==", selectedMessageRequest)
+          where("requestId", "==", selectedMessageRequest),
         );
 
         const querySnapshot = await getDocs(q);
@@ -332,6 +330,51 @@ export function MessagesSection({
             </div>
           </div>
         </div>
+
+        {request && offer && (
+          <div className="bg-gray-50 rounded-lg p-4 space-y-4 text-sm">
+            <div>
+              <h4 className="font-medium flex items-center gap-2 text-gray-700 mb-2">
+                <FileText className="h-4 w-4" />
+                Cererea Mea
+              </h4>
+              <div className="space-y-2 pl-6">
+                <p><span className="text-gray-600">Titlu:</span> {request.title}</p>
+                <p><span className="text-gray-600">Descriere:</span> {request.description}</p>
+                <p>
+                  <span className="text-gray-600">Data Preferată:</span>{" "}
+                  {formatDateSafely(request.preferredDate)}
+                </p>
+              </div>
+            </div>
+
+            <Separator />
+
+            <div>
+              <h4 className="font-medium flex items-center gap-2 text-gray-700 mb-2">
+                <MessageSquare className="h-4 w-4" />
+                Oferta Primită
+              </h4>
+              <div className="space-y-2 pl-6">
+                <p><span className="text-gray-600">Titlu:</span> {offer.title}</p>
+                <p><span className="text-gray-600">Detalii:</span> {offer.details}</p>
+                <div className="flex gap-4">
+                  <p className="flex items-center gap-1">
+                    <Calendar className="h-4 w-4 text-gray-500" />
+                    {formatDateSafely(offer.availableDate)}
+                  </p>
+                  <p className="flex items-center gap-1">
+                    <CreditCard className="h-4 w-4 text-gray-500" />
+                    {offer.price} RON
+                  </p>
+                </div>
+                {offer.notes && (
+                  <p><span className="text-gray-600">Note:</span> {offer.notes}</p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         <ScrollArea
           className="flex-1 pr-4"
