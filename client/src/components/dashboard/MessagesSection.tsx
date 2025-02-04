@@ -280,7 +280,7 @@ export function MessagesSection({
         const dateB = b.createdAt && typeof b.createdAt.toDate === 'function'
           ? b.createdAt.toDate().getTime()
           : new Date(b.createdAt).getTime();
-        return dateB - dateA;
+        return dateA - dateB;
       });
 
     const request = requests.find(r => r.id === selectedMessageRequest);
