@@ -17,13 +17,11 @@ import {
   FileText,
   MailOpen,
   MessageSquare,
-  Calendar,
-  Star,
+  SendHorizontal,
   User,
   Bell,
   BellOff,
   Loader2,
-  SendHorizontal,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
@@ -35,8 +33,6 @@ import { ClientRequests } from "@/components/dashboard/ClientRequests";
 import { SentOffers } from "@/components/dashboard/SentOffers";
 import { AcceptedOffers } from "@/components/dashboard/AcceptedOffers";
 import { ServiceMessagesSection } from "@/components/dashboard/ServiceMessagesSection";
-import { AppointmentsSection } from "@/components/dashboard/AppointmentsSection";
-import { ReviewsSection } from "@/components/dashboard/ReviewsSection";
 import { ServiceAccountSection } from "@/components/dashboard/ServiceAccountSection";
 import { useServiceMessages } from "@/hooks/useServiceMessages";
 import { useServiceRequests } from "@/hooks/useServiceRequests";
@@ -48,8 +44,6 @@ type TabType =
   | "offers"
   | "accepted-offers"
   | "messages"
-  | "appointments"
-  | "reviews"
   | "account";
 
 interface NavigationButtonProps {
@@ -81,7 +75,7 @@ const NavigationButton: React.FC<NavigationButtonProps> = ({
     {icon}
     <span className="flex items-center gap-2 text-sm">
       {label}
-      {notificationCount > 0 && (
+      {notificationCount && notificationCount > 0 && (
         <Badge
           variant="secondary"
           className="bg-[#00aff5] text-white text-xs px-2 py-0.5 rounded-full"
@@ -386,20 +380,6 @@ export default function ServiceDashboard() {
               notificationCount={unreadClientsCount}
             />
             <NavigationButton
-              tab="appointments"
-              activeTab={activeTab}
-              icon={<Calendar className="w-4 h-4 mr-2 flex-shrink-0" />}
-              label="Programări"
-              onClick={setActiveTab}
-            />
-            <NavigationButton
-              tab="reviews"
-              activeTab={activeTab}
-              icon={<Star className="w-4 h-4 mr-2 flex-shrink-0" />}
-              label="Recenzii"
-              onClick={setActiveTab}
-            />
-            <NavigationButton
               tab="account"
               activeTab={activeTab}
               icon={<User className="w-4 h-4 mr-2 flex-shrink-0" />}
@@ -460,8 +440,6 @@ export default function ServiceDashboard() {
             markMessageAsRead={markMessageAsRead}
           />
         )}
-        {activeTab === "appointments" && <AppointmentsSection />}
-        {activeTab === "reviews" && <ReviewsSection />}
         {activeTab === "account" && (
           <ServiceAccountSection
             userId={user?.uid || ""}
