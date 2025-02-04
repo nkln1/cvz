@@ -2,13 +2,11 @@ import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import LoginDropdown from "./LoginDropdown";
 import { Button } from "./ui/button";
-import { Mail, Building2 } from "lucide-react";
-import { useAuth } from "@/context/AuthContext";
+import { Mail } from "lucide-react";
 
 export default function Navigation() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [, setLocation] = useLocation();
-  const { user } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -27,13 +25,6 @@ export default function Navigation() {
   const handleLogoClick = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
     setLocation("/");
-  };
-
-  const handlePublicProfileClick = () => {
-    if (user?.uid) {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-      setLocation(`/service/${user.uid}`);
-    }
   };
 
   return (
@@ -62,18 +53,6 @@ export default function Navigation() {
             </span>
           </button>
           <div className="flex items-center space-x-2 sm:space-x-4">
-            {user && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handlePublicProfileClick}
-                className="text-sm sm:text-base flex items-center gap-1 sm:gap-2 text-gray-600 hover:text-[#00aff5] hover:bg-transparent hover:scale-105 transition-all duration-200"
-              >
-                <Building2 className="h-3 w-3 sm:h-4 sm:w-4" />
-                <span className="hidden sm:inline">Profil Public</span>
-                <span className="sm:hidden">Profil</span>
-              </Button>
-            )}
             <Button
               variant="ghost"
               size="sm"

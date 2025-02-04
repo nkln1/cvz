@@ -22,6 +22,7 @@ import {
   Bell,
   BellOff,
   Loader2,
+  Building2,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
@@ -329,21 +330,31 @@ export default function ServiceDashboard() {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-6 space-y-4 md:space-y-6 max-w-[1400px]">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
           <h1 className="text-2xl font-bold">Service Dashboard</h1>
-          {notificationPermission !== "granted" ? (
+          <div className="flex items-center gap-4">
             <Button
               variant="outline"
-              onClick={requestNotificationPermission}
-              className="flex items-center gap-2 w-full sm:w-auto"
+              onClick={() => setLocation(`/service/${user?.uid}`)}
+              className="flex items-center gap-2 text-[#00aff5] hover:text-[#0099d6]"
             >
-              <BellOff className="w-4 h-4" />
-              Enable Notifications
+              <Building2 className="h-4 w-4" />
+              Vezi Profil Public
             </Button>
-          ) : (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Bell className="w-4 h-4" />
-              Notifications enabled
-            </div>
-          )}
+            {notificationPermission !== "granted" ? (
+              <Button
+                variant="outline"
+                onClick={requestNotificationPermission}
+                className="flex items-center gap-2 w-full sm:w-auto"
+              >
+                <BellOff className="w-4 h-4" />
+                Enable Notifications
+              </Button>
+            ) : (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Bell className="w-4 h-4" />
+                Notifications enabled
+              </div>
+            )}
+          </div>
         </div>
 
         <nav className="flex flex-col sm:flex-row gap-2 border-b pb-4 overflow-x-auto scrollbar-hide">

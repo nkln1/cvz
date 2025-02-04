@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -70,7 +70,7 @@ export function ServicePublicProfile({ serviceId }: ServicePublicProfileProps) {
           const data = serviceDoc.data() as ServiceData;
           setServiceData(data);
           if (data.workingHours) {
-            setWorkingHours(data.workingHours);
+            setWorkingHours(data.workingHours as WorkingHours);
           }
         }
       } catch (error) {
