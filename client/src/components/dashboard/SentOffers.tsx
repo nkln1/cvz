@@ -54,9 +54,13 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
     let isMounted = true;
 
     const fetchOffers = async () => {
-      if (!user?.uid) return;
+      if (!user?.uid) {
+        setLoading(false);
+        return;
+      }
 
       try {
+        if (!isMounted) return;
         setLoading(true);
         const offersRef = collection(db, "offers");
         const q = query(offersRef, where("serviceId", "==", user.uid));
@@ -122,7 +126,7 @@ export function SentOffers({ requests, cars, refreshRequests, refreshCounter }: 
     );
   };
 
-  const filteredOffers = filterOffers(offers).filter(o => o.status.toLowerCase() === activeTab);
+  const filteredOffers = filterOffers(offers || []).filter(o => o?.status?.toLowerCase() === activeTab);
   const totalPages = Math.ceil(filteredOffers.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const paginatedOffers = filteredOffers.slice(startIndex, startIndex + ITEMS_PER_PAGE);
