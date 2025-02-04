@@ -133,10 +133,11 @@ export function MessagesSection({
   }, [selectedMessageRequest]);
 
   useEffect(() => {
-    if (isScrolledToBottom && messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
     }
-  }, [messages, isScrolledToBottom]);
+  }, [messages]);
+
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const { scrollHeight, scrollTop, clientHeight } = e.currentTarget;
@@ -257,16 +258,19 @@ export function MessagesSection({
     if (!selectedMessageRequest) return null;
 
     const conversationMessages = messages
-      .filter((msg) => msg.requestId === selectedMessageRequest)
-      .sort((a, b) => {
-        const dateA = a.createdAt && typeof a.createdAt.toDate === 'function'
-          ? a.createdAt.toDate().getTime()
-          : new Date(a.createdAt).getTime();
-        const dateB = b.createdAt && typeof b.createdAt.toDate === 'function'
-          ? b.createdAt.toDate().getTime()
-          : new Date(b.createdAt).getTime();
-        return dateB - dateA; // Newest messages first
-      });
+    .filter((msg) => msg.requestId === selectedMessageRequest)
+    .sort((a, b) => {
+      const dateA = a.createdAt && typeof a.createdAt.toDate === 'function'
+        ? a.createdAt.toDate().getTime()
+        : new Date(a.createdAt).getTime();
+      const dateB = b.createdAt && typeof b.createdAt.toDate === 'function'
+        ? b.createdAt.toDate().getTime()
+        : new Date(b.createdAt).getTime();
+      return dateB - dateA; // ✅ Acum cel mai recent mesaj este primul
+    });
+    console.log("Mesaje sortate:", conversationMessages);
+
+
 
     const request = requests.find(r => r.id === selectedMessageRequest);
     const currentGroup = messageGroups.find(
@@ -360,14 +364,14 @@ export function MessagesSection({
         )}
 
         {/* Messages Area */}
-        <ScrollArea
-          className="flex-1 pr-4"
-          style={{ height: "calc(600px - 180px)" }}
-          onScrollCapture={handleScroll}
-        >
-          <div className="space-y-4"> {/* Removed flex-col-reverse */}
-            <AnimatePresence>
-              {conversationMessages.map((message) => (
+            <ScrollArea
+              className="flex-1 pr-4"
+              style={{ height: "calc(600px - 180px)", display: "flex", flexDirection: "column-reverse" }}
+              onScrollCapture={handleScroll}
+            >
+              <div className="space-y-4">
+                <AnimatePresence>
+                  {conversationMessages.map((message) => ( // ❌ Elimină `.reverse()`
                 <motion.div
                   key={message.id}
                   initial={{ opacity: 0, y: 20 }}
