@@ -46,6 +46,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/components/ui/use-toast";
 import { useToast } from "@/hooks/use-toast";
+import { Link } from "wouter";
+import { generateSlug } from "@/lib/utils";
 
 interface ReceivedOffersProps {
   cars: Record<string, CarType>;
@@ -402,9 +404,14 @@ export function ReceivedOffers({
           <div className="mb-2">
             <h4 className="text-sm font-medium flex items-center gap-2 mb-1">
               <User className="w-4 h-4 text-blue-500" /> Service:
-              <span className="font-normal line-clamp-1">
+              <a
+                href={`/service/${generateSlug(offer.serviceName || "")}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-normal line-clamp-1 text-[#00aff5] hover:text-[#0099d6] hover:underline"
+              >
                 {offer.serviceName}
-              </span>
+              </a>
             </h4>
           </div>
 
