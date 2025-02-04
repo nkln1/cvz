@@ -43,6 +43,12 @@ interface ServicePublicProfileProps {
   slug: string;
 }
 
+const normalizeCompanyName = (companyName: string | undefined): string => {
+  if (!companyName) return "";
+  return companyName.toLowerCase().trim();
+};
+
+
 export function ServicePublicProfile({ slug }: ServicePublicProfileProps) {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -62,38 +68,40 @@ export function ServicePublicProfile({ slug }: ServicePublicProfileProps) {
   useEffect(() => {
     async function fetchServiceData() {
       try {
-        // Decode the slug to get the company name
+        setLoading(true);
+        // Decode and normalize the slug to get the company name
         const decodedCompanyName = decodeSlug(slug);
 
         // Query services collection by company name
         const servicesRef = collection(db, "services");
-        const q = query(
-          servicesRef,
-          where("companyName", "==", decodedCompanyName)
-        );
+        const querySnapshot = await getDocs(servicesRef);
 
-        const querySnapshot = await getDocs(q);
+        // Find the service with matching normalized company name
+        const matchingDoc = querySnapshot.docs.find(doc => {
+          const data = doc.data() as ServiceData;
+          return normalizeCompanyName(data.companyName) === normalizeCompanyName(decodedCompanyName);
+        });
 
-        if (!querySnapshot.empty) {
-          const serviceDoc = querySnapshot.docs[0];
-          const data = serviceDoc.data() as ServiceData;
-          setServiceData({ ...data, id: serviceDoc.id });
+        if (matchingDoc) {
+          const data = matchingDoc.data() as ServiceData;
+          setServiceData({ ...data, id: matchingDoc.id });
           if (data.workingHours) {
             setWorkingHours(data.workingHours as WorkingHours);
           }
         } else {
+          console.error("Service not found for slug:", slug);
           toast({
             variant: "destructive",
-            title: "Error",
-            description: "Service not found",
+            title: "Service negăsit",
+            description: "Nu am putut găsi serviciul auto specificat.",
           });
         }
       } catch (error) {
         console.error("Error fetching service data:", error);
         toast({
           variant: "destructive",
-          title: "Error",
-          description: "Could not load service data",
+          title: "Eroare",
+          description: "Nu am putut încărca datele serviciului. Vă rugăm să încercați din nou.",
         });
       } finally {
         setLoading(false);

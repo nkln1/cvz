@@ -16,5 +16,9 @@ export function generateSlug(companyName: string): string {
 }
 
 export function decodeSlug(slug: string): string {
-  return slug.replace(/-/g, ' ');
+  return slug.replace(/-/g, ' ').toLowerCase();
+}
+
+export function normalizeCompanyName(name: string): string {
+  return name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 }
