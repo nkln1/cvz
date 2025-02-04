@@ -261,16 +261,16 @@ export function MessagesSection({
       .sort((a, b) => {
         const dateA = new Date(a.createdAt).getTime();
         const dateB = new Date(b.createdAt).getTime();
-        return dateB - dateA;
+        return dateA - dateB; // Changed from dateB - dateA to dateA - dateB for newest messages at the top
       });
 
     const request = requests.find(r => r.id === selectedMessageRequest);
     const currentGroup = messageGroups.find(
       (g) => g.requestId === selectedMessageRequest
     );
-    const serviceId = selectedServiceId || 
-      (conversationMessages[0]?.fromId === userId 
-        ? conversationMessages[0]?.toId 
+    const serviceId = selectedServiceId ||
+      (conversationMessages[0]?.fromId === userId
+        ? conversationMessages[0]?.toId
         : conversationMessages[0]?.fromId);
     const serviceName = messageServices[serviceId]?.companyName || "Service Auto";
 
@@ -361,7 +361,7 @@ export function MessagesSection({
           style={{ height: "calc(600px - 180px)" }}
           onScrollCapture={handleScroll}
         >
-          <div className="space-y-4">
+          <div className="space-y-4 flex flex-col-reverse"> {/* Added flex-col-reverse */}
             <AnimatePresence>
               {conversationMessages.map((message) => (
                 <motion.div
