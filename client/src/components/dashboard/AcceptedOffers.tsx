@@ -88,10 +88,11 @@ export function AcceptedOffers({ requests, cars, refreshRequests, refreshCounter
               const userDoc = await getDoc(userRef);
               if (userDoc.exists()) {
                 clientPhone = userDoc.data().phone;
+                console.log("Found client phone:", clientPhone); // Debug log
               }
             }
 
-            return {
+            const offer = {
               id: docSnapshot.id,
               ...data,
               createdAt: data.createdAt?.toDate() || new Date(),
@@ -102,6 +103,9 @@ export function AcceptedOffers({ requests, cars, refreshRequests, refreshCounter
               status: "Accepted",
               isNew: false
             } as Offer;
+
+            console.log("Processed offer with phone:", offer.clientPhone); // Debug log
+            return offer;
           } catch (error) {
             console.error("Error fetching request data for doc:", docSnapshot.id, error);
             return null;
@@ -112,6 +116,7 @@ export function AcceptedOffers({ requests, cars, refreshRequests, refreshCounter
         fetchedOffers.push(...results.filter((offer): offer is Offer => offer !== null));
         fetchedOffers.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
         setOffers(fetchedOffers);
+        console.log("All fetched offers:", fetchedOffers); // Debug log
       } catch (error) {
         console.error("Error in fetchOffers:", error);
       } finally {
@@ -123,6 +128,7 @@ export function AcceptedOffers({ requests, cars, refreshRequests, refreshCounter
   }, [user, refreshCounter]);
 
   const handleViewDetails = (offer: Offer) => {
+    console.log("Selected offer for details:", offer); // Debug log
     setSelectedOffer(offer);
   };
 
@@ -210,109 +216,111 @@ export function AcceptedOffers({ requests, cars, refreshRequests, refreshCounter
         )}
       </CardContent>
 
-      <Dialog
-        open={!!selectedOffer}
-        onOpenChange={(open) => !open && setSelectedOffer(null)}
-      >
-        <DialogContent className="max-w-[600px] max-h-[80vh]">
-          <DialogHeader>
-            <DialogTitle>{selectedOffer?.title}</DialogTitle>
-          </DialogHeader>
-          <ScrollArea className="h-full max-h-[60vh] pr-4">
-            <div className="space-y-6 p-2">
-              {/* Client Details Section */}
-              <div>
-                <h3 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-                  <User className="h-4 w-4 text-blue-500" />
-                  Detalii client
-                </h3>
-                <div className="space-y-1 ml-6">
-                  <p className="text-sm text-gray-600">
-                    <span className="font-medium">Nume:</span> {selectedOffer?.request?.clientName || 'N/A'}
-                  </p>
-                  {selectedOffer?.clientPhone && (
-                    <p className="text-sm text-gray-600 flex items-center gap-2">
-                      <Phone className="h-4 w-4 text-green-500" />
-                      <span className="font-medium">Telefon:</span> {selectedOffer.clientPhone}
+      {selectedOffer && (
+        <Dialog
+          open={!!selectedOffer}
+          onOpenChange={(open) => !open && setSelectedOffer(null)}
+        >
+          <DialogContent className="max-w-[600px] max-h-[80vh]">
+            <DialogHeader>
+              <DialogTitle>{selectedOffer.title}</DialogTitle>
+            </DialogHeader>
+            <ScrollArea className="h-full max-h-[60vh] pr-4">
+              <div className="space-y-6 p-2">
+                {/* Client Details Section */}
+                <div>
+                  <h3 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                    <User className="h-4 w-4 text-blue-500" />
+                    Detalii client
+                  </h3>
+                  <div className="space-y-1 ml-6">
+                    <p className="text-sm text-gray-600">
+                      <span className="font-medium">Nume:</span> {selectedOffer.request?.clientName || 'N/A'}
                     </p>
-                  )}
+                    {selectedOffer.clientPhone && (
+                      <p className="text-sm text-gray-600 flex items-center gap-2">
+                        <Phone className="h-4 w-4 text-green-500" />
+                        <span className="font-medium">Telefon:</span> {selectedOffer.clientPhone}
+                      </p>
+                    )}
+                  </div>
                 </div>
-              </div>
 
-              <Separator />
+                <Separator />
 
-              {/* Initial Request Section */}
-              <div>
-                <h3 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-                  <FileText className="h-4 w-4 text-orange-500" />
-                  Cererea inițială
-                </h3>
-                <div className="space-y-2 ml-6">
-                  {selectedOffer?.request && (
-                    <>
-                      <p className="text-sm text-gray-600">
-                        <span className="font-medium">Titlu:</span> {selectedOffer.request.title}
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        <span className="font-medium">Descriere:</span> {selectedOffer.request.description}
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        <span className="font-medium">Data preferată:</span> {formatDateSafely(selectedOffer.request.preferredDate)}
-                      </p>
-                    </>
-                  )}
-                </div>
-              </div>
-
-              <Separator />
-
-              {/* Offer Details Section */}
-              <div>
-                <h3 className="text-sm font-medium text-gray-700 mb-2">
-                  Detalii Ofertă Acceptată
-                </h3>
-                <div className="space-y-4">
-                  <p className="text-sm text-gray-600 whitespace-pre-wrap">
-                    {selectedOffer?.details}
-                  </p>
-
-                  <div className="flex gap-4">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4 text-blue-500" />
-                      <div>
-                        <h4 className="text-xs font-medium text-gray-500">
-                          Data Disponibilă
-                        </h4>
+                {/* Initial Request Section */}
+                <div>
+                  <h3 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                    <FileText className="h-4 w-4 text-orange-500" />
+                    Cererea inițială
+                  </h3>
+                  <div className="space-y-2 ml-6">
+                    {selectedOffer.request && (
+                      <>
                         <p className="text-sm text-gray-600">
-                          {selectedOffer?.availableDate}
+                          <span className="font-medium">Titlu:</span> {selectedOffer.request.title}
                         </p>
+                        <p className="text-sm text-gray-600">
+                          <span className="font-medium">Descriere:</span> {selectedOffer.request.description}
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          <span className="font-medium">Data preferată:</span> {formatDateSafely(selectedOffer.request.preferredDate)}
+                        </p>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Offer Details Section */}
+                <div>
+                  <h3 className="text-sm font-medium text-gray-700 mb-2">
+                    Detalii Ofertă Acceptată
+                  </h3>
+                  <div className="space-y-4">
+                    <p className="text-sm text-gray-600 whitespace-pre-wrap">
+                      {selectedOffer.details}
+                    </p>
+
+                    <div className="flex gap-4">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4 text-blue-500" />
+                        <div>
+                          <h4 className="text-xs font-medium text-gray-500">
+                            Data Disponibilă
+                          </h4>
+                          <p className="text-sm text-gray-600">
+                            {selectedOffer.availableDate}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <CreditCard className="h-4 w-4 text-green-500" />
-                      <div>
-                        <h4 className="text-xs font-medium text-gray-500">Preț</h4>
-                        <p className="text-sm text-gray-600">{selectedOffer?.price} RON</p>
+                      <div className="flex items-center gap-2">
+                        <CreditCard className="h-4 w-4 text-green-500" />
+                        <div>
+                          <h4 className="text-xs font-medium text-gray-500">Preț</h4>
+                          <p className="text-sm text-gray-600">{selectedOffer.price} RON</p>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              {selectedOffer?.notes && (
-                <div>
-                  <h3 className="text-sm font-medium text-gray-700 mb-2">
-                    Observații
-                  </h3>
-                  <p className="text-sm text-gray-600 whitespace-pre-wrap">
-                    {selectedOffer.notes}
-                  </p>
-                </div>
-              )}
-            </div>
-          </ScrollArea>
-        </DialogContent>
-      </Dialog>
+                {selectedOffer.notes && (
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-700 mb-2">
+                      Observații
+                    </h3>
+                    <p className="text-sm text-gray-600 whitespace-pre-wrap">
+                      {selectedOffer.notes}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
+          </DialogContent>
+        </Dialog>
+      )}
     </Card>
   );
 }
