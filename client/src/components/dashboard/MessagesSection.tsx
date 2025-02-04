@@ -25,13 +25,7 @@ import type { Message } from "@/types/dashboard";
 import { Separator } from "@/components/ui/separator";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import type { Request } from "@/types/dashboard";
+import { generateSlug } from "@/lib/utils";
 
 interface MessagesSectionProps {
   messages: Message[];
@@ -199,7 +193,6 @@ export function MessagesSection({
             Nu există conversații active
           </p>
         ) : (
-          // Sort message groups to show newest conversations first
           [...messageGroups]
             .sort((a, b) => {
               const dateA = a.lastMessage.createdAt && typeof a.lastMessage.createdAt.toDate === 'function'
@@ -208,7 +201,7 @@ export function MessagesSection({
               const dateB = b.lastMessage.createdAt && typeof b.lastMessage.createdAt.toDate === 'function'
                 ? b.lastMessage.createdAt.toDate().getTime()
                 : new Date(b.lastMessage.createdAt).getTime();
-              return dateB - dateA; // Sort newest first
+              return dateB - dateA;
             })
             .map((group) => {
               const serviceId = group.lastMessage.fromId === userId
@@ -238,7 +231,17 @@ export function MessagesSection({
                         <div className="flex-1 min-w-0">
                           <div className="flex justify-between items-start">
                             <div>
-                              <h4 className="font-medium">{serviceName}</h4>
+                              <a
+                                href={`/service/${generateSlug(serviceName)}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="font-medium text-[#00aff5] hover:text-[#0099d6] hover:underline"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                }}
+                              >
+                                {serviceName}
+                              </a>
                               <p className="text-sm text-muted-foreground">{requestTitle}</p>
                             </div>
                             <span className="text-xs text-muted-foreground whitespace-nowrap ml-2">
@@ -277,13 +280,8 @@ export function MessagesSection({
         const dateB = b.createdAt && typeof b.createdAt.toDate === 'function'
           ? b.createdAt.toDate().getTime()
           : new Date(b.createdAt).getTime();
-        return dateB - dateA; // Sort newest first
+        return dateB - dateA;
       });
-
-    console.log("Sorted messages:", conversationMessages.map(m => ({
-      content: m.content,
-      date: m.createdAt
-    })));
 
     const request = requests.find(r => r.id === selectedMessageRequest);
     const currentGroup = messageGroups.find(
@@ -295,7 +293,6 @@ export function MessagesSection({
         : conversationMessages[0]?.fromId);
     const serviceName = messageServices[serviceId]?.companyName || "Service Auto";
 
-    // Mark messages as read
     conversationMessages.forEach((message) => {
       if (message.toId === userId && !message.read) {
         markMessageAsRead(message.id);
@@ -304,7 +301,6 @@ export function MessagesSection({
 
     return (
       <div className="space-y-4 h-full flex flex-col">
-        {/* Header */}
         <div className="flex items-center justify-between border-b pb-4">
           <div className="flex items-center gap-2">
             <Button
@@ -322,7 +318,14 @@ export function MessagesSection({
               </AvatarFallback>
             </Avatar>
             <div>
-              <h3 className="font-medium text-sm">{serviceName}</h3>
+              <a
+                href={`/service/${generateSlug(serviceName)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-sm text-[#00aff5] hover:text-[#0099d6] hover:underline"
+              >
+                {serviceName}
+              </a>
               <p className="text-xs text-muted-foreground">
                 {request?.title || ""}
               </p>
@@ -330,53 +333,6 @@ export function MessagesSection({
           </div>
         </div>
 
-        {/* Request and Offer History */}
-        {request && offer && (
-          <div className="bg-gray-50 rounded-lg p-4 space-y-4 text-sm">
-            <div>
-              <h4 className="font-medium flex items-center gap-2 text-gray-700 mb-2">
-                <FileText className="h-4 w-4" />
-                Cererea Mea
-              </h4>
-              <div className="space-y-2 pl-6">
-                <p><span className="text-gray-600">Titlu:</span> {request.title}</p>
-                <p><span className="text-gray-600">Descriere:</span> {request.description}</p>
-                <p>
-                  <span className="text-gray-600">Data Preferată:</span>{" "}
-                  {formatDateSafely(request.preferredDate)}
-                </p>
-              </div>
-            </div>
-
-            <Separator />
-
-            <div>
-              <h4 className="font-medium flex items-center gap-2 text-gray-700 mb-2">
-                <MessageSquare className="h-4 w-4" />
-                Oferta Primită
-              </h4>
-              <div className="space-y-2 pl-6">
-                <p><span className="text-gray-600">Titlu:</span> {offer.title}</p>
-                <p><span className="text-gray-600">Detalii:</span> {offer.details}</p>
-                <div className="flex gap-4">
-                  <p className="flex items-center gap-1">
-                    <Calendar className="h-4 w-4 text-gray-500" />
-                    {formatDateSafely(offer.availableDate)}
-                  </p>
-                  <p className="flex items-center gap-1">
-                    <CreditCard className="h-4 w-4 text-gray-500" />
-                    {offer.price} RON
-                  </p>
-                </div>
-                {offer.notes && (
-                  <p><span className="text-gray-600">Note:</span> {offer.notes}</p>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Messages Area */}
         <ScrollArea
           className="flex-1 pr-4"
           style={{ height: "calc(600px - 180px)", position: "relative" }}
@@ -421,7 +377,6 @@ export function MessagesSection({
           </div>
         </ScrollArea>
 
-        {/* Message Input */}
         <div className="border-t pt-4">
           <div className="flex gap-2">
             <Textarea
